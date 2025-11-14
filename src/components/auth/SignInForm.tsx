@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
@@ -12,6 +12,7 @@ import type { LoginRequest } from "../../types";
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const location = useLocation();
   const [formData, setFormData] = useState<LoginRequest>({
     email: "",
     password: "",
@@ -55,7 +56,7 @@ export default function SignInForm() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+  const from = location.state?.from || "/";
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -71,10 +72,11 @@ export default function SignInForm() {
       if (isChecked) {
         localStorage.setItem("keepLoggedIn", "true");
       }
-
-      // Redirect to dashboard or
-      navigate("/", { replace: true });
-      // }
+      if (result.user.role === "BUYER") {
+        navigate(from, { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       // Error is handled by the useAuth hook and will be displayed
       console.error("Login failed:", err);

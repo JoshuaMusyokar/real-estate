@@ -2,24 +2,29 @@
 
 import { baseApi } from "./baseApi";
 import type {
-  // Property,
-  PropertyCreateRequest,
-  PropertyUpdateRequest,
-  PropertySearchFilters,
   PropertyResponse,
   PropertiesResponse,
   PropertyStats,
-  PropertyImage,
+  BaseResponse,
+  FavoriteProperty,
+  CategorizedPropertiesResponse,
+  SimilarPropertiesResponse,
+  FavoritesResponse,
+  FavoriteStatusResponse,
+  UserFavoritesResponse,
+  PropertySearchFilters,
+  PropertyUpdateRequest,
 } from "../types";
 
 export const propertyApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Create property
-    createProperty: builder.mutation<PropertyResponse, PropertyCreateRequest>({
-      query: (propertyData) => ({
+    // Create property - accepts FormData with images and documents
+    createProperty: builder.mutation<PropertyResponse, FormData>({
+      query: (formData) => ({
         url: "/properties",
         method: "POST",
-        body: propertyData,
+        body: formData,
+        // Don't set Content-Type - browser will set it automatically with boundary
       }),
       invalidatesTags: ["Property"],
     }),
@@ -38,17 +43,24 @@ export const propertyApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // Update property
+    // Update property - accepts FormData for file uploads
     updateProperty: builder.mutation<
       PropertyResponse,
-      { id: string; data: PropertyUpdateRequest }
+      { id: string; data: FormData | PropertyUpdateRequest }
     >({
       query: ({ id, data }) => ({
         url: `/properties/${id}`,
         method: "PUT",
         body: data,
+        // If data is FormData, don't set Content-Type
+        ...(!(data instanceof FormData) && {
+          headers: { "Content-Type": "application/json" },
+        }),
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Property", id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Property", id },
+        "Property",
+      ],
     }),
 
     // Delete property
@@ -92,13 +104,44 @@ export const propertyApi = baseApi.injectEndpoints({
           : ["Property"],
     }),
 
+    // Get properties by owner
+    getPropertiesByOwner: builder.query<
+      PropertiesResponse,
+      { ownerId: string; limit?: number; excludePropertyId?: string }
+    >({
+      query: ({ ownerId, limit = 5, excludePropertyId }) => {
+        const params = new URLSearchParams();
+        params.append("ownerId", ownerId);
+        params.append("limit", limit.toString());
+        if (excludePropertyId) {
+          params.append("excludePropertyId", excludePropertyId);
+        }
+        return `/properties/by-owner?${params.toString()}`;
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: "Property" as const,
+                id,
+              })),
+              "Property",
+            ]
+          : ["Property"],
+    }),
+
     // Get user properties
     getUserProperties: builder.query<
       PropertiesResponse,
-      { page?: number; limit?: number }
+      { page?: number; limit?: number; status?: string }
     >({
-      query: ({ page = 1, limit = 20 } = {}) =>
-        `/properties/user/my-properties?page=${page}&limit=${limit}`,
+      query: ({ page = 1, limit = 20, status } = {}) => {
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("limit", limit.toString());
+        if (status) params.append("status", status);
+        return `/properties/user/my-properties?${params.toString()}`;
+      },
       providesTags: (result) =>
         result
           ? [
@@ -120,51 +163,89 @@ export const propertyApi = baseApi.injectEndpoints({
       providesTags: ["Property"],
     }),
 
-    // Add property image
-    addPropertyImage: builder.mutation<
-      PropertyResponse,
-      {
-        propertyId: string;
-        imageData: Omit<PropertyImage, "id" | "propertyId" | "createdAt">;
-      }
+    // Get similar properties for property details page
+    getSimilarProperties: builder.query<
+      SimilarPropertiesResponse,
+      { propertyId: string; limit?: number }
     >({
-      query: ({ propertyId, imageData }) => ({
-        url: `/properties/${propertyId}/images`,
+      query: ({ propertyId, limit = 6 }) =>
+        `/properties/similar/${propertyId}?limit=${limit}`,
+      providesTags: (result, error, { propertyId }) =>
+        result
+          ? [{ type: "Property", id: `SIMILAR-${propertyId}` }]
+          : ["Property"],
+    }),
+
+    // Get categorized properties for home page
+    getCategorizedProperties: builder.query<
+      CategorizedPropertiesResponse,
+      { limit?: number }
+    >({
+      query: ({ limit = 8 } = {}) =>
+        `/properties/cat/categorized?limit=${limit}`,
+      providesTags: ["Property"],
+    }),
+
+    // Add property to favorites
+    addToFavorites: builder.mutation<
+      { success: boolean; data: FavoriteProperty; message: string },
+      { propertyId: string }
+    >({
+      query: ({ propertyId }) => ({
+        url: "/properties/fav/favorites",
         method: "POST",
-        body: imageData,
+        body: { propertyId },
       }),
-      invalidatesTags: (result, error, { propertyId }) => [
-        { type: "Property", id: propertyId },
-      ],
+      invalidatesTags: ["Property", "Favorite"],
     }),
 
-    // Update property image
-    updatePropertyImage: builder.mutation<
-      PropertyResponse,
+    // Remove property from favorites
+    removeFromFavorites: builder.mutation<BaseResponse, { propertyId: string }>(
       {
-        imageId: string;
-        updates: Partial<
-          Omit<PropertyImage, "id" | "propertyId" | "createdAt">
-        >;
+        query: ({ propertyId }) => ({
+          url: `/properties/fav/favorites/${propertyId}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["Property", "Favorite"],
       }
+    ),
+
+    // Get user's favorite properties
+    getFavoriteProperties: builder.query<
+      FavoritesResponse,
+      { page?: number; limit?: number }
     >({
-      query: ({ imageId, updates }) => ({
-        url: `/properties/images/${imageId}`,
-        method: "PUT",
-        body: updates,
-      }),
-      invalidatesTags: (result) =>
-        result ? [{ type: "Property", id: result.data.id }] : ["Property"],
+      query: ({ page = 1, limit = 20 } = {}) =>
+        `/properties/fav/favorites?page=${page}&limit=${limit}`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: "Favorite" as const,
+                id,
+              })),
+              "Favorite",
+            ]
+          : ["Favorite"],
     }),
 
-    // Delete property image
-    deletePropertyImage: builder.mutation<PropertyResponse, string>({
-      query: (imageId) => ({
-        url: `/properties/images/${imageId}`,
-        method: "DELETE",
+    // Check favorite status for multiple properties
+    checkFavoriteStatus: builder.mutation<
+      FavoriteStatusResponse,
+      { propertyIds: string[] }
+    >({
+      query: ({ propertyIds }) => ({
+        url: "/properties/fav/favorites/check",
+        method: "POST",
+        body: { propertyIds },
       }),
-      invalidatesTags: (result) =>
-        result ? [{ type: "Property", id: result.data.id }] : ["Property"],
+      invalidatesTags: ["Favorite"],
+    }),
+
+    // Get user favorites (simple list of property IDs)
+    getUserFavorites: builder.query<UserFavoritesResponse, void>({
+      query: () => `/properties/fav/user/favorites`,
+      providesTags: ["Favorite"],
     }),
 
     // Review property (admin only)
@@ -177,12 +258,81 @@ export const propertyApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: reviewData,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Property", id }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Property", id },
+        "Property",
+      ],
+    }),
+
+    // Add property image (for edit mode)
+    addPropertyImage: builder.mutation<
+      PropertyResponse,
+      { propertyId: string; formData: FormData }
+    >({
+      query: ({ propertyId, formData }) => ({
+        url: `/properties/${propertyId}/images`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+      ],
+    }),
+
+    // Delete property image
+    deletePropertyImage: builder.mutation<
+      PropertyResponse,
+      { propertyId: string; imageId: string }
+    >({
+      query: ({ propertyId, imageId }) => ({
+        url: `/properties/${propertyId}/images/${imageId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+      ],
+    }),
+
+    // Add property document (for edit mode)
+    addPropertyDocument: builder.mutation<
+      PropertyResponse,
+      { propertyId: string; formData: FormData }
+    >({
+      query: ({ propertyId, formData }) => ({
+        url: `/properties/${propertyId}/documents`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+      ],
+    }),
+
+    // Delete property document
+    deletePropertyDocument: builder.mutation<
+      PropertyResponse,
+      { propertyId: string; documentId: string }
+    >({
+      query: ({ propertyId, documentId }) => ({
+        url: `/properties/${propertyId}/documents/${documentId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+      ],
     }),
   }),
 });
 
 export const {
+  useGetPropertiesByOwnerQuery,
+  useGetCategorizedPropertiesQuery,
+  useAddToFavoritesMutation,
+  useCheckFavoriteStatusMutation,
+  useGetFavoritePropertiesQuery,
+  useGetSimilarPropertiesQuery,
+  useRemoveFromFavoritesMutation,
+  useGetUserFavoritesQuery,
   useCreatePropertyMutation,
   useGetPropertyQuery,
   useGetPropertyBySlugQuery,
@@ -192,8 +342,9 @@ export const {
   useLazySearchPropertiesQuery,
   useGetUserPropertiesQuery,
   useGetPropertyStatsQuery,
-  useAddPropertyImageMutation,
-  useUpdatePropertyImageMutation,
-  useDeletePropertyImageMutation,
   useReviewPropertyMutation,
+  useAddPropertyImageMutation,
+  useDeletePropertyImageMutation,
+  useAddPropertyDocumentMutation,
+  useDeletePropertyDocumentMutation,
 } = propertyApi;

@@ -97,6 +97,7 @@ export interface PropertyImage {
   caption: string | null;
   order: number;
   isCover: boolean;
+  viewableUrl: string;
   createdAt: Date;
 }
 
@@ -107,6 +108,7 @@ export interface PropertyDocument {
   url: string;
   type: string;
   size: number;
+  viewableUrl: string;
   createdAt: Date;
 }
 
@@ -243,7 +245,15 @@ export interface PropertyResponse {
     images?: PropertyImage[];
     documents?: PropertyDocument[];
     amenities?: PropertyAmenity[];
+    owner?: OwnerInfo;
   };
+}
+export interface OwnerInfo {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
 }
 
 export interface PropertiesResponse {
@@ -293,4 +303,79 @@ export interface PropertyStats {
 export interface PropertyReviewRequest {
   status: PropertyStatus;
   rejectionReason?: string;
+}
+// New types for property enhancements
+export interface SimilarPropertiesResponse {
+  data: Array<{
+    id: string;
+    title: string;
+    price: number;
+    city: string;
+    locality: string;
+    propertyType: string;
+    purpose: string;
+    bedrooms?: number;
+    bathrooms?: number;
+    squareFeet?: number;
+    coverImage?: string;
+    amenities: string[];
+    isSaved: boolean;
+  }>;
+}
+
+export interface CategorizedPropertiesResponse {
+  featured: PropertiesResponse["data"];
+  recent: PropertiesResponse["data"];
+  luxury: PropertiesResponse["data"];
+  affordable: PropertiesResponse["data"];
+}
+
+// export interface FavoriteProperty {
+//   id: string;
+//   property: {
+//     id: string;
+//     title: string;
+//     price: number;
+//     city: string;
+//     locality: string;
+//     coverImage?: string;
+//   };
+//   savedAt: string;
+// }
+export interface FavoriteProperty {
+  id: string;
+  title: string;
+  price: string;
+  city: string;
+  locality: string;
+  propertyType: PropertyType;
+  purpose: PropertyStatus;
+  bedrooms: number;
+  bathrooms: number;
+  squareFeet: number;
+  coverImage: string;
+  amenities: string[];
+  savedAt: string;
+}
+
+export interface FavoritesResponse {
+  data: FavoriteProperty[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export interface FavoriteStatus {
+  propertyId: string;
+  isFavorite: boolean;
+}
+
+export interface FavoriteStatusResponse {
+  data: FavoriteStatus[];
+}
+export interface UserFavoritesResponse {
+  data: string[];
 }

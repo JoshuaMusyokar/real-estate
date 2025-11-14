@@ -2,6 +2,8 @@ import { Eye, Home, MapPin } from "lucide-react";
 import type { FC } from "react";
 import type { Property } from "../../types";
 import { StatusBadge } from "./StatusBadge";
+import { QuickReviewActions } from "./QuickReviewAction";
+import { useAuth } from "../../hooks/useAuth";
 interface PropertyListItemProps {
   property: Property;
   onEdit: (id: string) => void;
@@ -15,6 +17,7 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
   onDelete,
   onView,
 }) => {
+  const { user } = useAuth();
   const coverImage =
     property.images?.find((img) => img.isCover)?.url ||
     property.images?.[0]?.url;
@@ -89,7 +92,7 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onView(property.id)}
+                onClick={() => onView(property.slug)}
                 className="px-4 py-2 text-sm text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
               >
                 View
@@ -106,6 +109,9 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
               >
                 Delete
               </button>
+              {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ? (
+                <QuickReviewActions property={property} onSuccess={() => {}} />
+              ) : null}
             </div>
           </div>
         </div>

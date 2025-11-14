@@ -1,15 +1,87 @@
 import { ChevronLeft, ChevronRight, ImageIcon, X } from "lucide-react";
-import { useState, type FC } from "react";
+import { useState, useEffect, type FC } from "react";
 import type { PropertyImage } from "../../types";
+import { BASE_URL } from "../../constants";
 
 interface ImageGalleryProps {
   images: PropertyImage[];
   title: string;
+  propertyId: string;
 }
 
-export const ImageGallery: FC<ImageGalleryProps> = ({ images, title }) => {
+export const ImageGallery: FC<ImageGalleryProps> = ({
+  images,
+  title,
+  propertyId,
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch presigned URLs for all images
+  useEffect(() => {
+    const fetchPresignedUrls = async () => {
+      if (!images || images.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const urlMap: { [key: string]: string } = {};
+
+        // For each image, get presigned URL if it's from S3
+        for (const image of images) {
+          // If it's an external URL (like Unsplash), use directly
+          if (
+            image.url.includes("unsplash.com")
+            // ||
+            // image.url.includes("http")
+          ) {
+            urlMap[image.id] = image.url;
+            continue;
+          }
+
+          // If we already have a viewableUrl from backend, use it
+          if ((image as any).viewableUrl) {
+            urlMap[image.id] = (image as any).viewableUrl;
+            continue;
+          }
+
+          // Otherwise, fetch presigned URL from API
+          try {
+            const response = await fetch(
+              `${BASE_URL}/properties/${propertyId}/images/${image.id}/url`,
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+              }
+            );
+
+            const data = await response.json();
+            if (data.success) {
+              urlMap[image.id] = data.url;
+            } else {
+              // Fallback to original URL if presigned URL fails
+              urlMap[image.id] = image.url;
+            }
+          } catch (error) {
+            console.error("Error fetching presigned URL:", error);
+            urlMap[image.id] = image.url; // Fallback
+          }
+        }
+
+        setImageUrls(urlMap);
+      } catch (error) {
+        console.error("Error loading images:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPresignedUrls();
+  }, [images, propertyId]);
 
   const coverImage = images?.find((img) => img.isCover) || images?.[0];
   const otherImages = images?.filter((img) => !img.isCover) || [];
@@ -21,6 +93,22 @@ export const ImageGallery: FC<ImageGalleryProps> = ({ images, title }) => {
   const prevImage = () => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
+
+  // Get URL for a specific image
+  const getImageUrl = (image: PropertyImage) => {
+    return imageUrls[image.id] || image.url;
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full h-[600px] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading images...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!images || images.length === 0) {
     return (
@@ -45,7 +133,7 @@ export const ImageGallery: FC<ImageGalleryProps> = ({ images, title }) => {
           }}
         >
           <img
-            src={coverImage?.url}
+            src={getImageUrl(coverImage)}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -68,7 +156,7 @@ export const ImageGallery: FC<ImageGalleryProps> = ({ images, title }) => {
               }}
             >
               <img
-                src={img.url}
+                src={getImageUrl(img)}
                 alt={`${title} ${idx + 2}`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />

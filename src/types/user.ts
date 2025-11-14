@@ -1,3 +1,5 @@
+import type { AgentPerformance } from "./analytics";
+
 export type Role =
   | "SUPER_ADMIN"
   | "ADMIN"
@@ -15,6 +17,26 @@ export type UserStatus =
   | "SUSPENDED"
   | "PENDING_VERIFICATION";
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+export type Permission =
+  | "user:create"
+  | "user:view"
+  | "user:update"
+  | "user:delete"
+  | "role:create"
+  | "role:view"
+  | "role:update"
+  | "role:delete"
+  | "settings:manage"
+  | "reports:view"
+  | "dashboard:view";
+
 export interface User {
   id: string;
   email: string;
@@ -25,7 +47,119 @@ export interface User {
   role: Role;
   status: UserStatus;
   avatar: string | null;
-  permissions: any | null;
+  permissions: Permission | null;
+  allowedCities: string[];
+  allowedLocalities: string[];
+  twoFactorEnabled: boolean;
+  twoFactorSecret: string | null;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+export interface CreateUserRequest {
+  email: string;
+  phone?: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  status?: UserStatus;
+  avatar?: string;
+  permissions?: Permission;
+  allowedCities?: string[];
+  allowedLocalities?: string[];
+}
+
+export interface UpdateUserRequest {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: Role;
+  status?: UserStatus;
+  avatar?: string;
+  permissions?: Permission;
+  allowedCities?: string[];
+  allowedLocalities?: string[];
+}
+
+export interface UserFilter {
+  role?: Role[];
+  status?: UserStatus[];
+  search?: string;
+  city?: string;
+  locality?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+}
+
+export interface UsersResponse {
+  users: UserResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface UserCreateInput {
+  email: string;
+  phone?: string | null;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: Role | null;
+  status: UserStatus | null;
+  avatar: string | null;
+  permissions?: Permission;
+  allowedCities: string[] | null;
+  allowedLocalities?: string[];
+}
+
+export interface UserUpdateInput {
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: Role;
+  status?: UserStatus;
+  avatar?: string;
+  permissions?: Permission;
+  allowedCities?: string[];
+  allowedLocalities?: string[];
+  lastLoginAt?: Date;
+}
+
+// Add to your existing types
+export interface UserResponse {
+  id: string;
+  email: string;
+  phone: string | null;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  status: UserStatus;
+  avatar: string | null;
+  permissions?: Permission;
+  allowedCities: string[];
+  allowedLocalities: string[];
+  twoFactorEnabled: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  agentPerformance?: AgentPerformance;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  phone: string | null;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  status: UserStatus;
+  avatar: string | null;
+  permissions: Permission | null;
   allowedCities: string[];
   allowedLocalities: string[];
   twoFactorEnabled: boolean;
@@ -44,7 +178,7 @@ export interface UserCreateInput {
   role: Role | null;
   status: UserStatus | null;
   avatar: string | null;
-  permissions?: any;
+  permissions?: Permission;
   allowedCities: string[] | null;
   allowedLocalities?: string[];
 }
@@ -57,8 +191,114 @@ export interface UserUpdateInput {
   role?: Role;
   status?: UserStatus;
   avatar?: string;
-  permissions?: any;
+  permissions?: Permission;
   allowedCities?: string[];
   allowedLocalities?: string[];
   lastLoginAt?: Date;
+}
+// Add these to your existing types
+
+export interface UserStats {
+  total: number;
+  byRole: Record<Role, number>;
+  byStatus: Record<UserStatus, number>;
+  activeToday: number;
+  newThisWeek: number;
+  verified: number;
+  withTwoFactor: number;
+}
+
+export interface BulkUserOperation {
+  userIds: string[];
+  operation:
+    | "activate"
+    | "deactivate"
+    | "delete"
+    | "change-role"
+    | "resend-verification";
+  role?: Role;
+}
+
+// ✅ Common structure for all activity metadata
+export interface BaseChange<T> {
+  previous?: Partial<T>;
+  current?: Partial<T>;
+  changedFields?: (keyof T)[];
+}
+
+// ✅ Typed entity references
+export type EntityType =
+  | "user"
+  | "property"
+  | "listing"
+  | "transaction"
+  | "settings"
+  | "role"
+  | "permission"
+  | "city"
+  | "locality"
+  | "system";
+
+// ✅ Context information (always typed)
+export interface ActivityContext {
+  entityType?: EntityType;
+  entityId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  location?: string; // optional, e.g., for geo info
+  device?: string; // e.g., "iPhone 15", "MacBook Pro"
+}
+
+export interface ActivityMetadata<T = unknown> extends ActivityContext {
+  change?: BaseChange<T>;
+  extra?: Record<string, string | number | boolean | null | undefined>;
+}
+
+export interface UserActivity<T = unknown> {
+  id: string;
+  userId: string;
+  action:
+    | "CREATE"
+    | "UPDATE"
+    | "DELETE"
+    | "LOGIN"
+    | "LOGOUT"
+    | "ASSIGN_ROLE"
+    | "RESET_PASSWORD"
+    | "OTHER";
+  description?: string;
+  metadata?: ActivityMetadata<T>;
+  createdAt: string; // ISO timestamp
+}
+// export interface UserActivity {
+//   id: string;
+//   action: string;
+//   description: string;
+//   ipAddress?: string;
+//   userAgent?: string;
+//   createdAt: Date;
+//   metadata?: any;
+// }
+
+export interface ImportResult {
+  processed: number;
+  successful: number;
+  errors: string[];
+  failedRows: number[];
+}
+export interface ExportConfig {
+  format: "csv" | "excel" | "json";
+  fields: {
+    basic: boolean;
+    contact: boolean;
+    role: boolean;
+    status: boolean;
+    dates: boolean;
+    permissions: boolean;
+  };
+}
+
+export interface ExportRequest {
+  filters?: UserFilter;
+  config: ExportConfig;
 }

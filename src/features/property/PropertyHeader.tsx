@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Calendar,
   Clock,
@@ -105,7 +106,7 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
           </>
         )}
 
-        <button
+        {/* <button
           onClick={() => setIsSaved(!isSaved)}
           className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
             isSaved
@@ -114,7 +115,7 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
           }`}
         >
           <Heart className={`w-5 h-5 ${isSaved ? "fill-current" : ""}`} />
-        </button>
+        </button> */}
 
         <div className="relative">
           <button

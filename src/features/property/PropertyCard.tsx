@@ -10,6 +10,8 @@ import {
   Calendar,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
+import { ReviewPropertyModal } from "./ReviewPropertyModal";
+import { QuickReviewActions } from "./QuickReviewAction";
 
 interface PropertyCardProps {
   property: Property;
@@ -25,6 +27,9 @@ export const PropertyCard: FC<PropertyCardProps> = ({
   onView,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  // const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+
   const coverImage =
     property.images?.find((img) => img.isCover)?.url ||
     property.images?.[0]?.url;
@@ -95,7 +100,6 @@ export const PropertyCard: FC<PropertyCardProps> = ({
           )}
         </div>
       </div>
-
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
           <h3 className="font-bold text-lg text-gray-900 line-clamp-1 flex-1 pr-2 group-hover:text-blue-600 transition-colors">
@@ -147,7 +151,20 @@ export const PropertyCard: FC<PropertyCardProps> = ({
             {new Date(property.createdAt).toLocaleDateString()}
           </span>
         </div>
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 text-xs">
+          <QuickReviewActions
+            property={property}
+            /*onSuccess={() => refetch()}*/ onSuccess={() => {}}
+          />
+        </div>
       </div>
+      <ReviewPropertyModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        property={property!}
+        // onSuccess={() => refetch()}
+        onSuccess={() => {}}
+      />
     </div>
   );
 };

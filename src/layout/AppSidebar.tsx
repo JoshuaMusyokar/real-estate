@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
@@ -18,8 +18,15 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
-import { BarChart2, Building2, Settings2 } from "lucide-react";
+import {
+  BarChart2,
+  Briefcase,
+  Building2,
+  Settings2,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../hooks";
 
 type NavItem = {
   name: string;
@@ -44,6 +51,12 @@ const navItems: NavItem[] = [
     roles: ["*"],
   },
   {
+    icon: <SlidersHorizontal />,
+    name: "Amenities",
+    path: "/amenities",
+    roles: ["*"],
+  },
+  {
     icon: <UserCircleIcon />,
     name: "User Profile",
     path: "/profile",
@@ -51,12 +64,20 @@ const navItems: NavItem[] = [
   {
     icon: <BoxCubeIcon />,
     name: "Leads",
-    subItems: [{ name: "Leads", path: "/lead" }],
+    subItems: [
+      { name: "All Leads", path: "/crm/leads" },
+      { name: "Pipeline(Kanban)", path: "/crm/pipeline" },
+    ],
   },
   {
     icon: <CalenderIcon />,
     name: "Calendar",
     path: "/calendar",
+  },
+  {
+    icon: <Briefcase />,
+    name: "Agents",
+    path: "/agents",
   },
   {
     name: "Analytics",
@@ -98,9 +119,12 @@ const manage: NavItem[] = [
 ];
 
 const AppSidebar: React.FC = () => {
+  const navigate = useNavigate();
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
-  const { user } = useAuth();
+  const user = useAppSelector((state) => state.auth.user);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -111,12 +135,30 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
     (path: string) => location.pathname === path,
     [location.pathname]
   );
 
+  // Debug effect - remove this in production
+  useEffect(() => {
+    console.log("Auth state in sidebar:", { user, isAuthenticated });
+  }, [user, isAuthenticated]);
+
+  // Handle redirect only once when auth state is confirmed
+  useEffect(() => {
+    // If we've already redirected, don't do anything
+    if (hasRedirected) return;
+
+    // Only redirect if we're definitely not authenticated and not loading
+    if (!isAuthenticated && user === null) {
+      console.log("No user found, redirecting to signin");
+      setHasRedirected(true);
+      navigate("/signin", { replace: true });
+    }
+  }, [user, isAuthenticated, navigate, hasRedirected]);
+
+  // Your existing submenu effects...
   useEffect(() => {
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
@@ -165,6 +207,7 @@ const AppSidebar: React.FC = () => {
       return { type: menuType, index };
     });
   };
+
   const filterNavItemsByRole = (
     items: NavItem[],
     userRole: string
@@ -176,6 +219,24 @@ const AppSidebar: React.FC = () => {
       return item.roles.includes(userRole);
     });
   };
+
+  // Show loading state while auth is being determined
+  if (user === null && !hasRedirected) {
+    return (
+      <aside className="fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 w-[90px] h-screen border-r border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-center h-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+        </div>
+      </aside>
+    );
+  }
+
+  // Don't render if we're redirecting
+  if (user === null) {
+    return null;
+  }
+
+  // Rest of your component remains the same...
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
       {items.map((nav, index) => (
@@ -365,7 +426,7 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(
-                filterNavItemsByRole(navItems, user!.role!),
+                filterNavItemsByRole(navItems, user.role),
                 "main"
               )}
             </div>
@@ -384,7 +445,7 @@ const AppSidebar: React.FC = () => {
                 )}
               </h2>
               {renderMenuItems(
-                filterNavItemsByRole(manage, user!.role),
+                filterNavItemsByRole(manage, user.role),
                 "others"
               )}
             </div>

@@ -2,7 +2,7 @@
 // ACTIVITY TRACKING
 // ============================================
 
-import { type User } from "./user";
+import type { User } from "./user";
 
 export type ActivityType =
   | "CALL"
@@ -41,4 +41,69 @@ export interface Note {
   createdAt: Date;
   updatedAt: Date;
   user: User;
+}
+export interface CreateActivityInput {
+  leadId: string;
+  type: ActivityType;
+  title: string;
+  description?: string;
+  duration?: number;
+  metadata?: any;
+}
+export interface ActivityResponse {
+  id: string;
+  leadId: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  type: ActivityType;
+  title: string;
+  description?: string;
+  duration?: number;
+  metadata?: any;
+  createdAt: Date;
+}
+export interface ActivityCreateRequest {
+  leadId: string;
+  type: string;
+  title: string;
+  description?: string;
+  duration?: number;
+  metadata?: any;
+}
+
+export interface CreateNoteInput {
+  leadId: string;
+  content: string;
+  isInternal?: boolean;
+}
+
+export interface NoteResponse {
+  id: string;
+  leadId: string;
+  userId: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  content: string;
+  isInternal: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+// Removed duplicate NoteResponse interface with conflicting types
+
+export interface NoteCreateRequest {
+  leadId: string;
+  content: string;
+  isInternal?: boolean;
+}
+export interface NoteUpdateRequest {
+  content: string;
 }

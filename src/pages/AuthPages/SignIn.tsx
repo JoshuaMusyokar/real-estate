@@ -7,6 +7,7 @@ import Alert from "../../components/ui/alert/Alert";
 
 export default function SignIn() {
   const [searchParams] = useSearchParams();
+
   const sessionExpired = searchParams.get("session") === "expired";
   const sessionInvalid = searchParams.get("session") === "invalid";
 

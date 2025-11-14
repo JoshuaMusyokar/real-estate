@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
@@ -13,7 +14,7 @@ import Avatars from "./pages/UiElements/Avatars";
 import Buttons from "./pages/UiElements/Buttons";
 import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
-import Calendar from "./pages/Calendar";
+import { AppointmentsCalendar } from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
@@ -28,6 +29,15 @@ import PropertyUpdatePage from "./pages/Property/PropertyUpdatePage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicRoute from "./components/auth/PublicRoute";
 import RoleBasedRoute from "./components/auth/RoleBasedRoute";
+import PropertyDetailBuyerPage from "./pages/Buyers/PropertyDetailBuyerPage";
+import PipelineViewPage from "./pages/Lead/PipelineView";
+import LeadDetailPage from "./pages/Lead/LeadDetailPage";
+import AllLeadsPage from "./pages/Lead/AllLeadPage";
+import { SavedPropertiesPage } from "./features/Buyers/SavedProperties/SavedProperties";
+import BuyerAppointmentsPage from "./pages/Buyers/AppointmentsPage";
+import UserManagementPage from "./pages/UserPage/UserPage";
+import AgentsPage from "./pages/Agents/AgentsPage";
+import AmenityPage from "./pages/Amenity/AmenityPage";
 // import {Role } from "./types";
 
 export default function App() {
@@ -37,23 +47,25 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Public Landing Page */}
-          <Route path="/home" element={<MainLanding />} />
+          <Route path="/" element={<MainLanding />} />
 
           {/* Auth Routes - Only accessible when not authenticated */}
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route
-            path="/signin"
+            path="/saved-properties"
             element={
-              <PublicRoute>
-                <SignIn />
-              </PublicRoute>
+              <ProtectedRoute>
+                <SavedPropertiesPage />
+              </ProtectedRoute>
             }
           />
           <Route
-            path="/signup"
+            path="/my-appointments"
             element={
-              <PublicRoute>
-                <SignUp />
-              </PublicRoute>
+              <ProtectedRoute>
+                <BuyerAppointmentsPage />
+              </ProtectedRoute>
             }
           />
 
@@ -66,7 +78,7 @@ export default function App() {
             }
           >
             {/* Dashboard - Accessible to all authenticated users */}
-            <Route index path="/" element={<Home />} />
+            <Route index path="/dashboard" element={<Home />} />
 
             {/* Properties - Different access levels */}
             <Route path="/property" element={<Property />} />
@@ -111,9 +123,20 @@ export default function App() {
                 </RoleBasedRoute>
               }
             />
+            {/* Properties - Different access levels */}
+            <Route path="/crm/leads" element={<AllLeadsPage />} />
+            <Route path="/crm/pipeline" element={<PipelineViewPage />} />
+            <Route path="/crm/leads/:id" element={<LeadDetailPage />} />
+
+            {/* Agents  */}
+            <Route path="/agents" element={<AgentsPage />} />
+            {/* Amenity  */}
+            <Route path="/amenities" element={<AmenityPage />} />
 
             {/* User Profile - All authenticated users */}
             <Route path="/profile" element={<UserProfiles />} />
+            {/* User Profile - All authenticated users */}
+            <Route path="/users" element={<UserManagementPage />} />
 
             {/* Admin Only Routes */}
             <Route
@@ -122,7 +145,7 @@ export default function App() {
                 <RoleBasedRoute
                   allowedRoles={["ADMIN", "SUPER_ADMIN", "SALES_MANAGER"]}
                 >
-                  <Calendar />
+                  <AppointmentsCalendar />
                 </RoleBasedRoute>
               }
             />
@@ -140,6 +163,10 @@ export default function App() {
             <Route path="/line-chart" element={<LineChart />} />
             <Route path="/bar-chart" element={<BarChart />} />
           </Route>
+          <Route
+            path="/property-detail/:id"
+            element={<PropertyDetailBuyerPage />}
+          />
 
           {/* Unauthorized Page */}
           <Route path="/unauthorized" element={<Unauthorized />} />

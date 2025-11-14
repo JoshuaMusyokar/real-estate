@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/hooks/useAuth.ts
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -15,7 +16,13 @@ import { type RootState } from "../store/store";
 import { tokenService } from "../services/tokenService";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import type { User, Role, LoginRequest, RegisterRequest } from "../types";
+import type {
+  User,
+  Role,
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+} from "../types";
 
 interface UseAuthReturn {
   // State
@@ -24,8 +31,8 @@ interface UseAuthReturn {
   isAuthenticated: boolean;
 
   // Actions
-  login: (credentials: LoginRequest) => Promise<unknown>;
-  register: (userData: RegisterRequest) => Promise<unknown>;
+  login: (credentials: LoginRequest) => Promise<AuthResponse>;
+  register: (userData: RegisterRequest) => Promise<AuthResponse>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   refetchProfile: () => void;
@@ -63,6 +70,10 @@ export const useAuth = (): UseAuthReturn => {
     dispatch(validateToken());
   }, [dispatch]);
 
+  useEffect(() => {
+    console.log("user", authState);
+  }, [authState]);
+
   // Handle profile fetch errors (likely token issues)
   useEffect(() => {
     if (profileError) {
@@ -77,7 +88,9 @@ export const useAuth = (): UseAuthReturn => {
     navigate("/signin?session=expired");
   };
 
-  const handleLogin = async (credentials: LoginRequest): Promise<unknown> => {
+  const handleLogin = async (
+    credentials: LoginRequest
+  ): Promise<AuthResponse> => {
     try {
       const result = await login(credentials).unwrap();
       if (result.success) {
@@ -92,7 +105,7 @@ export const useAuth = (): UseAuthReturn => {
 
   const handleRegister = async (
     userData: RegisterRequest
-  ): Promise<unknown> => {
+  ): Promise<AuthResponse> => {
     try {
       const result = await register(userData).unwrap();
       if (result.success) {
@@ -136,7 +149,7 @@ export const useAuth = (): UseAuthReturn => {
 
   return {
     // State
-    user: authState.user || profile?.data || null,
+    user: authState.user,
     token: authState.token,
     isAuthenticated: authState.isAuthenticated && isTokenValid(),
 

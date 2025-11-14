@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ArrowLeft,
   ArrowRight,
@@ -7,9 +8,15 @@ import {
   Calendar,
   Check,
   DollarSign,
+  FileText,
   ImageIcon,
+  MapPin,
   Save,
+  Search,
   Square,
+  Upload,
+  X,
+  AlertCircle,
 } from "lucide-react";
 import { StepIndicator } from "./StepIndicator";
 import { ImageUpload } from "./ImageUpload";
@@ -19,7 +26,6 @@ import type {
   PropertyStatus,
   PropertySubType,
   PropertyType,
-  PropertyUpdateRequest,
 } from "../../types";
 import { useEffect, useState } from "react";
 import {
@@ -38,6 +44,37 @@ interface PropertyFormPageProps {
   propertyId?: string;
 }
 
+interface PropertyDocument {
+  file?: File;
+  url?: string;
+  name: string;
+  type: string;
+  size?: number;
+}
+
+interface PropertyImageFile {
+  file?: File;
+  url?: string;
+  caption?: string;
+  order: number;
+  isCover: boolean;
+  preview?: string;
+}
+
+interface LocationSuggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    city?: string;
+    town?: string;
+    village?: string;
+    state?: string;
+    country?: string;
+    postcode?: string;
+  };
+}
+
 export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   mode,
   propertyId,
@@ -45,7 +82,14 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
 
-  const steps = ["Basic Info", "Location", "Details", "Amenities", "Images"];
+  const steps = [
+    "Basic Info",
+    "Location",
+    "Details",
+    "Amenities",
+    "Media",
+    "Documents",
+  ];
 
   // API Hooks
   const [createProperty, { isLoading: isCreating }] =
@@ -68,7 +112,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     propertyType: "RESIDENTIAL",
     subType: null,
     purpose: "SALE",
-    status: "DRAFT",
+    status: "UNDER_REVIEW",
     price: 0,
     priceNegotiable: false,
     currency: "USD",
@@ -93,7 +137,18 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     images: [],
   });
 
+  const [imageFiles, setImageFiles] = useState<PropertyImageFile[]>([]);
+  const [documents, setDocuments] = useState<PropertyDocument[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Location search state
+  const [locationSearch, setLocationSearch] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    LocationSuggestion[]
+  >([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Load existing property data for edit mode
   useEffect(() => {
@@ -127,15 +182,91 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         youtubeVideoUrl: property.youtubeVideoUrl,
         virtualTourUrl: property.virtualTourUrl,
         amenities: property.amenities?.map((a) => a.amenityId) || [],
-        images:
-          property.images?.map((img) => ({
-            url: img.url,
-            order: img.order,
-            isCover: img.isCover,
-          })) || [],
+        images: [],
       });
+
+      // Load existing images
+      if (property.images) {
+        setImageFiles(
+          property.images.map((img, idx) => ({
+            url: img.url,
+            caption: img.caption || undefined,
+            order: img.order || idx,
+            isCover: img.isCover,
+            preview: img.viewableUrl || img.url,
+          }))
+        );
+      }
+
+      // Load existing documents
+      if (property.documents) {
+        setDocuments(
+          property.documents.map((doc) => ({
+            url: doc.url,
+            name: doc.name,
+            type: doc.type,
+            size: doc.size,
+          }))
+        );
+      }
     }
   }, [mode, propertyData]);
+
+  // Geocoding with Nominatim
+  const searchLocation = async (query: string) => {
+    if (query.length < 3) return;
+
+    setIsSearchingLocation(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}&limit=5&addressdetails=1`,
+        {
+          headers: {
+            "User-Agent": "PropertyApp/1.0",
+          },
+        }
+      );
+      const data: LocationSuggestion[] = await response.json();
+      setLocationSuggestions(data);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Failed to search location:", error);
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (locationSearch) {
+        searchLocation(locationSearch);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [locationSearch]);
+
+  const handleLocationSelect = (location: LocationSuggestion) => {
+    setFormData({
+      ...formData,
+      address: location.display_name.split(",")[0] || location.display_name,
+      city:
+        location.address.city ||
+        location.address.town ||
+        location.address.village ||
+        "",
+      state: location.address.state || null,
+      country: location.address.country || "",
+      zipCode: location.address.postcode || null,
+      latitude: parseFloat(location.lat),
+      longitude: parseFloat(location.lon),
+    });
+    setLocationSearch(location.display_name);
+    setShowSuggestions(false);
+    setErrors({ ...errors, location: "" });
+  };
 
   const propertyTypes: PropertyType[] = [
     "RESIDENTIAL",
@@ -162,31 +293,169 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     "INDUSTRIAL_LAND",
   ];
   const purposes: PropertyPurpose[] = ["SALE", "RENT", "LEASE"];
-  const statuses: PropertyStatus[] = ["DRAFT", "UNDER_REVIEW", "AVAILABLE"];
+  const statuses: PropertyStatus[] =
+    mode === "edit"
+      ? ["DRAFT", "UNDER_REVIEW", "AVAILABLE", "SOLD", "RENTED"]
+      : ["DRAFT", "UNDER_REVIEW"];
+
+  // Validation
+  const validateField = (fieldName: string, value: any): string => {
+    switch (fieldName) {
+      case "title":
+        if (!value || !value.trim()) return "Title is required";
+        if (value.trim().length < 10)
+          return "Title must be at least 10 characters";
+        if (value.trim().length > 200)
+          return "Title must not exceed 200 characters";
+        break;
+
+      case "description":
+        if (!value || !value.trim()) return "Description is required";
+        if (value.trim().length < 50)
+          return "Description must be at least 50 characters";
+        if (value.trim().length > 5000)
+          return "Description must not exceed 5000 characters";
+        break;
+
+      case "price":
+        if (!value || value <= 0) return "Price must be greater than 0";
+        if (value > 1000000000) return "Price seems unrealistic";
+        break;
+
+      case "address":
+        if (!value || !value.trim()) return "Address is required";
+        if (value.trim().length < 5)
+          return "Address must be at least 5 characters";
+        break;
+
+      case "city":
+        if (!value || !value.trim()) return "City is required";
+        break;
+
+      case "locality":
+        if (!value || !value.trim()) return "Locality is required";
+        break;
+
+      case "country":
+        if (!value || !value.trim()) return "Country is required";
+        break;
+
+      case "bedrooms":
+        if (value !== null && value !== undefined && value < 0)
+          return "Bedrooms cannot be negative";
+        if (value > 50) return "Number of bedrooms seems unrealistic";
+        break;
+
+      case "bathrooms":
+        if (value !== null && value !== undefined && value < 0)
+          return "Bathrooms cannot be negative";
+        if (value > 50) return "Number of bathrooms seems unrealistic";
+        break;
+
+      case "squareFeet":
+        if (value !== null && value !== undefined) {
+          if (value < 50) return "Square feet seems too small";
+          if (value > 1000000) return "Square feet seems too large";
+        }
+        break;
+
+      case "yearBuilt":
+        const currentYear = new Date().getFullYear();
+        if (value !== null && value !== undefined) {
+          if (value < 1800) return "Year built seems too old";
+          if (value > currentYear + 5)
+            return "Year built cannot be more than 5 years in future";
+        }
+        break;
+
+      case "youtubeVideoUrl":
+        if (value && value.trim()) {
+          const youtubeRegex =
+            /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+          if (!youtubeRegex.test(value)) return "Invalid YouTube URL";
+        }
+        break;
+
+      case "virtualTourUrl":
+        if (value && value.trim()) {
+          try {
+            new URL(value);
+          } catch {
+            return "Invalid URL format";
+          }
+        }
+        break;
+    }
+    return "";
+  };
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
     switch (step) {
       case 0: // Basic Info
-        if (!formData.title.trim()) newErrors.title = "Title is required";
-        if (!formData.description.trim())
-          newErrors.description = "Description is required";
-        if (formData.price <= 0)
-          newErrors.price = "Price must be greater than 0";
+        ["title", "description", "price"].forEach((field) => {
+          const error = validateField(
+            field,
+            formData[field as keyof typeof formData]
+          );
+          if (error) newErrors[field] = error;
+        });
         break;
+
       case 1: // Location
-        if (!formData.address.trim()) newErrors.address = "Address is required";
-        if (!formData.city.trim()) newErrors.city = "City is required";
-        if (!formData.locality.trim())
-          newErrors.locality = "Locality is required";
-        if (!formData.country.trim()) newErrors.country = "Country is required";
+        ["address", "city", "locality", "country"].forEach((field) => {
+          const error = validateField(
+            field,
+            formData[field as keyof typeof formData]
+          );
+          if (error) newErrors[field] = error;
+        });
+        if (!formData.latitude || !formData.longitude) {
+          newErrors.location =
+            "Please select a location from search to get coordinates";
+        }
         break;
-      case 2: // Details - optional fields
+
+      case 2: // Details
+        ["bedrooms", "bathrooms", "squareFeet", "yearBuilt"].forEach(
+          (field) => {
+            const error = validateField(
+              field,
+              formData[field as keyof typeof formData]
+            );
+            if (error) newErrors[field] = error;
+          }
+        );
+        ["youtubeVideoUrl", "virtualTourUrl"].forEach((field) => {
+          const error = validateField(
+            field,
+            formData[field as keyof typeof formData]
+          );
+          if (error) newErrors[field] = error;
+        });
         break;
-      case 3: // Amenities - optional
+
+      case 3: // Amenities
+        if (!formData.amenities || formData.amenities.length === 0) {
+          newErrors.amenities = "Please select at least one amenity";
+        }
         break;
-      case 4: // Images - optional but recommended
+
+      case 4: // Images
+        if (imageFiles.length === 0) {
+          newErrors.images = "Please upload at least one image";
+        } else if (imageFiles.length < 3) {
+          newErrors.images =
+            "Please upload at least 3 images for better visibility";
+        }
+        const hasCover = imageFiles.some((img) => img.isCover);
+        if (!hasCover && imageFiles.length > 0) {
+          newErrors.images = "Please mark one image as cover";
+        }
+        break;
+
+      case 5: // Documents (optional)
         break;
     }
 
@@ -194,33 +463,208 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleBlur = (fieldName: string) => {
+    setTouched({ ...touched, [fieldName]: true });
+    const error = validateField(
+      fieldName,
+      formData[fieldName as keyof typeof formData]
+    );
+    if (error) {
+      setErrors({ ...errors, [fieldName]: error });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors[fieldName];
+      setErrors(newErrors);
+    }
+  };
+
   const handleNext = () => {
     if (validateStep(currentStep)) {
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: PropertyImageFile[] = Array.from(files).map(
+      (file, idx) => ({
+        file,
+        order: imageFiles.length + idx,
+        isCover: imageFiles.length === 0 && idx === 0,
+        preview: URL.createObjectURL(file),
+      })
+    );
+
+    setImageFiles([...imageFiles, ...newImages]);
+  };
+
+  const removeImage = (index: number) => {
+    const removed = imageFiles[index];
+    if (removed.preview && removed.file) {
+      URL.revokeObjectURL(removed.preview);
+    }
+    const updated = imageFiles.filter((_, i) => i !== index);
+    // Ensure at least one cover image
+    if (removed.isCover && updated.length > 0) {
+      updated[0].isCover = true;
+    }
+    setImageFiles(updated);
+  };
+
+  const setCoverImage = (index: number) => {
+    setImageFiles(
+      imageFiles.map((img, i) => ({
+        ...img,
+        isCover: i === index,
+      }))
+    );
+  };
+
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+    ];
+
+    const newDocs: PropertyDocument[] = Array.from(files)
+      .filter((file) => {
+        if (!allowedTypes.includes(file.type)) {
+          alert(`File ${file.name} is not a supported format`);
+          return false;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`File ${file.name} exceeds 10MB limit`);
+          return false;
+        }
+        return true;
+      })
+      .map((file) => ({
+        file,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      }));
+
+    setDocuments([...documents, ...newDocs]);
+  };
+
+  const removeDocument = (index: number) => {
+    setDocuments(documents.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(currentStep)) return;
+    // Validate all steps
+    let allValid = true;
+    for (let i = 0; i < steps.length; i++) {
+      if (!validateStep(i)) {
+        allValid = false;
+        setCurrentStep(i);
+        break;
+      }
+    }
+
+    if (!allValid) {
+      alert("Please complete all required fields correctly");
+      return;
+    }
 
     try {
+      const formDataToSend = new FormData();
+
+      // Prepare property data as JSON
+      const propertyData = {
+        title: formData.title,
+        description: formData.description,
+        propertyType: formData.propertyType,
+        subType: formData.subType,
+        purpose: formData.purpose,
+        status: mode === "create" ? "UNDER_REVIEW" : formData.status,
+        price: formData.price,
+        priceNegotiable: formData.priceNegotiable,
+        currency: formData.currency,
+        address: formData.address,
+        city: formData.city,
+        locality: formData.locality,
+        state: formData.state,
+        country: formData.country,
+        zipCode: formData.zipCode,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        squareFeet: formData.squareFeet,
+        squareMeters: formData.squareMeters,
+        floors: formData.floors,
+        yearBuilt: formData.yearBuilt,
+        furnishingStatus: formData.furnishingStatus,
+        youtubeVideoUrl: formData.youtubeVideoUrl,
+        virtualTourUrl: formData.virtualTourUrl,
+        amenities: formData.amenities,
+        images: imageFiles
+          .filter((img) => !img.file)
+          .map((img) => ({
+            url: img.url!,
+            caption: img.caption || null,
+            order: img.order,
+            isCover: img.isCover,
+          })),
+      };
+
+      // Add data as JSON string
+      formDataToSend.append("data", JSON.stringify(propertyData));
+
+      // Add image files
+      imageFiles.forEach((img) => {
+        if (img.file) {
+          formDataToSend.append("images", img.file);
+        }
+      });
+
+      // Add document files
+      documents.forEach((doc) => {
+        if (doc.file) {
+          formDataToSend.append("documents", doc.file);
+        }
+      });
+
       if (mode === "create") {
-        const result = await createProperty(formData).unwrap();
+        const result = await createProperty(formDataToSend).unwrap();
+        alert("Property created successfully! It's now under review.");
         navigate(`/properties/${result.data.slug}`);
       } else if (propertyId) {
         const result = await updateProperty({
           id: propertyId,
-          data: formData as PropertyUpdateRequest,
+          data: formDataToSend as any,
         }).unwrap();
+        alert("Property updated successfully!");
         navigate(`/properties/${result.data.slug}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save property:", error);
+      alert(
+        error?.data?.message || "Failed to save property. Please try again."
+      );
     }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   const renderStepContent = () => {
@@ -238,14 +682,23 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
+                onBlur={() => handleBlur("title")}
                 className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                  errors.title ? "border-red-500" : "border-gray-200"
+                  touched.title && errors.title
+                    ? "border-red-500"
+                    : "border-gray-200"
                 }`}
                 placeholder="e.g., Luxury 3 Bedroom Apartment in Downtown"
               />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+              {touched.title && errors.title && (
+                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.title}
+                </p>
               )}
+              <p className="mt-1 text-xs text-gray-500">
+                {formData.title.length}/200 characters (min: 10)
+              </p>
             </div>
 
             <div>
@@ -257,17 +710,24 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
+                onBlur={() => handleBlur("description")}
                 rows={6}
                 className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all resize-none ${
-                  errors.description ? "border-red-500" : "border-gray-200"
+                  touched.description && errors.description
+                    ? "border-red-500"
+                    : "border-gray-200"
                 }`}
-                placeholder="Describe your property in detail..."
+                placeholder="Describe your property in detail... (minimum 50 characters)"
               />
-              {errors.description && (
-                <p className="mt-1 text-sm text-red-600">
+              {touched.description && errors.description && (
+                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
                   {errors.description}
                 </p>
               )}
+              <p className="mt-1 text-xs text-gray-500">
+                {formData.description.length}/5000 characters (min: 50)
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -287,7 +747,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                 >
                   {propertyTypes.map((type) => (
                     <option key={type} value={type}>
-                      {type}
+                      {type.replace("_", " ")}
                     </option>
                   ))}
                 </select>
@@ -310,7 +770,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   <option value="">Select Sub Type</option>
                   {subTypes.map((type) => (
                     <option key={type} value={type}>
-                      {type}
+                      {type.replace("_", " ")}
                     </option>
                   ))}
                 </select>
@@ -328,7 +788,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       onClick={() => setFormData({ ...formData, purpose })}
                       className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
                         formData.purpose === purpose
-                          ? "bg-blue-600 text-white"
+                          ? "bg-blue-600 text-white shadow-lg"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
@@ -338,28 +798,40 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Status *
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as PropertyStatus,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-                >
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {mode === "edit" && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        status: e.target.value as PropertyStatus,
+                      })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                  >
+                    {statuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status.replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
+
+            {mode === "create" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> All new properties are automatically
+                  set to <strong>UNDER_REVIEW</strong> status and will be
+                  reviewed by administrators before becoming public.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2">
@@ -377,14 +849,20 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                         price: parseFloat(e.target.value) || 0,
                       })
                     }
+                    onBlur={() => handleBlur("price")}
                     className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                      errors.price ? "border-red-500" : "border-gray-200"
+                      touched.price && errors.price
+                        ? "border-red-500"
+                        : "border-gray-200"
                     }`}
                     placeholder="0.00"
                   />
                 </div>
-                {errors.price && (
-                  <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                {touched.price && errors.price && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.price}
+                  </p>
                 )}
               </div>
 
@@ -403,6 +881,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   <option value="EUR">EUR</option>
                   <option value="GBP">GBP</option>
                   <option value="KES">KES</option>
+                  <option value="INR">INR</option>
                 </select>
               </div>
             </div>
@@ -433,6 +912,57 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-2">
+                Search Location *
+              </label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={locationSearch}
+                  onChange={(e) => setLocationSearch(e.target.value)}
+                  onFocus={() =>
+                    locationSuggestions.length > 0 && setShowSuggestions(true)
+                  }
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="Search for address, city, or area..."
+                />
+                {isSearchingLocation && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {showSuggestions && locationSuggestions.length > 0 && (
+                <div className="mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                  {locationSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleLocationSelect(suggestion)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 flex items-start gap-3"
+                    >
+                      <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">
+                          {suggestion.display_name}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {errors.location && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.location}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-2">
                 Address *
               </label>
               <input
@@ -441,13 +971,19 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
+                onBlur={() => handleBlur("address")}
                 className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                  errors.address ? "border-red-500" : "border-gray-200"
+                  touched.address && errors.address
+                    ? "border-red-500"
+                    : "border-gray-200"
                 }`}
                 placeholder="Street address"
               />
-              {errors.address && (
-                <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+              {touched.address && errors.address && (
+                <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.address}
+                </p>
               )}
             </div>
 
@@ -462,13 +998,19 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, city: e.target.value })
                   }
+                  onBlur={() => handleBlur("city")}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                    errors.city ? "border-red-500" : "border-gray-200"
+                    touched.city && errors.city
+                      ? "border-red-500"
+                      : "border-gray-200"
                   }`}
                   placeholder="City"
                 />
-                {errors.city && (
-                  <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                {touched.city && errors.city && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.city}
+                  </p>
                 )}
               </div>
 
@@ -482,13 +1024,19 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, locality: e.target.value })
                   }
+                  onBlur={() => handleBlur("locality")}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                    errors.locality ? "border-red-500" : "border-gray-200"
+                    touched.locality && errors.locality
+                      ? "border-red-500"
+                      : "border-gray-200"
                   }`}
                   placeholder="Locality"
                 />
-                {errors.locality && (
-                  <p className="mt-1 text-sm text-red-600">{errors.locality}</p>
+                {touched.locality && errors.locality && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.locality}
+                  </p>
                 )}
               </div>
 
@@ -517,13 +1065,19 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   onChange={(e) =>
                     setFormData({ ...formData, country: e.target.value })
                   }
+                  onBlur={() => handleBlur("country")}
                   className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                    errors.country ? "border-red-500" : "border-gray-200"
+                    touched.country && errors.country
+                      ? "border-red-500"
+                      : "border-gray-200"
                   }`}
                   placeholder="Country"
                 />
-                {errors.country && (
-                  <p className="mt-1 text-sm text-red-600">{errors.country}</p>
+                {touched.country && errors.country && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.country}
+                  </p>
                 )}
               </div>
 
@@ -561,8 +1115,9 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       latitude: parseFloat(e.target.value) || null,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-                  placeholder="0.000000"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
               </div>
 
@@ -580,11 +1135,22 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       longitude: parseFloat(e.target.value) || null,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-                  placeholder="0.000000"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50"
+                  placeholder="Auto-filled from location search"
+                  readOnly
                 />
               </div>
             </div>
+
+            {formData.latitude && formData.longitude && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="text-sm text-green-800">
+                  <strong>Location coordinates set!</strong> Your property will
+                  appear correctly on the map.
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -606,9 +1172,16 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       bedrooms: parseInt(e.target.value) || null,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                  onBlur={() => handleBlur("bedrooms")}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.bedrooms ? "border-red-500" : "border-gray-200"
+                  }`}
                   placeholder="0"
+                  min="0"
                 />
+                {errors.bedrooms && (
+                  <p className="mt-1 text-xs text-red-600">{errors.bedrooms}</p>
+                )}
               </div>
 
               <div>
@@ -625,9 +1198,18 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       bathrooms: parseInt(e.target.value) || null,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                  onBlur={() => handleBlur("bathrooms")}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.bathrooms ? "border-red-500" : "border-gray-200"
+                  }`}
                   placeholder="0"
+                  min="0"
                 />
+                {errors.bathrooms && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.bathrooms}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -646,6 +1228,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="0"
+                  min="0"
                 />
               </div>
 
@@ -663,9 +1246,18 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       yearBuilt: parseInt(e.target.value) || null,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                  onBlur={() => handleBlur("yearBuilt")}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.yearBuilt ? "border-red-500" : "border-gray-200"
+                  }`}
                   placeholder="2024"
+                  min="1800"
                 />
+                {errors.yearBuilt && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {errors.yearBuilt}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -684,9 +1276,18 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                       squareFeet: parseInt(e.target.value) || null,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                  onBlur={() => handleBlur("squareFeet")}
+                  className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.squareFeet ? "border-red-500" : "border-gray-200"
+                  }`}
                   placeholder="0"
+                  min="0"
                 />
+                {errors.squareFeet && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.squareFeet}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -704,6 +1305,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="0"
+                  min="0"
                 />
               </div>
             </div>
@@ -742,9 +1344,17 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                     youtubeVideoUrl: e.target.value || null,
                   })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                onBlur={() => handleBlur("youtubeVideoUrl")}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.youtubeVideoUrl ? "border-red-500" : "border-gray-200"
+                }`}
                 placeholder="https://youtube.com/watch?v=..."
               />
+              {errors.youtubeVideoUrl && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.youtubeVideoUrl}
+                </p>
+              )}
             </div>
 
             <div>
@@ -760,9 +1370,17 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                     virtualTourUrl: e.target.value || null,
                   })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+                onBlur={() => handleBlur("virtualTourUrl")}
+                className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.virtualTourUrl ? "border-red-500" : "border-gray-200"
+                }`}
                 placeholder="https://virtualtour.com/..."
               />
+              {errors.virtualTourUrl && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.virtualTourUrl}
+                </p>
+              )}
             </div>
           </div>
         );
@@ -771,13 +1389,20 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                Select Amenities
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Select Amenities *
               </h3>
               <p className="text-sm text-gray-600 mb-6">
                 Choose all amenities available in your property
               </p>
             </div>
+
+            {errors.amenities && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <p className="text-sm text-red-800">{errors.amenities}</p>
+              </div>
+            )}
 
             {categories.length > 0 ? (
               categories.map((category) => {
@@ -806,6 +1431,11 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                                 ? current.filter((id) => id !== amenity.id)
                                 : [...current, amenity.id];
                               setFormData({ ...formData, amenities: updated });
+                              if (updated.length > 0 && errors.amenities) {
+                                const newErrors = { ...errors };
+                                delete newErrors.amenities;
+                                setErrors(newErrors);
+                              }
                             }}
                             className={`p-3 rounded-xl text-sm font-medium transition-all text-left ${
                               isSelected
@@ -859,15 +1489,39 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
               </div>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-              <div className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center flex-shrink-0">
+            <div
+              className={`border rounded-xl p-4 flex items-start gap-3 ${
+                formData.amenities && formData.amenities.length > 0
+                  ? "bg-blue-50 border-blue-200"
+                  : "bg-gray-50 border-gray-200"
+              }`}
+            >
+              <div
+                className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  formData.amenities && formData.amenities.length > 0
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-300 text-gray-600"
+                }`}
+              >
                 <Check className="w-5 h-5" />
               </div>
               <div>
-                <div className="font-semibold text-blue-900 mb-1">
+                <div
+                  className={`font-semibold mb-1 ${
+                    formData.amenities && formData.amenities.length > 0
+                      ? "text-blue-900"
+                      : "text-gray-700"
+                  }`}
+                >
                   {formData.amenities?.length || 0} Amenities Selected
                 </div>
-                <div className="text-sm text-blue-700">
+                <div
+                  className={`text-sm ${
+                    formData.amenities && formData.amenities.length > 0
+                      ? "text-blue-700"
+                      : "text-gray-600"
+                  }`}
+                >
                   More amenities increase property appeal and search visibility
                 </div>
               </div>
@@ -880,18 +1534,86 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                Property Images
+                Property Images *
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                Add high-quality images to showcase your property. The first
-                image or marked cover will be the main display.
+                Add high-quality images to showcase your property. Mark one as
+                cover image.
               </p>
             </div>
 
-            <ImageUpload
-              images={formData.images || []}
-              onChange={(images) => setFormData({ ...formData, images })}
-            />
+            {errors.images && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <p className="text-sm text-red-800">{errors.images}</p>
+              </div>
+            )}
+
+            <div>
+              <label className="block w-full cursor-pointer">
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 hover:bg-blue-50 transition-all">
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                    Click to upload images
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    PNG, JPG up to 5MB each (min. 3 images)
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/png,image/jpeg,image/jpg"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {imageFiles.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {imageFiles.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`relative group rounded-xl overflow-hidden border-4 ${
+                      img.isCover ? "border-green-500" : "border-gray-200"
+                    }`}
+                  >
+                    <img
+                      src={img.preview || img.url}
+                      alt={`Property ${idx + 1}`}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center gap-2">
+                      {!img.isCover && (
+                        <button
+                          type="button"
+                          onClick={() => setCoverImage(idx)}
+                          className="opacity-0 group-hover:opacity-100 bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                        >
+                          Set as Cover
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="opacity-0 group-hover:opacity-100 bg-red-600 text-white p-2 rounded-lg transition-all"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {img.isCover && (
+                      <div className="absolute top-2 left-2 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        COVER
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs">
+                      #{idx + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
               <ImageIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -901,6 +1623,93 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                 and interior shots, and ensure good lighting.
               </div>
             </div>
+          </div>
+        );
+
+      case 5: // Documents
+        return (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Property Documents
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Upload relevant documents like title deeds, floor plans, or
+                certificates (optional but recommended)
+              </p>
+            </div>
+
+            <div>
+              <label className="block w-full cursor-pointer">
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 hover:bg-blue-50 transition-all">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                    Click to upload documents
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    PDF, DOC, DOCX, JPG, PNG up to 10MB each
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,image/jpeg,image/png"
+                  onChange={handleDocumentUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {documents.length > 0 && (
+              <div className="space-y-3">
+                {documents.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between group hover:border-blue-300 transition-all"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">
+                          {doc.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {doc.size ? formatFileSize(doc.size) : "Unknown size"}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeDocument(idx)}
+                      className="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+              <FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <strong>Document Tips:</strong> Include title deeds, floor
+                plans, NOC (No Objection Certificate), or any relevant property
+                certificates. These increase buyer confidence and trust.
+              </div>
+            </div>
+
+            {documents.length > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+                <div className="text-sm text-green-800">
+                  <strong>{documents.length} document(s) uploaded.</strong> This
+                  adds credibility to your listing!
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -990,7 +1799,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                     <>
                       <Save className="w-5 h-5" />
                       {mode === "create"
-                        ? "Create Property"
+                        ? "Submit Property"
                         : "Update Property"}
                     </>
                   )}
@@ -1000,19 +1809,45 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           </form>
         </div>
 
-        {/* Save Draft Button (for create mode) */}
+        {/* Additional Info */}
         {mode === "create" && (
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setFormData({ ...formData, status: "DRAFT" });
-                handleSubmit();
-              }}
-              className="text-gray-600 hover:text-gray-900 font-medium underline"
-            >
-              Save as Draft
-            </button>
+          <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="font-bold text-gray-900 mb-3">
+              What happens after submission?
+            </h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                  1
+                </div>
+                <div>
+                  Your property will be set to <strong>UNDER_REVIEW</strong>{" "}
+                  status
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                  2
+                </div>
+                <div>Our team will review your listing within 24-48 hours</div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                  3
+                </div>
+                <div>
+                  Once approved, it will be visible to potential buyers/renters
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                  4
+                </div>
+                <div>
+                  You'll receive notifications about inquiries and views
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

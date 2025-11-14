@@ -1,12 +1,5 @@
-import {
-  Check,
-  ChevronRight,
-  Home,
-  MapPin,
-  Navigation,
-  User,
-} from "lucide-react";
-import { ContactForm } from "./ContactForm";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React from "react";
 import type { Amenity, Role } from "../../types";
 import { PropertyStats } from "./PropertyStats";
 import { PropertyHeader } from "./PropertyHeader";
@@ -16,12 +9,24 @@ import {
   useDeletePropertyMutation,
   useGetPropertyBySlugQuery,
 } from "../../services/propertyApi";
+import { useToast } from "../../hooks/useToast";
+import { OwnerInfoSection } from "./components/OwnerInfoSection";
+import { LocationSection } from "./components/LocationSection";
+import { PropertyDetailsSection } from "./components/PropertyDetailSection";
+import { DescriptionSection } from "./components/DescriptionSection";
+import { Breadcrumb } from "./components/BreadCrump";
+import { PropertyDetailError } from "./components/PropertyDetailError";
+import { PropertyDetailSkeleton } from "./components/PropertyDetailSkeleton";
+import { MediaSection } from "./components/MediaSection";
+import { AmenitiesSection } from "./components/AmenitiesSection";
+import { DocumentsSection } from "./components/DocumentSection";
 
 interface PropertyDetailProps {
   slug: string;
   userRole?: Role;
   userId?: string;
 }
+
 export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   slug,
   userRole = "BUYER",
@@ -29,6 +34,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
 }) => {
   const { data, isLoading, error } = useGetPropertyBySlugQuery(slug);
   const [deleteProperty] = useDeletePropertyMutation();
+  const { success, error: showError } = useToast();
 
   const property = data?.data;
   const propertyId = property?.id;
@@ -41,7 +47,6 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   );
 
   const amenities: Amenity[] = amenitiesData?.data || [];
-
   const isOwner = userId === property?.ownerId;
 
   const handleEdit = () => {
@@ -53,254 +58,196 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
     if (window.confirm("Are you sure you want to delete this property?")) {
       try {
         await deleteProperty(property!.id).unwrap();
+        success(
+          "Property deleted",
+          "The property has been successfully deleted."
+        );
         // Navigate to properties list
-      } catch (error) {
-        console.error("Failed to delete property:", error);
+      } catch (err) {
+        showError(
+          "Delete failed",
+          "Failed to delete the property. Please try again."
+        );
       }
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">
-            Loading property details...
-          </p>
-        </div>
-      </div>
-    );
+    return <PropertyDetailSkeleton />;
   }
 
   if (error || !property) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <Home className="w-24 h-24 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Property Not Found
-          </h2>
-          <p className="text-gray-600 mb-6">
-            The property you're looking for doesn't exist or has been removed.
-          </p>
-          <button className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-            Back to Properties
-          </button>
-        </div>
-      </div>
-    );
+    return <PropertyDetailError />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/20">
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="hover:text-blue-600 cursor-pointer">Home</span>
-            <ChevronRight className="w-4 h-4" />
-            <span className="hover:text-blue-600 cursor-pointer">
-              Properties
-            </span>
-            <ChevronRight className="w-4 h-4" />
-            <span className="hover:text-blue-600 cursor-pointer">
-              {property.city}
-            </span>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium truncate">
-              {property.title}
-            </span>
-          </div>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <Breadcrumb property={property} />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Image Gallery */}
-        <div className="mb-8">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Image Gallery - Full Width */}
+        <div className="mb-6">
           <ImageGallery images={property.images || []} title={property.title} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="xl:col-span-3 space-y-6">
             {/* Header */}
-            <PropertyHeader
-              property={property}
-              userRole={userRole}
-              isOwner={isOwner}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <PropertyHeader
+                property={property}
+                userRole={userRole}
+                isOwner={isOwner}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            </div>
 
             {/* Stats */}
-            <PropertyStats property={property} />
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <PropertyStats property={property} />
+            </div>
+
+            {/* Media Section */}
+            {(property.images?.length > 0 ||
+              property.youtubeVideoUrl ||
+              property.virtualTourUrl) && (
+              <MediaSection
+                youtubeUrl={property.youtubeVideoUrl}
+                virtualTourUrl={property.virtualTourUrl}
+                images={property.images || []}
+              />
+            )}
 
             {/* Description */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                About This Property
-              </h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {property.description}
-              </p>
-            </div>
+            <DescriptionSection description={property.description} />
 
             {/* Property Details */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Property Details
-              </h2>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">
-                    Property Type
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {property.propertyType}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Sub Type</div>
-                  <div className="font-semibold text-gray-900">
-                    {property.subType || "N/A"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Purpose</div>
-                  <div className="font-semibold text-gray-900">
-                    {property.purpose}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Currency</div>
-                  <div className="font-semibold text-gray-900">
-                    {property.currency}
-                  </div>
-                </div>
-                {property.squareMeters && (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">
-                      Square Meters
-                    </div>
-                    <div className="font-semibold text-gray-900">
-                      {property.squareMeters}
-                    </div>
-                  </div>
-                )}
-                {property.zipCode && (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Zip Code</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.zipCode}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PropertyDetailsSection property={property} />
 
             {/* Amenities */}
-            {amenities.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Amenities
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {amenities.map((item: Amenity) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
-                    >
-                      <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Check className="w-5 h-5" />
-                      </div>
-                      <span className="font-medium text-gray-900">
-                        {item.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {amenities.length > 0 && <AmenitiesSection amenities={amenities} />}
+
+            {/* Documents */}
+            {property.documents && property.documents.length > 0 && (
+              <DocumentsSection documents={property.documents} />
             )}
 
             {/* Location */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Location
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
-                  <div>
-                    <div className="font-semibold text-gray-900 mb-1">
-                      Address
-                    </div>
-                    <div className="text-gray-700">{property.address}</div>
-                    <div className="text-gray-700">
-                      {property.locality}, {property.city}
-                    </div>
-                    {property.state && (
-                      <div className="text-gray-700">
-                        {property.state}, {property.country}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {property.latitude && property.longitude && (
-                  <div className="h-64 bg-gray-200 rounded-xl flex items-center justify-center">
-                    <Navigation className="w-12 h-12 text-gray-400" />
-                    <span className="ml-3 text-gray-600 font-medium">
-                      Map placeholder
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <LocationSection property={property} />
 
             {/* Owner Info (Admin/Owner only) */}
             {(isOwner ||
               userRole === "ADMIN" ||
               userRole === "SUPER_ADMIN") && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <User className="w-6 h-6 text-amber-600" />
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Owner Information
-                  </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Name</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.ownerName}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Email</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.ownerEmail}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Phone</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.ownerPhone}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Owner ID</div>
-                    <div className="font-semibold text-gray-900 text-xs">
-                      {property.ownerId}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <OwnerInfoSection property={property} />
             )}
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <ContactForm property={property} />
+          <div className="xl:col-span-1">
+            <div className="sticky top-6 space-y-6">
+              {/* Property Actions */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Property Actions
+                </h3>
+                <div className="space-y-3">
+                  <button className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 17v-2a4 4 0 014-4h4M9 17V9a4 4 0 014-4h4M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-4"
+                      />
+                    </svg>
+                    Generate Report
+                  </button>
+                  <button className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    View Analytics
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Quick Stats
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Views
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {property.viewCount}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Inquiries
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {property.inquiryCount}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Shares
+                    </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {property.shareCount}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  Status
+                </h3>
+                <div
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    property.status === "AVAILABLE"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                      : property.status === "UNDER_REVIEW"
+                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                      : property.status === "SOLD" ||
+                        property.status === "RENTED"
+                      ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                  }`}
+                >
+                  {property.status.replace("_", " ")}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { AppWrapper } from "./components/common/PageMeta.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { Provider } from "react-redux";
 import { store } from "./store/store.ts";
+import { ToastContainer } from "./components/ui/alert/ToastContainer.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
           <App />
         </AppWrapper>
       </ThemeProvider>
+      <ToastContainer />
     </Provider>
   </StrictMode>
 );

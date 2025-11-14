@@ -27,3 +27,15 @@ export interface ApiResponse<T> {
   message?: string;
   error?: string;
 }
+export interface BaseResponse {
+  success: boolean;
+  message: string;
+}
+export interface ErrorResponse {
+  success: false;
+  message: string;
+  errors?: Array<{
+    field: string;
+    message: string;
+  }>;
+}

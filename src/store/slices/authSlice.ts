@@ -26,6 +26,10 @@ const isTokenExpired = (token: string): boolean => {
   const currentTime = Date.now() / 1000;
   return decoded.exp < currentTime;
 };
+const getStoredUser = (): Omit<User, "password" | "twoFactorSecret"> | null => {
+  const stored = localStorage.getItem("user");
+  return stored ? JSON.parse(stored) : null;
+};
 
 // Get stored token with validation
 const getValidatedToken = (): string | null => {
@@ -44,7 +48,7 @@ const getValidatedToken = (): string | null => {
 
 const initialState: AuthState = {
   token: getValidatedToken(),
-  user: null,
+  user: getStoredUser(),
   isAuthenticated: !!getValidatedToken(),
   tokenExpiry: getValidatedToken()
     ? decodeToken(getValidatedToken()!)?.exp || null
@@ -71,6 +75,7 @@ const authSlice = createSlice({
       state.tokenExpiry = decoded?.exp || null;
 
       localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
     },
     logout: (state) => {
       state.user = null;
@@ -79,6 +84,7 @@ const authSlice = createSlice({
       state.tokenExpiry = null;
 
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       sessionStorage.clear();
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
@@ -93,6 +99,7 @@ const authSlice = createSlice({
       state.tokenExpiry = null;
 
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
     validateToken: (state) => {
       if (state.token && isTokenExpired(state.token)) {

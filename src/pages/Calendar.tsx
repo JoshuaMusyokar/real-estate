@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -8,281 +9,689 @@ import type {
   DateSelectArg,
   EventClickArg,
 } from "@fullcalendar/core";
-import { Modal } from "../components/ui/modal";
-import { useModal } from "../hooks/useModal";
-import PageMeta from "../components/common/PageMeta";
+import {
+  X,
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  Home,
+  Loader2,
+  Plus,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+import {
+  useGetAdminAppointmentsQuery,
+  useGetSuperAdminAppointmentsQuery,
+  useGetPropertyOwnerAppointmentsQuery,
+  useCreateAppointmentMutation,
+  useUpdateAppointmentMutation,
+  useCancelAppointmentMutation,
+  useCompleteAppointmentMutation,
+} from "../services/appointmentApi";
+import type {
+  CalendarEvent,
+  AppointmentType,
+  AppointmentStatus,
+  AppointmentCreateRequest,
+} from "../types";
+import { useAuth } from "../hooks/useAuth"; // Your auth hook
 
-interface CalendarEvent extends EventInput {
-  extendedProps: {
-    calendar: string;
-  };
-}
+const APPOINTMENT_TYPES: {
+  value: AppointmentType;
+  label: string;
+  color: string;
+}[] = [
+  { value: "PROPERTY_VIEWING", label: "Property Viewing", color: "#3B82F6" },
+  { value: "CONSULTATION", label: "Consultation", color: "#8B5CF6" },
+  { value: "NEGOTIATION", label: "Negotiation", color: "#F59E0B" },
+  { value: "DOCUMENTATION", label: "Documentation", color: "#10B981" },
+  { value: "CLOSING", label: "Closing", color: "#EF4444" },
+  { value: "FOLLOW_UP", label: "Follow Up", color: "#6B7280" },
+];
 
-const Calendar: React.FC = () => {
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null
-  );
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  const [eventEndDate, setEventEndDate] = useState("");
-  const [eventLevel, setEventLevel] = useState("");
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const calendarRef = useRef<FullCalendar>(null);
-  const { isOpen, openModal, closeModal } = useModal();
-
-  const calendarsEvents = {
-    Danger: "danger",
-    Success: "success",
-    Primary: "primary",
-    Warning: "warning",
-  };
-
-  useEffect(() => {
-    // Initialize with some events
-    setEvents([
-      {
-        id: "1",
-        title: "Event Conf.",
-        start: new Date().toISOString().split("T")[0],
-        extendedProps: { calendar: "Danger" },
-      },
-      {
-        id: "2",
-        title: "Meeting",
-        start: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Success" },
-      },
-      {
-        id: "3",
-        title: "Workshop",
-        start: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-        end: new Date(Date.now() + 259200000).toISOString().split("T")[0],
-        extendedProps: { calendar: "Primary" },
-      },
-    ]);
-  }, []);
-
-  const handleDateSelect = (selectInfo: DateSelectArg) => {
-    resetModalFields();
-    setEventStartDate(selectInfo.startStr);
-    setEventEndDate(selectInfo.endStr || selectInfo.startStr);
-    openModal();
-  };
-
-  const handleEventClick = (clickInfo: EventClickArg) => {
-    const event = clickInfo.event;
-    setSelectedEvent(event as unknown as CalendarEvent);
-    setEventTitle(event.title);
-    setEventStartDate(event.start?.toISOString().split("T")[0] || "");
-    setEventEndDate(event.end?.toISOString().split("T")[0] || "");
-    setEventLevel(event.extendedProps.calendar);
-    openModal();
-  };
-
-  const handleAddOrUpdateEvent = () => {
-    if (selectedEvent) {
-      // Update existing event
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === selectedEvent.id
-            ? {
-                ...event,
-                title: eventTitle,
-                start: eventStartDate,
-                end: eventEndDate,
-                extendedProps: { calendar: eventLevel },
-              }
-            : event
-        )
-      );
-    } else {
-      // Add new event
-      const newEvent: CalendarEvent = {
-        id: Date.now().toString(),
-        title: eventTitle,
-        start: eventStartDate,
-        end: eventEndDate,
-        allDay: true,
-        extendedProps: { calendar: eventLevel },
-      };
-      setEvents((prevEvents) => [...prevEvents, newEvent]);
-    }
-    closeModal();
-    resetModalFields();
-  };
-
-  const resetModalFields = () => {
-    setEventTitle("");
-    setEventStartDate("");
-    setEventEndDate("");
-    setEventLevel("");
-    setSelectedEvent(null);
-  };
-
-  return (
-    <>
-      <PageMeta
-        title="React.js Calendar Dashboard | TailAdmin - Next.js Admin Dashboard Template"
-        description="This is React.js Calendar Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
-      />
-      <div className="rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="custom-calendar">
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{
-              left: "prev,next addEventButton",
-              center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
-            }}
-            events={events}
-            selectable={true}
-            select={handleDateSelect}
-            eventClick={handleEventClick}
-            eventContent={renderEventContent}
-            customButtons={{
-              addEventButton: {
-                text: "Add Event +",
-                click: openModal,
-              },
-            }}
-          />
-        </div>
-        <Modal
-          isOpen={isOpen}
-          onClose={closeModal}
-          className="max-w-[700px] p-6 lg:p-10"
-        >
-          <div className="flex flex-col px-2 overflow-y-auto custom-scrollbar">
-            <div>
-              <h5 className="mb-2 font-semibold text-gray-800 modal-title text-theme-xl dark:text-white/90 lg:text-2xl">
-                {selectedEvent ? "Edit Event" : "Add Event"}
-              </h5>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Plan your next big moment: schedule or edit an event to stay on
-                track
-              </p>
-            </div>
-            <div className="mt-8">
-              <div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Event Title
-                  </label>
-                  <input
-                    id="event-title"
-                    type="text"
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-              </div>
-              <div className="mt-6">
-                <label className="block mb-4 text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Event Color
-                </label>
-                <div className="flex flex-wrap items-center gap-4 sm:gap-5">
-                  {Object.entries(calendarsEvents).map(([key, value]) => (
-                    <div key={key} className="n-chk">
-                      <div
-                        className={`form-check form-check-${value} form-check-inline`}
-                      >
-                        <label
-                          className="flex items-center text-sm text-gray-700 form-check-label dark:text-gray-400"
-                          htmlFor={`modal${key}`}
-                        >
-                          <span className="relative">
-                            <input
-                              className="sr-only form-check-input"
-                              type="radio"
-                              name="event-level"
-                              value={key}
-                              id={`modal${key}`}
-                              checked={eventLevel === key}
-                              onChange={() => setEventLevel(key)}
-                            />
-                            <span className="flex items-center justify-center w-5 h-5 mr-2 border border-gray-300 rounded-full box dark:border-gray-700">
-                              <span
-                                className={`h-2 w-2 rounded-full bg-white ${
-                                  eventLevel === key ? "block" : "hidden"
-                                }`}
-                              ></span>
-                            </span>
-                          </span>
-                          {key}
-                        </label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Enter Start Date
-                </label>
-                <div className="relative">
-                  <input
-                    id="event-start-date"
-                    type="date"
-                    value={eventStartDate}
-                    onChange={(e) => setEventStartDate(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                  Enter End Date
-                </label>
-                <div className="relative">
-                  <input
-                    id="event-end-date"
-                    type="date"
-                    value={eventEndDate}
-                    onChange={(e) => setEventEndDate(e.target.value)}
-                    className="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-6 modal-footer sm:justify-end">
-              <button
-                onClick={closeModal}
-                type="button"
-                className="flex w-full justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] sm:w-auto"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleAddOrUpdateEvent}
-                type="button"
-                className="btn btn-success btn-update-event flex w-full justify-center rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 sm:w-auto"
-              >
-                {selectedEvent ? "Update Changes" : "Add Event"}
-              </button>
-            </div>
-          </div>
-        </Modal>
-      </div>
-    </>
-  );
+const STATUS_COLORS: Record<AppointmentStatus, string> = {
+  SCHEDULED: "#3B82F6",
+  CONFIRMED: "#10B981",
+  COMPLETED: "#6B7280",
+  CANCELLED: "#EF4444",
+  NO_SHOW: "#F59E0B",
+  RESCHEDULED: "#8B5CF6",
 };
 
-const renderEventContent = (eventInfo: any) => {
-  const colorClass = `fc-bg-${eventInfo.event.extendedProps.calendar.toLowerCase()}`;
+interface AppointmentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedEvent: CalendarEvent | null;
+  selectedDate: { start: Date; end: Date } | null;
+  onSuccess: () => void;
+}
+
+const AppointmentModal: React.FC<AppointmentModalProps> = ({
+  isOpen,
+  onClose,
+  selectedEvent,
+  selectedDate,
+  onSuccess,
+}) => {
+  const [createAppointment, { isLoading: isCreating }] =
+    useCreateAppointmentMutation();
+  const [updateAppointment, { isLoading: isUpdating }] =
+    useUpdateAppointmentMutation();
+  const [cancelAppointment] = useCancelAppointmentMutation();
+  const [completeAppointment] = useCompleteAppointmentMutation();
+
+  const [formData, setFormData] = useState({
+    title: selectedEvent?.title || "",
+    type: selectedEvent?.type || ("PROPERTY_VIEWING" as AppointmentType),
+    startDate: selectedEvent?.start
+      ? new Date(selectedEvent.start).toISOString().slice(0, 16)
+      : selectedDate?.start.toISOString().slice(0, 16) || "",
+    endDate: selectedEvent?.end
+      ? new Date(selectedEvent.end).toISOString().slice(0, 16)
+      : selectedDate?.end.toISOString().slice(0, 16) || "",
+    location: selectedEvent?.location || "",
+    description: selectedEvent?.description || "",
+    leadEmail: selectedEvent?.lead?.email || "",
+    leadPhone: selectedEvent?.lead?.phone || "",
+    leadFirstName: selectedEvent?.lead?.firstName || "",
+    leadLastName: selectedEvent?.lead?.lastName || "",
+  });
+
+  const handleSubmit = async (): Promise<void> => {
+    try {
+      if (selectedEvent) {
+        // Update existing appointment
+        await updateAppointment({
+          id: selectedEvent.id,
+          data: {
+            title: formData.title,
+            type: formData.type,
+            scheduledAt: new Date(formData.startDate).toISOString(),
+            duration: Math.floor(
+              (new Date(formData.endDate).getTime() -
+                new Date(formData.startDate).getTime()) /
+                60000
+            ),
+            location: formData.location,
+            description: formData.description,
+          },
+        }).unwrap();
+      } else {
+        // Create new appointment
+        const duration = Math.floor(
+          (new Date(formData.endDate).getTime() -
+            new Date(formData.startDate).getTime()) /
+            60000
+        );
+
+        await createAppointment({
+          agentId: null, // Will be set by backend
+          type: formData.type,
+          title: formData.title,
+          scheduledAt: new Date(formData.startDate),
+          duration,
+          location: formData.location,
+          description: formData.description,
+          email: formData.leadEmail,
+          phone: formData.leadPhone,
+          firstName: formData.leadFirstName,
+          lastName: formData.leadLastName,
+        } as AppointmentCreateRequest).unwrap();
+      }
+
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Failed to save appointment:", error);
+      alert("Failed to save appointment. Please try again.");
+    }
+  };
+
+  const handleComplete = async (): Promise<void> => {
+    if (!selectedEvent) return;
+    try {
+      await completeAppointment({ id: selectedEvent.id }).unwrap();
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Failed to complete appointment:", error);
+    }
+  };
+
+  const handleCancel = async (): Promise<void> => {
+    if (!selectedEvent || !confirm("Cancel this appointment?")) return;
+    try {
+      await cancelAppointment({ id: selectedEvent.id }).unwrap();
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Failed to cancel appointment:", error);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const isEditing = !!selectedEvent;
+  const canComplete =
+    selectedEvent?.status === "SCHEDULED" ||
+    selectedEvent?.status === "CONFIRMED";
+  const canCancel =
+    selectedEvent?.status !== "COMPLETED" &&
+    selectedEvent?.status !== "CANCELLED";
+
   return (
     <div
-      className={`event-fc-color flex fc-event-main ${colorClass} p-1 rounded-sm`}
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
     >
-      <div className="fc-daygrid-event-dot"></div>
-      <div className="fc-event-time">{eventInfo.timeText}</div>
-      <div className="fc-event-title">{eventInfo.event.title}</div>
+      <div
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">
+              {isEditing ? "Edit Appointment" : "Schedule Appointment"}
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {isEditing
+                ? "Update appointment details"
+                : "Create a new appointment"}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Event Details (View Mode) */}
+        {isEditing && selectedEvent && (
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {selectedEvent.lead && (
+                <div>
+                  <div className="text-gray-600 mb-1">Lead</div>
+                  <div className="font-semibold text-gray-900">
+                    {selectedEvent.lead.firstName} {selectedEvent.lead.lastName}
+                  </div>
+                  <div className="text-gray-600 text-xs">
+                    {selectedEvent.lead.email}
+                  </div>
+                </div>
+              )}
+              {selectedEvent.agent && (
+                <div>
+                  <div className="text-gray-600 mb-1">Agent</div>
+                  <div className="font-semibold text-gray-900">
+                    {selectedEvent.agent.firstName}{" "}
+                    {selectedEvent.agent.lastName}
+                  </div>
+                </div>
+              )}
+              {selectedEvent.property && (
+                <div className="col-span-2">
+                  <div className="text-gray-600 mb-1">Property</div>
+                  <div className="font-semibold text-gray-900">
+                    {selectedEvent.property.title}
+                  </div>
+                  <div className="text-gray-600 text-xs">
+                    {selectedEvent.property.locality},{" "}
+                    {selectedEvent.property.city}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Form */}
+        <div className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Appointment Title *
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              placeholder="e.g., Property Viewing with Client"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Appointment Type *
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {APPOINTMENT_TYPES.map((type) => (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: type.value })}
+                  className={`p-3 border-2 rounded-xl transition-all text-left ${
+                    formData.type === type.value
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: type.color }}
+                    />
+                    <span className="font-medium text-sm text-gray-900">
+                      {type.label}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Start Date & Time *
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.startDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, startDate: e.target.value })
+                }
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                End Date & Time *
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.endDate}
+                onChange={(e) =>
+                  setFormData({ ...formData, endDate: e.target.value })
+                }
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                required
+              />
+            </div>
+          </div>
+
+          {!isEditing && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.leadFirstName}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        leadFirstName: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.leadLastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, leadLastName: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.leadEmail}
+                    onChange={(e) =>
+                      setFormData({ ...formData, leadEmail: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.leadPhone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, leadPhone: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Location
+            </label>
+            <input
+              type="text"
+              value={formData.location}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              placeholder="e.g., Office or Property Address"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              rows={3}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+              placeholder="Additional notes..."
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex items-center justify-between gap-3 border-t border-gray-200 rounded-b-2xl">
+          <div className="flex gap-2">
+            {isEditing && canComplete && (
+              <button
+                onClick={handleComplete}
+                className="px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Complete
+              </button>
+            )}
+            {isEditing && canCancel && (
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <XCircle className="w-4 h-4" />
+                Cancel
+              </button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={
+                isCreating ||
+                isUpdating ||
+                !formData.title ||
+                !formData.startDate
+              }
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isCreating || isUpdating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  {isEditing ? (
+                    <Edit className="w-4 h-4" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  {isEditing ? "Update" : "Create"}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default Calendar;
+export const AppointmentsCalendar: React.FC = () => {
+  const { user } = useAuth(); // Get current user from your auth hook
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null
+  );
+  const [selectedDate, setSelectedDate] = useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Fetch appointments based on user role
+  const {
+    data: adminEvents,
+    isLoading: adminLoading,
+    refetch: refetchAdmin,
+  } = useGetAdminAppointmentsQuery(
+    {},
+    {
+      skip:
+        user?.role !== "ADMIN" &&
+        user?.role !== "SALES_MANAGER" &&
+        user?.role !== "SALES_AGENT",
+    }
+  );
+
+  const {
+    data: superAdminEvents,
+    isLoading: superAdminLoading,
+    refetch: refetchSuperAdmin,
+  } = useGetSuperAdminAppointmentsQuery(
+    {},
+    {
+      skip: user?.role !== "SUPER_ADMIN",
+    }
+  );
+
+  const {
+    data: ownerEvents,
+    isLoading: ownerLoading,
+    refetch: refetchOwner,
+  } = useGetPropertyOwnerAppointmentsQuery(
+    { ownerId: user?.id || "" },
+    {
+      skip: user?.role !== "PROPERTY_OWNER",
+    }
+  );
+
+  // Determine which events to show based on role
+  const events = useMemo(() => {
+    if (user?.role === "SUPER_ADMIN") return superAdminEvents || [];
+    if (user?.role === "PROPERTY_OWNER") return ownerEvents || [];
+    return adminEvents || [];
+  }, [user?.role, adminEvents, superAdminEvents, ownerEvents]);
+
+  const isLoading = adminLoading || superAdminLoading || ownerLoading;
+
+  // Convert to FullCalendar format
+  const calendarEvents: EventInput[] = useMemo(() => {
+    return events.map((event) => ({
+      id: event.id,
+      title: event.title,
+      start: new Date(event.start),
+      end: new Date(event.end),
+      backgroundColor: STATUS_COLORS[event.status],
+      borderColor: STATUS_COLORS[event.status],
+      extendedProps: {
+        ...event,
+      },
+    }));
+  }, [events]);
+
+  const handleDateSelect = (selectInfo: DateSelectArg): void => {
+    setSelectedDate({
+      start: selectInfo.start,
+      end: selectInfo.end,
+    });
+    setSelectedEvent(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEventClick = (clickInfo: EventClickArg): void => {
+    const event = clickInfo.event.extendedProps as CalendarEvent;
+    setSelectedEvent(event);
+    setSelectedDate(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSuccess = (): void => {
+    // Refetch based on role
+    if (user?.role === "SUPER_ADMIN") {
+      refetchSuperAdmin();
+    } else if (user?.role === "PROPERTY_OWNER") {
+      refetchOwner();
+    } else {
+      refetchAdmin();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading calendar...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <CalendarIcon className="w-7 h-7 text-blue-600" />
+              Appointments Calendar
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Manage your appointments and schedule new ones
+            </p>
+          </div>
+          <div className="text-sm text-gray-600 bg-white px-4 py-2 rounded-lg border border-gray-200">
+            <span className="font-semibold text-gray-900">{events.length}</span>{" "}
+            appointments
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          headerToolbar={{
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek,timeGridDay",
+          }}
+          events={calendarEvents}
+          selectable={true}
+          select={handleDateSelect}
+          eventClick={handleEventClick}
+          height="auto"
+          eventTimeFormat={{
+            hour: "2-digit",
+            minute: "2-digit",
+            meridiem: "short",
+          }}
+        />
+      </div>
+
+      <AppointmentModal
+        isOpen={false}
+        // isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedEvent={selectedEvent}
+        selectedDate={selectedDate}
+        onSuccess={handleSuccess}
+      />
+
+      <style>{`
+        .fc {
+          font-family: inherit;
+        }
+        .fc .fc-button {
+          background-color: #3B82F6;
+          border-color: #3B82F6;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 600;
+          text-transform: capitalize;
+        }
+        .fc .fc-button:hover {
+          background-color: #2563EB;
+          border-color: #2563EB;
+        }
+        .fc .fc-button-active {
+          background-color: #1D4ED8 !important;
+          border-color: #1D4ED8 !important;
+        }
+        .fc .fc-daygrid-day-number {
+          font-weight: 600;
+          color: #374151;
+        }
+        .fc .fc-col-header-cell {
+          background-color: #F9FAFB;
+          font-weight: 700;
+          color: #374151;
+          padding: 12px 0;
+        }
+        .fc .fc-event {
+          border-radius: 6px;
+          padding: 2px 6px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .fc .fc-event:hover {
+          opacity: 0.85;
+        }
+      `}</style>
+    </div>
+  );
+};

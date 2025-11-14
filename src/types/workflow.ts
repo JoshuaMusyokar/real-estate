@@ -22,6 +22,28 @@ export type WorkflowActionType =
   | "ADD_TAG"
   | "WAIT_DELAY";
 
+export interface WorkflowActionInput {
+  order: number;
+  actionType: WorkflowActionType;
+  config: Record<string, any>;
+  delayMinutes?: number;
+}
+export interface CreateWorkflowInput {
+  name: string;
+  description?: string;
+  trigger: WorkflowTrigger;
+  conditions?: Record<string, any>;
+  isActive?: boolean;
+  actions: WorkflowActionInput[];
+}
+export interface UpdateWorkflowInput {
+  name?: string;
+  description?: string;
+  trigger?: WorkflowTrigger;
+  conditions?: Record<string, any>;
+  isActive?: boolean;
+  actions?: WorkflowActionInput[];
+}
 export interface Workflow {
   id: string;
   name: string;
@@ -34,7 +56,37 @@ export interface Workflow {
   actions: WorkflowAction[];
   executions: WorkflowExecution[];
 }
-
+export interface WorkflowResponse {
+  id: string;
+  name: string;
+  description?: string;
+  trigger: WorkflowTrigger;
+  conditions?: Record<string, any>;
+  isActive: boolean;
+  actions: WorkflowActionResponse[];
+  executions: WorkflowExecutionResponse[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+export interface WorkflowActionResponse {
+  id: string;
+  order: number;
+  actionType: WorkflowActionType;
+  config: Record<string, any>;
+  delayMinutes?: number;
+}
+export interface WorkflowFilter {
+  trigger?: WorkflowTrigger;
+  isActive?: boolean;
+}
+export interface WorkflowExecutionResponse {
+  id: string;
+  status: string;
+  leadId?: string;
+  startedAt: Date;
+  completedAt?: Date;
+  errorLog?: string;
+}
 export interface WorkflowAction {
   id: string;
   workflowId: string;
@@ -53,4 +105,62 @@ export interface WorkflowExecution {
   startedAt: Date;
   completedAt?: Date;
   errorLog?: string;
+}
+export interface WorkflowExecutionResponse {
+  id: string;
+  status: string;
+  leadId?: string;
+  startedAt: string;
+  completedAt?: string;
+  errorLog?: string;
+}
+
+export interface WorkflowCreateRequest {
+  name: string;
+  description?: string;
+  trigger: string;
+  conditions?: Record<string, any>;
+  isActive?: boolean;
+  actions: WorkflowActionRequest[];
+}
+
+export interface WorkflowActionRequest {
+  order: number;
+  actionType: string;
+  config: Record<string, any>;
+  delayMinutes?: number;
+}
+
+export interface WorkflowUpdateRequest {
+  name?: string;
+  description?: string;
+  trigger?: string;
+  conditions?: Record<string, any>;
+  isActive?: boolean;
+  actions?: WorkflowActionRequest[];
+}
+export interface WorkflowResponse {
+  id: string;
+  name: string;
+  description?: string;
+  trigger: string;
+  conditions?: Record<string, any>;
+  isActive: boolean;
+  actions: WorkflowActionResponse[];
+  executions: WorkflowExecutionResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ExecuteWorkflowRequest {
+  leadId?: string;
+  context?: Record<string, any>;
+}
+export interface WorkflowsResponse {
+  data: WorkflowResponse[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
 }
