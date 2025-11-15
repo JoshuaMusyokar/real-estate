@@ -1,6 +1,13 @@
 // ============================================
 // MARKETING AUTOMATION
+
 // ============================================
+
+export type MetadataValue = string | number | boolean | null;
+
+export interface MetadataContent {
+  [key: string]: MetadataValue | MetadataValue[] | MetadataContent;
+}
 
 export interface LandingPage {
   id: string;
@@ -10,7 +17,7 @@ export interface LandingPage {
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords: string[];
-  content: any;
+  content: MetadataContent;
   isPublished: boolean;
   isActive: boolean;
   viewCount: number;

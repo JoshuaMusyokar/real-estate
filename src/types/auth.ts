@@ -1,6 +1,5 @@
-import type { Role, User } from "./user";
+import type { Permission, Role, User } from "./user";
 
-// types/auth.types.ts
 export interface LoginRequest {
   email: string;
   password: string;
@@ -28,7 +27,7 @@ export interface TokenPayload {
   userId: string;
   email: string;
   role: Role;
-  permissions?: any;
+  permissions?: Permission;
   exp: number;
   iat: number;
 }

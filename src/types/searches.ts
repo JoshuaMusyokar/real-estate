@@ -5,11 +5,17 @@
 import type { Property } from "./property";
 import type { User } from "./user";
 
+export type FilterValue = string | number | boolean | null;
+
+export interface SavedSearchFilters {
+  [key: string]: FilterValue | FilterValue[] | SavedSearchFilters;
+}
+
 export interface SavedSearch {
   id: string;
   userId: string;
   name?: string;
-  filters: any;
+  filters: SavedSearchFilters;
   notifyOnNew: boolean;
   createdAt: Date;
   user: User;

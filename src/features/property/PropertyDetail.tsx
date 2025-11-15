@@ -92,7 +92,11 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Image Gallery - Full Width */}
         <div className="mb-6">
-          <ImageGallery images={property.images || []} title={property.title} />
+          <ImageGallery
+            images={property.images || []}
+            title={property.title}
+            propertyId={property.id}
+          />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">

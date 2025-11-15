@@ -11,6 +11,7 @@ export interface PaginatedResponse<T> {
     totalPages: number;
   };
 }
+export type RecordValue = string | number | boolean | null;
 
 export interface SearchFilters {
   page?: number;
@@ -19,6 +20,12 @@ export interface SearchFilters {
   sortOrder?: "asc" | "desc";
   search?: string;
   [key: string]: any;
+}
+
+export type JSONValue = string | number | boolean | null;
+
+export interface JSONContent {
+  [key: string]: JSONValue | JSONValue[] | JSONContent;
 }
 
 export interface ApiResponse<T> {

@@ -8,6 +8,7 @@ import type {
   BulkUserOperation,
   UserStats,
   ExportConfig,
+  Activity,
 } from "../types";
 interface UsersApiResponse {
   success: boolean;
@@ -303,9 +304,9 @@ export const userApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // Get user activity log
+    //TODO: ** Have a look at response Get user activity log
     getUserActivity: builder.query<
-      { success: boolean; data: any[] },
+      { success: boolean; data: Activity[] },
       { userId: string; page?: number; limit?: number }
     >({
       query: ({ userId, page = 1, limit = 20 }) =>

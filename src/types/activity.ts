@@ -2,6 +2,7 @@
 // ACTIVITY TRACKING
 // ============================================
 
+import type { MetadataContent } from "./marketing";
 import type { User } from "./user";
 
 export type ActivityType =
@@ -27,7 +28,7 @@ export interface Activity {
   title: string;
   description?: string;
   duration?: number;
-  metadata?: any;
+  metadata?: MetadataContent;
   createdAt: Date;
   user: User;
 }
@@ -48,7 +49,7 @@ export interface CreateActivityInput {
   title: string;
   description?: string;
   duration?: number;
-  metadata?: any;
+  metadata?: MetadataContent;
 }
 export interface ActivityResponse {
   id: string;
@@ -64,7 +65,7 @@ export interface ActivityResponse {
   title: string;
   description?: string;
   duration?: number;
-  metadata?: any;
+  metadata?: MetadataContent;
   createdAt: Date;
 }
 export interface ActivityCreateRequest {
@@ -73,7 +74,7 @@ export interface ActivityCreateRequest {
   title: string;
   description?: string;
   duration?: number;
-  metadata?: any;
+  metadata?: MetadataContent;
 }
 
 export interface CreateNoteInput {

@@ -1,3 +1,5 @@
+import type { RecordValue } from "./common";
+
 // Form Submission Types
 export interface FormSubmissionResponse {
   id: string;
@@ -8,7 +10,7 @@ export interface FormSubmissionResponse {
     slug: string;
   };
   formType: string;
-  data: Record<string, any>;
+  data: Record<string, RecordValue>;
   ipAddress?: string;
   userAgent?: string;
   createdAt: string;
@@ -17,7 +19,7 @@ export interface FormSubmissionResponse {
 export interface FormSubmissionCreateRequest {
   landingPageId?: string;
   formType: string;
-  data: Record<string, any>;
+  data: Record<string, RecordValue>;
   ipAddress?: string;
   userAgent?: string;
 }

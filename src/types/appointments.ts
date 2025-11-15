@@ -2,6 +2,7 @@
 // APPOINTMENT SCHEDULING
 // ============================================
 
+import type { JSONContent } from "./common";
 import type { Lead } from "./lead";
 import type { Property } from "./property";
 import type { User } from "./user";
@@ -43,7 +44,7 @@ export interface Appointment {
   feedbackSent: boolean;
   feedback?: string;
   rating?: number;
-  checklist?: any;
+  checklist?: JSONContent;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -92,7 +93,7 @@ export interface AppointmentResponse {
   feedbackSent: boolean;
   feedback?: string;
   rating?: number;
-  checklist?: any;
+  checklist?: JSONContent;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -110,7 +111,7 @@ export interface AppointmentCreateRequestOld {
   locationLng?: number;
   scheduledAt: string;
   duration?: number;
-  checklist?: any;
+  checklist?: JSONContent;
   notes?: string;
 }
 export interface AppointmentCreateRequest {
@@ -134,7 +135,7 @@ export interface AppointmentCreateRequest {
   locationLng?: number;
   scheduledAt: Date;
   duration?: number;
-  checklist?: any;
+  checklist?: JSONContent;
   notes?: string;
 
   // Optional contextual info
@@ -157,7 +158,7 @@ export interface AppointmentUpdateRequest {
   completedAt?: string;
   feedback?: string;
   rating?: number;
-  checklist?: any;
+  checklist?: JSONContent;
   notes?: string;
 }
 

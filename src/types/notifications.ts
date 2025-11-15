@@ -11,6 +11,15 @@ export type NotificationType =
   | "PROPERTY_INQUIRY"
   | "SYSTEM_ALERT";
 
+export type NotificationMetadataValue = string | number | boolean | null;
+
+export interface NotificationMetadata {
+  [key: string]:
+    | NotificationMetadataValue
+    | NotificationMetadataValue[]
+    | NotificationMetadata;
+}
+
 export interface Notification {
   id: string;
   userId: string;
@@ -19,7 +28,7 @@ export interface Notification {
   message: string;
   isRead: boolean;
   link?: string;
-  metadata?: any;
+  metadata?: NotificationMetadata;
   createdAt: Date;
   readAt?: Date;
   user: User;
