@@ -57,6 +57,7 @@ export const UserTableRow: React.FC<{
       PROPERTY_OWNER:
         "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
       BUYER: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+      BUILDER: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
       AGENT_EXTERNAL:
         "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
     };
