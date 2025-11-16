@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Home,
   Search,
+  LayoutDashboard,
 } from "lucide-react";
 import { useGetFavoritePropertiesQuery } from "../services/propertyApi";
 import { useAuth } from "../hooks/useAuth";
@@ -19,13 +20,13 @@ import { useAuth } from "../hooks/useAuth";
 interface PublicHeaderProps {
   onShowFavorites?: () => void;
   onShowAppointments?: () => void;
-  theme?: "vibrant" | "clean" | "dark"; // Template theme
+  theme?: "vibrant" | "clean" | "dark";
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onShowFavorites,
   onShowAppointments,
-  theme = "vibrant", // Default to Template 1 (vibrant)
+  theme = "vibrant",
 }) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,6 +41,9 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   );
 
   const favoriteProperties = favoritesData?.data || [];
+
+  // Check if user has dashboard access (all roles except BUYER)
+  const hasDashboardAccess = user && user.role !== "BUYER";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -69,7 +73,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   // Theme-based styling
   const getThemeStyles = () => {
     switch (theme) {
-      case "clean": // Template 2 (Zillow-style)
+      case "clean":
         return {
           bg: "bg-white border-b border-gray-200",
           logo: "bg-blue-600",
@@ -82,7 +86,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
           dropdown: "bg-white border-gray-200",
           accent: "blue",
         };
-      case "dark": // Template 3 (Redfin-style)
+      case "dark":
         return {
           bg: "bg-slate-900 border-b border-slate-800",
           logo: "bg-gradient-to-br from-red-600 to-red-700",
@@ -96,7 +100,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
           dropdown: "bg-slate-800 border-slate-700",
           accent: "red",
         };
-      default: // Template 1 (Vibrant)
+      default:
         return {
           bg: "bg-white/80 backdrop-blur-xl border-b border-gray-200/50",
           logo: "bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600",
@@ -163,6 +167,17 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
           <div className="flex items-center gap-3">
             {user ? (
               <>
+                {/* Dashboard Button - Show for all roles except BUYER */}
+                {hasDashboardAccess && (
+                  <Link
+                    to="/dashboard"
+                    className={`hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all ${styles.iconButton}`}
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                    <span>Dashboard</span>
+                  </Link>
+                )}
+
                 {/* Favorites Dropdown */}
                 <div className="relative" ref={dropdownRef}>
                   <button
@@ -375,6 +390,21 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                       </div>
 
                       <div className="p-2">
+                        {/* Dashboard Menu Item - Show for non-BUYER roles */}
+                        {hasDashboardAccess && (
+                          <button
+                            onClick={() => handleMenuNavigate("/dashboard")}
+                            className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left ${
+                              theme === "dark"
+                                ? "hover:bg-slate-700 text-slate-300"
+                                : "hover:bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            <LayoutDashboard className="w-5 h-5" />
+                            <span className="font-medium">Dashboard</span>
+                          </button>
+                        )}
+
                         <button
                           onClick={() =>
                             handleMenuNavigate("/saved-properties")
@@ -482,6 +512,18 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                       theme === "dark" ? "border-slate-800" : "border-gray-200"
                     }`}
                   >
+                    {/* Dashboard Link in Mobile Menu */}
+                    {hasDashboardAccess && (
+                      <Link
+                        to="/dashboard"
+                        className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <LayoutDashboard className="w-5 h-5" />
+                        Dashboard
+                      </Link>
+                    )}
+
                     <Link
                       to="/saved-properties"
                       className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
@@ -491,7 +533,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                       Saved Properties
                     </Link>
                     <Link
-                      to="/appointments"
+                      to="/my-appointments"
                       className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
                       onClick={() => setMobileMenuOpen(false)}
                     >

@@ -48,6 +48,7 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Public Landing Page */}
+          <Route path="/" element={<MainLanding />} />
           <Route path="/:template" element={<MainLanding />} />
 
           {/* Auth Routes - Only accessible when not authenticated */}
