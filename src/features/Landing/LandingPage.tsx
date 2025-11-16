@@ -98,12 +98,13 @@ export const PropertyLandingPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       {/* Premium Navigation Bar with Glass Morphism */}
       <PublicHeader
+        theme="vibrant"
         onShowFavorites={handleShowFavorites}
         onShowAppointments={handleShowAppointments}
       />
 
       {/* Hero Section with Advanced Animations */}
-      <section className="relative pt-32 pb-28 overflow-hidden">
+      <section className="relative pt-32 pb-4 overflow-hidden">
         {/* Animated Gradient Mesh Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50" />
@@ -132,16 +133,16 @@ export const PropertyLandingPage = () => {
             </div>
 
             {/* Main Headline with Gradient Animation */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 leading-[1.1] animate-slide-up">
+            {/* <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 leading-[1.1] animate-slide-up">
               <span className="block bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-2">
                 Discover Your Perfect
               </span>
               <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent animate-gradient">
                 Dream Home Today
               </span>
-            </h1>
+            </h1> */}
 
-            <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed animate-fade-in-delay font-medium">
+            <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed animate-fade-in-delay font-medium">
               Explore{" "}
               <span className="text-blue-600 font-bold">
                 exclusive properties
@@ -151,7 +152,7 @@ export const PropertyLandingPage = () => {
             </p>
 
             {/* Premium Search Bar with Enhanced Styling */}
-            <div className="max-w-5xl mx-auto mb-10 animate-slide-up-delay">
+            <div className="max-w-5xl mx-auto mb-4 animate-slide-up-delay">
               <div className="bg-white rounded-3xl shadow-2xl shadow-blue-900/10 p-3 sm:p-4 flex flex-col lg:flex-row gap-3 border-2 border-gray-100 hover:border-blue-200 hover:shadow-3xl transition-all duration-500 group">
                 <div className="flex-1 relative">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
@@ -186,7 +187,7 @@ export const PropertyLandingPage = () => {
               </div>
 
               {/* Quick Filter Pills with Enhanced Design */}
-              <div className="flex flex-wrap gap-3 mt-8 justify-center">
+              <div className="flex flex-wrap gap-3 mt-2 justify-center">
                 {[
                   {
                     label: "🏰 Luxury Villas",
@@ -224,7 +225,7 @@ export const PropertyLandingPage = () => {
             </div>
 
             {/* Trust Signals */}
-            <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-gray-600 animate-fade-in-delay-2">
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600 animate-fade-in-delay-2">
               <div className="flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-500" />
                 <span className="font-semibold">Verified Listings</span>
@@ -242,65 +243,16 @@ export const PropertyLandingPage = () => {
         </div>
       </section>
 
-      {/* Premium Stats Section with Animated Counters */}
-      <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: TrendingUp,
-                value: properties.length || "15K",
-                label: "Active Listings",
-                suffix: "+",
-              },
-              { icon: Users, value: "8K", label: "Happy Clients", suffix: "+" },
-              {
-                icon: MapPin,
-                value: "200",
-                label: "Cities Covered",
-                suffix: "+",
-              },
-              {
-                icon: Award,
-                value: "$2.5B",
-                label: "Properties Sold",
-                suffix: "+",
-              },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className="text-center group hover:scale-110 transition-transform duration-500 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-4 group-hover:bg-white/30 transition-all group-hover:rotate-6">
-                  <stat.icon className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-5xl lg:text-6xl font-black text-white mb-2 tracking-tight">
-                  {stat.value}
-                  {stat.suffix}
-                </div>
-                <div className="text-sm lg:text-base text-blue-100 font-bold uppercase tracking-wider">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Main Content - Properties Listing */}
       <section
         id="properties"
-        className="py-24 bg-gradient-to-br from-gray-50 via-white to-blue-50"
+        className="py-6 bg-gradient-to-br from-gray-50 via-white to-blue-50"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header with Enhanced Typography */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
             <div className="space-y-2">
-              <h2 className="text-4xl lg:text-5xl font-black text-gray-900">
+              <h2 className="text-1xl lg:text-2xl font-black text-gray-900">
                 {isLoading ? (
                   <span className="animate-pulse bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent">
                     Loading Properties...
@@ -314,21 +266,17 @@ export const PropertyLandingPage = () => {
                   </>
                 )}
               </h2>
-              <p className="text-gray-600 font-semibold text-lg flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                Handpicked premium selections
-              </p>
             </div>
 
             {/* Enhanced Sort Dropdown */}
-            <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl shadow-lg border-2 border-gray-100 hover:border-blue-200 transition-all">
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-2xl shadow-lg border-2 border-gray-100 hover:border-blue-200 transition-all">
               <span className="text-sm text-gray-600 font-bold hidden sm:inline">
                 Sort by:
               </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border-0 focus:ring-2 focus:ring-blue-500 bg-transparent font-bold text-gray-900 cursor-pointer appearance-none pr-8 focus:outline-none"
+                className="px-2 py-2 border-0 focus:ring-2 focus:ring-blue-500 bg-transparent font-bold text-gray-900 cursor-pointer appearance-none pr-8 focus:outline-none"
               >
                 <option value="featured">⭐ Featured First</option>
                 <option value="price">💰 Price: Low to High</option>
@@ -383,7 +331,7 @@ export const PropertyLandingPage = () => {
 
           {/* Properties Grid with Enhanced Cards */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
@@ -399,7 +347,7 @@ export const PropertyLandingPage = () => {
               ))}
             </div>
           ) : properties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {properties.map((property, index) => (
                 <LandingPropertyCard
                   key={property.id}
@@ -434,6 +382,55 @@ export const PropertyLandingPage = () => {
               </button>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Premium Stats Section with Animated Counters */}
+      <section className="relative py-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+
+        <div className="relative max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: TrendingUp,
+                value: properties.length || "15K",
+                label: "Active Listings",
+                suffix: "+",
+              },
+              { icon: Users, value: "8K", label: "Happy Clients", suffix: "+" },
+              {
+                icon: MapPin,
+                value: "200",
+                label: "Cities Covered",
+                suffix: "+",
+              },
+              {
+                icon: Award,
+                value: "$2.5B",
+                label: "Properties Sold",
+                suffix: "+",
+              },
+            ].map((stat, index) => (
+              <div
+                key={index}
+                className="text-center group hover:scale-110 transition-transform duration-500 animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-4 group-hover:bg-white/30 transition-all group-hover:rotate-6">
+                  <stat.icon className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-5xl lg:text-6xl font-black text-white mb-2 tracking-tight">
+                  {stat.value}
+                  {stat.suffix}
+                </div>
+                <div className="text-sm lg:text-base text-blue-100 font-bold uppercase tracking-wider">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

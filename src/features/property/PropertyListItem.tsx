@@ -4,6 +4,7 @@ import type { Property } from "../../types";
 import { StatusBadge } from "./StatusBadge";
 import { QuickReviewActions } from "./QuickReviewAction";
 import { useAuth } from "../../hooks/useAuth";
+import { getCurrencySymbol } from "../../utils/currency-utils";
 interface PropertyListItemProps {
   property: Property;
   onEdit: (id: string) => void;
@@ -19,8 +20,8 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
 }) => {
   const { user } = useAuth();
   const coverImage =
-    property.images?.find((img) => img.isCover)?.url ||
-    property.images?.[0]?.url;
+    property.images?.find((img) => img.isCover)?.viewableUrl ||
+    property.images?.[0]?.viewableUrl;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg hover:border-gray-300 transition-all duration-300">
@@ -83,7 +84,8 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
           <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-gray-900">
-                ${property.price.toLocaleString()}
+                {getCurrencySymbol(property.currency)}
+                {property.price.toLocaleString()}
               </span>
               <span className="text-sm text-gray-500 uppercase font-semibold">
                 {property.purpose}

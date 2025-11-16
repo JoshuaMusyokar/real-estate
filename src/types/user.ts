@@ -7,9 +7,10 @@ export type Role =
   | "SALES_AGENT"
   | "MARKETING"
   | "VIEWER"
-  | "PROPERTY_OWNER"
+  | "PROPERTY_OWNER" // Maps to "Owner"
   | "BUYER"
-  | "AGENT_EXTERNAL";
+  | "AGENT_EXTERNAL" // Maps to "Broker"
+  | "BUILDER"; // New role for "Builder"
 
 export type UserStatus =
   | "ACTIVE"

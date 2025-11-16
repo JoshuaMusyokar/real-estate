@@ -73,10 +73,13 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
     name: "Calendar",
     path: "/calendar",
+
+    roles: ["ADMIN", "SUPER_ADMIN"],
   },
   {
     icon: <Briefcase />,
     name: "Agents",
+    roles: ["ADMIN", "SUPER_ADMIN"],
     path: "/agents",
   },
   {
@@ -107,14 +110,16 @@ const navItems: NavItem[] = [
 
 const manage: NavItem[] = [
   {
-    icon: <Settings2 />,
-    name: "Settings",
-    // subItems: [{ name: "Leads", path: "/lead" }],
-  },
-  {
     icon: <PlugInIcon />,
     name: "Manage Users",
+    roles: ["ADMIN", "SUPER_ADMIN"],
     subItems: [{ name: "Users", path: "/users" }],
+  },
+  {
+    icon: <Settings2 />,
+    name: "Settings",
+    roles: ["ADMIN", "SUPER_ADMIN"],
+    subItems: [{ name: "Landing", path: "/landing" }],
   },
 ];
 
@@ -382,29 +387,17 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+            <div className="flex items-center">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                Bengal Properties
+              </span>
+            </div>
           ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+            <div className="flex items-center">
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                BP
+              </span>
+            </div>
           )}
         </Link>
       </div>

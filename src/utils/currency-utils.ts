@@ -23,3 +23,20 @@ export const getCurrencySymbol = (currency: string = "USD"): string => {
 
   return formatter.format(0).replace(/[0.,]/g, "");
 };
+// export function getCurrencySymbol(currency: string): string {
+//   const symbols: Record<string, string> = {
+//     USD: "$",
+//     EUR: "€",
+//     GBP: "£",
+//     KES: "KSh",
+//     INR: "₹",
+//     AED: "د.إ",
+//     SAR: "﷼",
+//     AUD: "$",
+//     CAD: "$",
+//     JPY: "¥",
+//     ZAR: "R",
+//   };
+
+//   return symbols[currency] || currency;
+// }

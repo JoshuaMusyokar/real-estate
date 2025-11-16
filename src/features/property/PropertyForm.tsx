@@ -38,6 +38,7 @@ import {
   useUpdatePropertyMutation,
 } from "../../services/propertyApi";
 import { useNavigate } from "react-router";
+import { useToast } from "../../hooks/useToast";
 
 interface PropertyFormPageProps {
   mode: "create" | "edit";
@@ -101,6 +102,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   });
   const { data: amenitiesData } = useSearchAmenitiesQuery({ isActive: true });
   const { data: categoriesData } = useGetAmenityCategoriesQuery();
+  const { success, error: showError } = useToast();
 
   const amenities = amenitiesData?.data || [];
   const categories = categoriesData?.data || [];
@@ -359,7 +361,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         }
         break;
 
-      case "yearBuilt":
+      case "yearBuilt": {
         const currentYear = new Date().getFullYear();
         if (value !== null && value !== undefined) {
           if (value < 1800) return "Year built seems too old";
@@ -367,7 +369,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
             return "Year built cannot be more than 5 years in future";
         }
         break;
-
+      }
       case "youtubeVideoUrl":
         if (value && value.trim()) {
           const youtubeRegex =
@@ -442,7 +444,8 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         }
         break;
 
-      case 4: // Images
+      case 4: {
+        // Images
         if (imageFiles.length === 0) {
           newErrors.images = "Please upload at least one image";
         } else if (imageFiles.length < 3) {
@@ -454,7 +457,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           newErrors.images = "Please mark one image as cover";
         }
         break;
-
+      }
       case 5: // Documents (optional)
         break;
     }
@@ -543,11 +546,14 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     const newDocs: PropertyDocument[] = Array.from(files)
       .filter((file) => {
         if (!allowedTypes.includes(file.type)) {
-          alert(`File ${file.name} is not a supported format`);
+          showError(
+            "Unsupported!",
+            `File ${file.name} is not a supported format`
+          );
           return false;
         }
         if (file.size > 10 * 1024 * 1024) {
-          alert(`File ${file.name} exceeds 10MB limit`);
+          showError("Invalid!", `File ${file.name} exceeds 10MB limit`);
           return false;
         }
         return true;
@@ -578,7 +584,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     }
 
     if (!allValid) {
-      alert("Please complete all required fields correctly");
+      showError("Invalid!", "Please complete all required fields correctly.");
       return;
     }
 
@@ -643,20 +649,21 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
 
       if (mode === "create") {
         const result = await createProperty(formDataToSend).unwrap();
-        alert("Property created successfully! It's now under review.");
+        success("Property created successfully!", "It's now under review.");
         navigate(`/properties/${result.data.slug}`);
       } else if (propertyId) {
         const result = await updateProperty({
           id: propertyId,
           data: formDataToSend as any,
         }).unwrap();
-        alert("Property updated successfully!");
+        success("Property updated successfully!", "check property details.");
         navigate(`/properties/${result.data.slug}`);
       }
     } catch (error: any) {
       console.error("Failed to save property:", error);
-      alert(
-        error?.data?.message || "Failed to save property. Please try again."
+      showError(
+        error?.data?.message || "Failed to save property",
+        "Please try again."
       );
     }
   };
@@ -877,11 +884,17 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                   }
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
                 >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="KES">KES</option>
-                  <option value="INR">INR</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="GBP">GBP - British Pound</option>
+                  <option value="KES">KES - Kenyan Shilling</option>
+                  <option value="INR">INR - Indian Rupee</option>
+                  <option value="AED">AED - UAE Dirham</option>
+                  <option value="SAR">SAR - Saudi Riyal</option>
+                  <option value="AUD">AUD - Australian Dollar</option>
+                  <option value="CAD">CAD - Canadian Dollar</option>
+                  <option value="JPY">JPY - Japanese Yen</option>
+                  <option value="ZAR">ZAR - South African Rand</option>
                 </select>
               </div>
             </div>

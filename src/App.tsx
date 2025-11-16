@@ -38,6 +38,7 @@ import BuyerAppointmentsPage from "./pages/Buyers/AppointmentsPage";
 import UserManagementPage from "./pages/UserPage/UserPage";
 import AgentsPage from "./pages/Agents/AgentsPage";
 import AmenityPage from "./pages/Amenity/AmenityPage";
+import LandingPagesAdmin from "./features/Settings/Landing/LandingAmin";
 // import {Role } from "./types";
 
 export default function App() {
@@ -47,7 +48,7 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Public Landing Page */}
-          <Route path="/" element={<MainLanding />} />
+          <Route path="/:template" element={<MainLanding />} />
 
           {/* Auth Routes - Only accessible when not authenticated */}
           <Route path="/signin" element={<SignIn />} />
@@ -137,6 +138,8 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             {/* User Profile - All authenticated users */}
             <Route path="/users" element={<UserManagementPage />} />
+            {/* User Profile - All authenticated users */}
+            <Route path="/landing" element={<LandingPagesAdmin />} />
 
             {/* Admin Only Routes */}
             <Route

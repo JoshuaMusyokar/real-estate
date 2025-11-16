@@ -21,6 +21,7 @@ import {
   Package,
   Calendar,
   Tag,
+  Lock,
 } from "lucide-react";
 import {
   useSearchAmenitiesQuery,
@@ -37,6 +38,7 @@ import type {
   AmenityUpdateRequest,
   AmenitySearchFilters,
 } from "../../types";
+import { useAuth } from "../../hooks/useAuth";
 
 type ViewMode = "grid" | "table";
 
@@ -50,7 +52,8 @@ interface AmenityFormData {
 
 export const AmenitiesManagement = () => {
   // View & UI State
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const { user } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -275,13 +278,15 @@ export const AmenitiesManagement = () => {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
-              >
-                <Plus className="w-4 h-4" />
-                Add Amenity
-              </button>
+              {["ADMIN", "SUPER_ADMIN"].includes(user!.role) && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Amenity
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -515,17 +520,19 @@ export const AmenitiesManagement = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveDropdown(
-                          activeDropdown === amenity.id ? null : amenity.id
-                        );
-                      }}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                    >
-                      <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    </button>
+                    {["ADMIN", "SUPER_ADMIN"].includes(user!.role) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdown(
+                            activeDropdown === amenity.id ? null : amenity.id
+                          );
+                        }}
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    )}
                     {activeDropdown === amenity.id && (
                       <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-10">
                         <button
@@ -672,36 +679,46 @@ export const AmenitiesManagement = () => {
                       {new Date(amenity.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      {["ADMIN", "SUPER_ADMIN"].includes(user!.role) ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(amenity)}
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(amenity)}
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                            title={amenity.isActive ? "Deactivate" : "Activate"}
+                          >
+                            {amenity.isActive ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAmenity(amenity);
+                              setShowDeleteModal(true);
+                            }}
+                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => handleEdit(amenity)}
+                          disabled={true}
                           className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          title="Edit"
+                          title="Locked"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Lock className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleToggleStatus(amenity)}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title={amenity.isActive ? "Deactivate" : "Activate"}
-                        >
-                          {amenity.isActive ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAmenity(amenity);
-                            setShowDeleteModal(true);
-                          }}
-                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      )}
                     </td>
                   </tr>
                 ))}

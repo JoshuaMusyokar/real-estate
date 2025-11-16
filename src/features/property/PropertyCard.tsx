@@ -12,6 +12,7 @@ import {
 import { StatusBadge } from "./StatusBadge";
 import { ReviewPropertyModal } from "./ReviewPropertyModal";
 import { QuickReviewActions } from "./QuickReviewAction";
+import { getCurrencySymbol } from "../../utils/currency-utils";
 
 interface PropertyCardProps {
   property: Property;
@@ -31,8 +32,8 @@ export const PropertyCard: FC<PropertyCardProps> = ({
   // const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   const coverImage =
-    property.images?.find((img) => img.isCover)?.url ||
-    property.images?.[0]?.url;
+    property.images?.find((img) => img.isCover)?.viewableUrl ||
+    property.images?.[0]?.viewableUrl;
 
   return (
     <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
@@ -133,7 +134,8 @@ export const PropertyCard: FC<PropertyCardProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <div className="text-2xl font-bold text-gray-900">
-              ${property.price.toLocaleString()}
+              {getCurrencySymbol(property.currency)}
+              {property.price.toLocaleString()}
             </div>
             <div className="text-xs text-gray-500 uppercase font-semibold mt-0.5">
               {property.purpose}

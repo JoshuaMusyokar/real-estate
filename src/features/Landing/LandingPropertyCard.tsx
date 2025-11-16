@@ -22,6 +22,7 @@ import {
 } from "../../services/propertyApi";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router";
+import { getCurrencySymbol } from "../../utils/currency-utils";
 interface PropertyCardProps {
   property: Property;
   className: string;
@@ -255,7 +256,8 @@ export const LandingPropertyCard: FC<PropertyCardProps> = ({
         <div className="flex items-end justify-between pt-2">
           <div>
             <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              ${property.price.toLocaleString()}
+              {getCurrencySymbol(property.currency)}
+              {property.price.toLocaleString()}
             </div>
             <div className="text-xs text-gray-500 uppercase font-black mt-1 tracking-wider">
               {isPricePerMonth ? "per month" : property.purpose}
