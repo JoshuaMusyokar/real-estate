@@ -54,7 +54,7 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
               <div className="flex items-center gap-2 text-gray-600 text-sm">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span className="line-clamp-1">
-                  {property.locality}, {property.city}
+                  {property.locality}, {property.city.name}
                 </span>
               </div>
             </div>
@@ -111,7 +111,8 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
               >
                 Delete
               </button>
-              {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ? (
+              {user?.role.name === "ADMIN" ||
+              user?.role.name === "SUPER_ADMIN" ? (
                 <QuickReviewActions property={property} onSuccess={() => {}} />
               ) : null}
             </div>

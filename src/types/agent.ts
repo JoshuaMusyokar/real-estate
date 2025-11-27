@@ -1,5 +1,7 @@
+import type { ResCity, ResLocality } from "./location";
 import type { PropertyType } from "./property";
-import type { Role, UserStatus } from "./user";
+import type { ResRole } from "./rbac";
+import type { UserStatus } from "./user";
 
 // Add to your existing typestype
 export interface AgentForAssignment {
@@ -9,10 +11,10 @@ export interface AgentForAssignment {
   email: string;
   phone?: string;
   avatar?: string;
-  role: Role;
+  role: ResRole | null;
   status: UserStatus;
-  allowedCities: string[];
-  allowedLocalities: string[];
+  cities: ResCity[];
+  localities: ResLocality[];
   // Performance metrics
   activeLeadsCount: number;
   totalLeadsClosed: number;

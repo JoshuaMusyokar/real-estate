@@ -13,37 +13,56 @@ import {
   Home,
   Search,
   LayoutDashboard,
+  MapPin,
 } from "lucide-react";
 import { useGetFavoritePropertiesQuery } from "../services/propertyApi";
 import { useAuth } from "../hooks/useAuth";
+import { useGetCitiesQuery } from "../services/locationApi";
 
 interface PublicHeaderProps {
   onShowFavorites?: () => void;
   onShowAppointments?: () => void;
   theme?: "vibrant" | "clean" | "dark";
+  selectedCityId?: string;
+  onCityChange?: (cityId: string) => void;
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onShowFavorites,
   onShowAppointments,
   theme = "vibrant",
+  selectedCityId,
+  onCityChange,
 }) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [favoritesDropdownOpen, setFavoritesDropdownOpen] = useState(false);
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+  const [citySearchTerm, setCitySearchTerm] = useState("");
   const { user, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: favoritesData } = useGetFavoritePropertiesQuery(
     { page: 1, limit: 5 },
     { skip: !user }
   );
 
-  const favoriteProperties = favoritesData?.data || [];
+  const { data: citiesData, isLoading: isLoadingCities } = useGetCitiesQuery({
+    page: 1,
+    limit: 100,
+  });
 
-  // Check if user has dashboard access (all roles except BUYER)
-  const hasDashboardAccess = user && user.role !== "BUYER";
+  const favoriteProperties = favoritesData?.data || [];
+  const cities = citiesData?.data || [];
+  const selectedCity = cities.find((city) => city.id === selectedCityId);
+  const filteredCities = cities.filter((city) =>
+    city.name.toLowerCase().includes(citySearchTerm.toLowerCase())
+  );
+
+  // Check if user has dashboard access
+  const hasDashboardAccess = user && user.role.name !== "BUYER";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,6 +72,12 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
       ) {
         setFavoritesDropdownOpen(false);
         setUserMenuOpen(false);
+      }
+      if (
+        cityDropdownRef.current &&
+        !cityDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCityDropdownOpen(false);
       }
     };
 
@@ -70,6 +95,14 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
     setUserMenuOpen(false);
   };
 
+  const handleCitySelect = (cityId: string) => {
+    if (onCityChange) {
+      onCityChange(cityId);
+    }
+    setCityDropdownOpen(false);
+    setCitySearchTerm("");
+  };
+
   // Theme-based styling
   const getThemeStyles = () => {
     switch (theme) {
@@ -83,6 +116,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
           button: "bg-blue-600 hover:bg-blue-700 text-white",
           buttonSecondary: "text-gray-700 hover:bg-gray-100",
           iconButton: "text-gray-700 hover:text-blue-600 hover:bg-blue-50",
+          cityButton:
+            "bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200",
           dropdown: "bg-white border-gray-200",
           accent: "blue",
         };
@@ -97,6 +132,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
             "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white",
           buttonSecondary: "text-slate-300 hover:bg-slate-800",
           iconButton: "text-slate-300 hover:text-red-400 hover:bg-slate-800",
+          cityButton:
+            "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700",
           dropdown: "bg-slate-800 border-slate-700",
           accent: "red",
         };
@@ -111,6 +148,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
             "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:shadow-2xl hover:shadow-blue-500/30 text-white",
           buttonSecondary: "text-gray-700 hover:bg-gray-100",
           iconButton: "text-gray-700 hover:text-blue-600 hover:bg-blue-50/50",
+          cityButton:
+            "bg-blue-50/50 hover:bg-blue-100/50 text-gray-700 border-blue-200/50",
           dropdown: "bg-white border-gray-200/50",
           accent: "blue",
         };
@@ -121,10 +160,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
 
   return (
     <nav className={`fixed top-0 w-full z-50 shadow-lg ${styles.bg}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 gap-8">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div
               className={`relative w-12 h-12 ${styles.logo} rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}
             >
@@ -133,12 +172,14 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                 <div className="absolute inset-0 bg-white/20 rounded-2xl blur-xl group-hover:bg-white/30 transition-all" />
               )}
             </div>
-            <div>
-              <span className={`block text-2xl font-black ${styles.logoText}`}>
+            <div className="hidden sm:block">
+              <span
+                className={`block text-xl font-black ${styles.logoText} leading-tight`}
+              >
                 Bengal Property
               </span>
               <span
-                className={`block text-[10px] font-semibold ${styles.logoSubtext} -mt-1`}
+                className={`block text-[9px] font-semibold ${styles.logoSubtext} -mt-0.5`}
               >
                 {theme === "dark"
                   ? "Data-Driven Real Estate"
@@ -147,34 +188,83 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-1">
+          {/* City Selector - Integrated Design */}
+          <div className="relative flex-shrink-0" ref={cityDropdownRef}>
+            <button
+              onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${styles.cityButton}`}
+            >
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm font-semibold hidden sm:inline">
+                {selectedCity?.name || "Select City"}
+              </span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${
+                  cityDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {cityDropdownOpen && (
+              <div
+                className={`absolute top-full left-0 mt-2 w-80 rounded-xl shadow-2xl border backdrop-blur-xl z-50 ${styles.dropdown}`}
+              >
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search cities..."
+                      value={citySearchTerm}
+                      onChange={(e) => setCitySearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto p-2">
+                  {filteredCities.map((city) => (
+                    <button
+                      key={city.id}
+                      onClick={() => handleCitySelect(city.id)}
+                      className={`w-full px-3 py-2 text-left rounded-lg text-sm font-medium transition-all ${
+                        city.id === selectedCityId
+                          ? "bg-blue-500 text-white"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {city.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Navigation - Centered */}
+          <div className="hidden lg:flex items-center gap-1 flex-1 justify-center">
             {["Properties", "How It Works", "About", "Contact"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                className={`px-4 py-2.5 font-semibold transition-all rounded-xl relative group ${styles.navLink}`}
+                className={`px-4 py-2 font-semibold text-sm transition-all rounded-xl ${styles.navLink}`}
               >
                 {item}
-                <span
-                  className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-${styles.accent}-600 group-hover:w-3/4 transition-all duration-300`}
-                />
               </a>
             ))}
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {user ? (
               <>
-                {/* Dashboard Button - Show for all roles except BUYER */}
+                {/* Dashboard Button */}
                 {hasDashboardAccess && (
                   <Link
                     to="/dashboard"
-                    className={`hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all ${styles.iconButton}`}
+                    className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${styles.iconButton}`}
                   >
-                    <LayoutDashboard className="w-5 h-5" />
-                    <span>Dashboard</span>
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span className="hidden lg:inline">Dashboard</span>
                   </Link>
                 )}
 
@@ -184,15 +274,11 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                     onClick={() =>
                       setFavoritesDropdownOpen(!favoritesDropdownOpen)
                     }
-                    className={`relative p-2.5 rounded-xl transition-all group ${styles.iconButton}`}
+                    className={`relative p-2 rounded-xl transition-all ${styles.iconButton}`}
                   >
-                    <Heart className="w-6 h-6" />
+                    <Heart className="w-5 h-5" />
                     {favoriteProperties.length > 0 && (
-                      <span
-                        className={`absolute -top-1 -right-1 min-w-[20px] h-5 bg-${
-                          styles.accent === "red" ? "red" : styles.accent
-                        }-500 text-white text-xs rounded-full flex items-center justify-center font-bold`}
-                      >
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                         {favoriteProperties.length}
                       </span>
                     )}
@@ -200,146 +286,63 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
 
                   {favoritesDropdownOpen && (
                     <div
-                      className={`absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-2xl border backdrop-blur-xl z-50 ${styles.dropdown}`}
+                      className={`absolute right-0 top-full mt-2 w-80 rounded-xl shadow-2xl border backdrop-blur-xl z-50 ${styles.dropdown}`}
                     >
-                      <div
-                        className={`p-4 border-b ${
-                          theme === "dark"
-                            ? "border-slate-700"
-                            : "border-gray-100"
-                        }`}
-                      >
+                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
-                          <h3
-                            className={`font-bold ${
-                              theme === "dark" ? "text-white" : "text-gray-900"
-                            }`}
-                          >
+                          <h3 className="font-bold text-sm">
                             Saved Properties
                           </h3>
-                          <span
-                            className={`text-sm ${
-                              theme === "dark"
-                                ? "text-slate-400"
-                                : "text-gray-500"
-                            }`}
-                          >
+                          <span className="text-xs text-gray-500">
                             {favoriteProperties.length} saved
                           </span>
                         </div>
                       </div>
-
-                      <div className="max-h-96 overflow-y-auto">
+                      <div className="max-h-80 overflow-y-auto p-2">
                         {favoriteProperties.length > 0 ? (
-                          <div className="p-2">
-                            {favoriteProperties.map((fav) => (
-                              <Link
-                                key={fav.id}
-                                to={`/properties/${fav.id}`}
-                                className={`flex items-center gap-3 p-3 rounded-xl transition-all group ${
-                                  theme === "dark"
-                                    ? "hover:bg-slate-700"
-                                    : "hover:bg-gray-50"
-                                }`}
-                                onClick={() => setFavoritesDropdownOpen(false)}
-                              >
-                                <img
-                                  src={
-                                    fav.coverImage || "/default-property.jpg"
-                                  }
-                                  alt={fav.title}
-                                  className="w-12 h-12 rounded-lg object-cover"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p
-                                    className={`font-semibold text-sm truncate ${
-                                      theme === "dark"
-                                        ? "text-white"
-                                        : "text-gray-900"
-                                    }`}
-                                  >
-                                    {fav.title}
-                                  </p>
-                                  <p
-                                    className={`text-sm ${
-                                      theme === "dark"
-                                        ? "text-slate-300"
-                                        : "text-gray-600"
-                                    }`}
-                                  >
-                                    ${fav.price.toLocaleString()}
-                                  </p>
-                                  <p
-                                    className={`text-xs ${
-                                      theme === "dark"
-                                        ? "text-slate-400"
-                                        : "text-gray-500"
-                                    }`}
-                                  >
-                                    {fav.city}, {fav.locality}
-                                  </p>
-                                </div>
-                              </Link>
-                            ))}
-                          </div>
+                          favoriteProperties.map((fav) => (
+                            <Link
+                              key={fav.id}
+                              to={`/properties/${fav.id}`}
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                              onClick={() => setFavoritesDropdownOpen(false)}
+                            >
+                              <img
+                                src={fav.coverImage || "/default-property.jpg"}
+                                alt={fav.title}
+                                className="w-12 h-12 rounded-lg object-cover"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm truncate">
+                                  {fav.title}
+                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400">
+                                  ${fav.price.toLocaleString()}
+                                </p>
+                              </div>
+                            </Link>
+                          ))
                         ) : (
                           <div className="p-6 text-center">
-                            <Heart
-                              className={`w-12 h-12 mx-auto mb-3 ${
-                                theme === "dark"
-                                  ? "text-slate-700"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                            <p
-                              className={`font-medium ${
-                                theme === "dark"
-                                  ? "text-slate-400"
-                                  : "text-gray-500"
-                              }`}
-                            >
+                            <Heart className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                            <p className="text-sm text-gray-500">
                               No saved properties
-                            </p>
-                            <p
-                              className={`text-sm mt-1 ${
-                                theme === "dark"
-                                  ? "text-slate-500"
-                                  : "text-gray-400"
-                              }`}
-                            >
-                              Start saving your favorites
                             </p>
                           </div>
                         )}
                       </div>
-
-                      <div
-                        className={`p-4 border-t ${
-                          theme === "dark"
-                            ? "border-slate-700"
-                            : "border-gray-100"
-                        }`}
-                      >
+                      <div className="p-2 border-t border-gray-200 dark:border-gray-700">
                         <Link
                           to="/saved-properties"
-                          className={`w-full py-2.5 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${styles.button}`}
+                          className={`w-full py-2 px-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${styles.button}`}
                           onClick={() => setFavoritesDropdownOpen(false)}
                         >
-                          <Heart className="w-4 h-4" />
-                          View All Saved
+                          View All
                         </Link>
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Appointments Button */}
-                <button
-                  onClick={onShowAppointments}
-                  className={`p-2.5 rounded-xl transition-all ${styles.iconButton}`}
-                >
-                  <Calendar className="w-6 h-6" />
-                </button>
 
                 {/* User Menu */}
                 <div className="relative">
@@ -352,99 +355,51 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                         theme === "dark"
                           ? "bg-gradient-to-br from-red-500 to-red-600"
                           : "bg-gradient-to-br from-blue-500 to-purple-500"
-                      } rounded-full flex items-center justify-center text-white font-bold text-sm`}
+                      } rounded-full flex items-center justify-center text-white font-bold text-xs`}
                     >
                       {user.firstName?.[0]}
                       {user.lastName?.[0]}
                     </div>
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-3.5 h-3.5 hidden sm:block" />
                   </button>
 
                   {userMenuOpen && (
                     <div
-                      className={`absolute right-0 top-full mt-2 w-56 rounded-2xl shadow-2xl border backdrop-blur-xl z-50 ${styles.dropdown}`}
+                      className={`absolute right-0 top-full mt-2 w-56 rounded-xl shadow-2xl border backdrop-blur-xl z-50 ${styles.dropdown}`}
                     >
-                      <div
-                        className={`p-4 border-b ${
-                          theme === "dark"
-                            ? "border-slate-700"
-                            : "border-gray-100"
-                        }`}
-                      >
-                        <p
-                          className={`font-bold ${
-                            theme === "dark" ? "text-white" : "text-gray-900"
-                          }`}
-                        >
+                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                        <p className="font-bold text-sm">
                           {user.firstName} {user.lastName}
                         </p>
-                        <p
-                          className={`text-sm ${
-                            theme === "dark"
-                              ? "text-slate-400"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {user.email}
-                        </p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
-
                       <div className="p-2">
-                        {/* Dashboard Menu Item - Show for non-BUYER roles */}
                         {hasDashboardAccess && (
                           <button
                             onClick={() => handleMenuNavigate("/dashboard")}
-                            className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left ${
-                              theme === "dark"
-                                ? "hover:bg-slate-700 text-slate-300"
-                                : "hover:bg-gray-50 text-gray-700"
-                            }`}
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all w-full text-left text-sm"
                           >
-                            <LayoutDashboard className="w-5 h-5" />
-                            <span className="font-medium">Dashboard</span>
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
                           </button>
                         )}
-
                         <button
                           onClick={() =>
                             handleMenuNavigate("/saved-properties")
                           }
-                          className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left ${
-                            theme === "dark"
-                              ? "hover:bg-slate-700 text-slate-300"
-                              : "hover:bg-gray-50 text-gray-700"
-                          }`}
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all w-full text-left text-sm"
                         >
-                          <Heart className="w-5 h-5" />
-                          <span className="font-medium">Saved Properties</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleMenuNavigate("/my-appointments")}
-                          className={`flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left ${
-                            theme === "dark"
-                              ? "hover:bg-slate-700 text-slate-300"
-                              : "hover:bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          <Calendar className="w-5 h-5" />
-                          <span className="font-medium">My Appointments</span>
+                          <Heart className="w-4 h-4" />
+                          Saved Properties
                         </button>
                       </div>
-
-                      <div
-                        className={`p-2 border-t ${
-                          theme === "dark"
-                            ? "border-slate-700"
-                            : "border-gray-100"
-                        }`}
-                      >
+                      <div className="p-2 border-t border-gray-200 dark:border-gray-700">
                         <button
                           onClick={handleLogout}
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-red-600 transition-all w-full"
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-50 text-red-600 transition-all w-full text-sm"
                         >
-                          <LogOut className="w-5 h-5" />
-                          <span className="font-medium">Sign Out</span>
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
                         </button>
                       </div>
                     </div>
@@ -452,16 +407,16 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/signin"
-                  className={`hidden sm:block px-6 py-2.5 font-bold rounded-xl transition-all ${styles.buttonSecondary}`}
+                  className={`hidden sm:block px-4 py-2 text-sm font-bold rounded-xl transition-all ${styles.buttonSecondary}`}
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className={`px-6 py-3 font-bold rounded-xl hover:scale-105 transition-all duration-300 flex items-center gap-2 ${styles.button}`}
+                  className={`px-4 py-2 text-sm font-bold rounded-xl transition-all ${styles.button}`}
                 >
                   Get Started
                 </Link>
@@ -471,12 +426,12 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`lg:hidden p-2.5 rounded-xl transition-all ${styles.iconButton}`}
+              className={`lg:hidden p-2 rounded-xl transition-all ${styles.iconButton}`}
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               ) : (
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5" />
               )}
             </button>
           </div>
@@ -485,7 +440,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div
-            className={`lg:hidden border-t shadow-xl ${
+            className={`lg:hidden border-t ${
               theme === "dark"
                 ? "bg-slate-900 border-slate-800"
                 : "bg-white border-gray-200"
@@ -497,51 +452,22 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                   <a
                     key={item}
                     href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                    className={`block px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
+                    className={`block px-3 py-2 font-semibold text-sm rounded-lg transition-all ${styles.navLink}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item}
                   </a>
                 )
               )}
-
-              {user && (
-                <>
-                  <div
-                    className={`border-t mt-4 pt-4 ${
-                      theme === "dark" ? "border-slate-800" : "border-gray-200"
-                    }`}
-                  >
-                    {/* Dashboard Link in Mobile Menu */}
-                    {hasDashboardAccess && (
-                      <Link
-                        to="/dashboard"
-                        className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        <LayoutDashboard className="w-5 h-5" />
-                        Dashboard
-                      </Link>
-                    )}
-
-                    <Link
-                      to="/saved-properties"
-                      className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Heart className="w-5 h-5" />
-                      Saved Properties
-                    </Link>
-                    <Link
-                      to="/my-appointments"
-                      className={`flex items-center gap-3 px-4 py-3 font-semibold rounded-xl transition-all ${styles.navLink}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Calendar className="w-5 h-5" />
-                      My Appointments
-                    </Link>
-                  </div>
-                </>
+              {user && hasDashboardAccess && (
+                <Link
+                  to="/dashboard"
+                  className={`flex items-center gap-2 px-3 py-2 font-semibold text-sm rounded-lg transition-all ${styles.navLink}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
               )}
             </div>
           </div>

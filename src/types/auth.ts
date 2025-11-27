@@ -1,4 +1,5 @@
-import type { Permission, Role, User } from "./user";
+import type { Permission, Role } from "./rbac";
+import type { User } from "./user";
 
 export interface LoginRequest {
   email: string;
@@ -12,7 +13,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: Role;
+  role: string;
 }
 
 export interface AuthResponse {

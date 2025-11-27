@@ -511,9 +511,9 @@ export const AppointmentsCalendar: React.FC = () => {
     {},
     {
       skip:
-        user?.role !== "ADMIN" &&
-        user?.role !== "SALES_MANAGER" &&
-        user?.role !== "SALES_AGENT",
+        user?.role.name !== "ADMIN" &&
+        user?.role.name !== "SALES_MANAGER" &&
+        user?.role.name !== "SALES_AGENT",
     }
   );
 
@@ -524,7 +524,7 @@ export const AppointmentsCalendar: React.FC = () => {
   } = useGetSuperAdminAppointmentsQuery(
     {},
     {
-      skip: user?.role !== "SUPER_ADMIN",
+      skip: user?.role.name !== "SUPER_ADMIN",
     }
   );
 
@@ -535,14 +535,14 @@ export const AppointmentsCalendar: React.FC = () => {
   } = useGetPropertyOwnerAppointmentsQuery(
     { ownerId: user?.id || "" },
     {
-      skip: user?.role !== "PROPERTY_OWNER",
+      skip: user?.role.name !== "PROPERTY_OWNER",
     }
   );
 
   // Determine which events to show based on role
   const events = useMemo(() => {
-    if (user?.role === "SUPER_ADMIN") return superAdminEvents || [];
-    if (user?.role === "PROPERTY_OWNER") return ownerEvents || [];
+    if (user?.role.name === "SUPER_ADMIN") return superAdminEvents || [];
+    if (user?.role.name === "PROPERTY_OWNER") return ownerEvents || [];
     return adminEvents || [];
   }, [user?.role, adminEvents, superAdminEvents, ownerEvents]);
 
@@ -581,9 +581,9 @@ export const AppointmentsCalendar: React.FC = () => {
 
   const handleSuccess = (): void => {
     // Refetch based on role
-    if (user?.role === "SUPER_ADMIN") {
+    if (user?.role.name === "SUPER_ADMIN") {
       refetchSuperAdmin();
-    } else if (user?.role === "PROPERTY_OWNER") {
+    } else if (user?.role.name === "PROPERTY_OWNER") {
       refetchOwner();
     } else {
       refetchAdmin();

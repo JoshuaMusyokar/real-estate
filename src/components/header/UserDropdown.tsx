@@ -100,7 +100,9 @@ export default function UserDropdown() {
             {user?.email}
           </span>
           <span className="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400 capitalize">
-            {user?.role ? user.role.toLowerCase().replace("_", " ") : "User"}
+            {user?.role
+              ? user.role.name.toLowerCase().replace("_", " ")
+              : "User"}
           </span>
         </div>
 

@@ -7,6 +7,7 @@ import type {
 import { useAssignLeadMutation } from "../../../services/leadApi";
 import { useEffect, useState } from "react";
 import { useGetAgentsForAssignmentQuery } from "../../../services/agentApi";
+import { useToast } from "../../../hooks/useToast";
 
 interface AssignLeadModalProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export const AssignLeadModal: React.FC<AssignLeadModalProps> = ({
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
-
+  const { success, error: showError } = useToast();
   const { data, isLoading: isLoadingAgents } = useGetAgentsForAssignmentQuery({
     city: lead.city,
     propertyType: lead.propertyType as PropertyType,
@@ -57,9 +58,11 @@ export const AssignLeadModal: React.FC<AssignLeadModalProps> = ({
       await assignLead({ id: lead.id, agentId: selectedAgentId }).unwrap();
       onSuccess();
       onClose();
+      success("Success", "Lead Assigned Successfully");
     } catch (err) {
       console.error("Failed to assign lead:", err);
-      setError("Failed to assign lead. Please try again.");
+      showError("Failed", "Failed to assign lead. Please try again.");
+      // setError("Failed to assign lead. Please try again.");
     }
   };
 
@@ -79,7 +82,7 @@ export const AssignLeadModal: React.FC<AssignLeadModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
@@ -216,18 +219,18 @@ export const AssignLeadModal: React.FC<AssignLeadModalProps> = ({
                     </div>
                   </div>
 
-                  {agent.allowedCities.length > 0 && (
+                  {agent.cities.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <p className="text-xs text-gray-600 mb-1">
                         Allowed Cities:
                       </p>
                       <div className="flex flex-wrap gap-1">
-                        {agent.allowedCities.map((city) => (
+                        {agent.cities.map((city) => (
                           <span
-                            key={city}
+                            key={city.id}
                             className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
                           >
-                            {city}
+                            {city.name}
                           </span>
                         ))}
                       </div>

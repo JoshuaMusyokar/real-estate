@@ -91,7 +91,7 @@ export default function UserMetaCard() {
 
   const getRoleDisplay = () => {
     if (user?.role) {
-      return user.role
+      return user.role.name
         .split("_")
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
         .join(" ");

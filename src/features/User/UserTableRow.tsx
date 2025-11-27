@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Role, UserResponse, UserStatus } from "../../types";
+import type { UserResponse, UserStatus } from "../../types";
 import {
   Edit,
   Eye,
@@ -10,6 +10,7 @@ import {
   UserX,
 } from "lucide-react";
 import { userStatuses } from "../../utils/user-utils";
+// import { useGetRolesQuery } from "../../services/rbacApi";
 
 export const UserTableRow: React.FC<{
   user: UserResponse;
@@ -30,6 +31,20 @@ export const UserTableRow: React.FC<{
 }) => {
   const [showActions, setShowActions] = useState(false);
 
+  // Fetch roles from API
+  // const { data: rolesData } = useGetRolesQuery({
+  //   page: 1,
+  //   limit: 100,
+  // });
+
+  // const roles = rolesData?.data || [];
+
+  // Get role object from user's roleId
+  const getUserRole = () => {
+    return user.role;
+    // return roles.find((role) => role.id === user.role.id) || user.role;
+  };
+
   const getStatusColor = (status: UserStatus) => {
     const colors = {
       ACTIVE:
@@ -42,8 +57,9 @@ export const UserTableRow: React.FC<{
     return colors[status];
   };
 
-  const getRoleColor = (role: Role) => {
-    const colors = {
+  // Updated getRoleColor to work with role object
+  const getRoleColor = (roleName: string) => {
+    const colors: Record<string, string> = {
       SUPER_ADMIN:
         "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
       ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -61,8 +77,10 @@ export const UserTableRow: React.FC<{
       AGENT_EXTERNAL:
         "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
     };
-    return colors[role] || "bg-gray-100 text-gray-800";
+    return colors[roleName] || "bg-gray-100 text-gray-800";
   };
+
+  const currentRole = getUserRole();
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -93,17 +111,25 @@ export const UserTableRow: React.FC<{
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {user.email}
             </div>
+            {user.manager && (
+              <span className="inline-flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <UserCheck size={12} className="mr-1 text-blue-500" />
+                Manager: {user.manager.firstName} {user.manager.lastName}
+              </span>
+            )}
           </div>
         </div>
       </td>
       <td className="px-6 py-4">
-        <span
-          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-            user.role
-          )}`}
-        >
-          {user.role.replace("_", " ")}
-        </span>
+        {user.roleId && (
+          <span
+            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
+              currentRole.name
+            )}`}
+          >
+            {currentRole.name}
+          </span>
+        )}
       </td>
       <td className="px-6 py-4">
         <select

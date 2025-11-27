@@ -172,7 +172,7 @@ export const Template4PropertyCard: FC<Template4PropertyCardProps> = ({
         <div className="flex items-center gap-1 text-gray-600 text-sm mb-3">
           <MapPin className="w-4 h-4 flex-shrink-0" />
           <span className="line-clamp-1">
-            {property.locality}, {property.city}
+            {property.locality}, {property.city.name}
           </span>
         </div>
 

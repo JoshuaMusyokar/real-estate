@@ -72,7 +72,7 @@ export default function SignInForm() {
       if (isChecked) {
         localStorage.setItem("keepLoggedIn", "true");
       }
-      if (result.user.role === "BUYER") {
+      if (result.user.role.name === "BUYER") {
         navigate(from, { replace: true });
       } else {
         navigate("/dashboard", { replace: true });

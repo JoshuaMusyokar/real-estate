@@ -14,6 +14,7 @@ import type {
   UserFavoritesResponse,
   PropertySearchFilters,
   PropertyUpdateRequest,
+  ApiResponse,
 } from "../types";
 
 export const propertyApi = baseApi.injectEndpoints({
@@ -48,15 +49,20 @@ export const propertyApi = baseApi.injectEndpoints({
       PropertyResponse,
       { id: string; data: FormData | PropertyUpdateRequest }
     >({
-      query: ({ id, data }) => ({
-        url: `/properties/${id}`,
-        method: "PUT",
-        body: data,
-        // If data is FormData, don't set Content-Type
-        ...(!(data instanceof FormData) && {
-          headers: { "Content-Type": "application/json" },
-        }),
-      }),
+      query: ({ id, data }) => {
+        const isForm = data instanceof FormData;
+        console.log("fasdfsd", data instanceof FormData, data);
+
+        return {
+          url: `/properties/${id}`,
+          method: "PUT",
+          body: data,
+          // body: isForm ? data : JSON.stringify(data),
+          // ...(!isForm && {
+          //   headers: { "Content-Type": "application/json" },
+          // }),
+        };
+      },
       invalidatesTags: (result, error, { id }) => [
         { type: "Property", id },
         "Property",
@@ -178,7 +184,7 @@ export const propertyApi = baseApi.injectEndpoints({
 
     // Get categorized properties for home page
     getCategorizedProperties: builder.query<
-      CategorizedPropertiesResponse,
+      ApiResponse<CategorizedPropertiesResponse>,
       { limit?: number }
     >({
       query: ({ limit = 8 } = {}) =>

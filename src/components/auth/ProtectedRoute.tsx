@@ -1,10 +1,9 @@
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "../../hooks/useAuth";
-import { type Role } from "../../types";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: Role;
+  requiredRole?: string;
   fallbackPath?: string;
 }
 
@@ -22,7 +21,7 @@ export default function ProtectedRoute({
   }
 
   // Check role-based access if requiredRole is specified
-  if (requiredRole && user?.role !== requiredRole) {
+  if (requiredRole && user?.role.name !== requiredRole) {
     // Redirect to unauthorized page or home based on user role
     const redirectPath = user?.role ? "/unauthorized" : "/";
     return <Navigate to={redirectPath} replace />;

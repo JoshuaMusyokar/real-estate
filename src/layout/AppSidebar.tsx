@@ -20,10 +20,22 @@ import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
 import {
   BarChart2,
+  BarChart3,
   Briefcase,
   Building2,
+  Calendar,
+  Contact2,
+  LayoutDashboard,
+  ListCheck,
+  Map,
+  MapPin,
   Settings2,
+  ShieldCheck,
   SlidersHorizontal,
+  TowerControl,
+  User,
+  UserCog,
+  Users,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useAppSelector } from "../hooks";
@@ -37,13 +49,19 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+  // ----------------------------
+  // PRIMARY SECTION
+  // ----------------------------
   {
-    icon: <GridIcon />,
+    icon: <LayoutDashboard />,
     name: "Dashboard",
-    subItems: [{ name: "Dashboard", path: "/", pro: false }],
+    subItems: [{ name: "Overview", path: "/", pro: false }],
     roles: ["*"],
   },
 
+  // ----------------------------
+  // PROPERTY MANAGEMENT
+  // ----------------------------
   {
     icon: <Building2 />,
     name: "Properties",
@@ -51,66 +69,83 @@ const navItems: NavItem[] = [
     roles: ["*"],
   },
   {
-    icon: <SlidersHorizontal />,
+    icon: <MapPin />,
+    name: "Cities",
+    path: "/cities",
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    icon: <Map />,
+    name: "Localities",
+    path: "/localities",
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    icon: <ListCheck />,
     name: "Amenities",
     path: "/amenities",
     roles: ["*"],
   },
+
+  // ----------------------------
+  // LEADS / CRM
+  // ----------------------------
   {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-  {
-    icon: <BoxCubeIcon />,
+    icon: <Contact2 />,
     name: "Leads",
     subItems: [
       { name: "All Leads", path: "/crm/leads" },
-      { name: "Pipeline(Kanban)", path: "/crm/pipeline" },
+      { name: "Pipeline (Kanban)", path: "/crm/pipeline" },
     ],
+    roles: ["*"],
   },
   {
-    icon: <CalenderIcon />,
+    icon: <Users />,
+    name: "Agents",
+    path: "/agents",
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
+
+  // ----------------------------
+  // PRODUCTIVITY & ANALYTICS
+  // ----------------------------
+  {
+    icon: <Calendar />,
     name: "Calendar",
     path: "/calendar",
-
     roles: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    icon: <Briefcase />,
-    name: "Agents",
-    roles: ["ADMIN", "SUPER_ADMIN"],
-    path: "/agents",
-  },
-  {
+    icon: <BarChart3 />,
     name: "Analytics",
     path: "/analytics",
-    icon: <BarChart2 />,
     roles: ["ADMIN", "SUPER_ADMIN", "SALES_MANAGER"],
   },
-  // {
-  //   name: "Forms",
-  //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
+
+  // ----------------------------
+  // PROFILE
+  // ----------------------------
+  {
+    icon: <User />,
+    name: "User Profile",
+    path: "/profile",
+    roles: ["*"],
+  },
+
+  // ----------------------------
+  // SYSTEM / SECURITY
+  // ----------------------------
+  {
+    icon: <ShieldCheck />,
+    name: "RBAC",
+    path: "/rbac",
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
 ];
 
 const manage: NavItem[] = [
   {
-    icon: <PlugInIcon />,
+    icon: <UserCog />,
     name: "Manage Users",
     roles: ["ADMIN", "SUPER_ADMIN"],
     subItems: [{ name: "Users", path: "/users" }],
@@ -119,7 +154,7 @@ const manage: NavItem[] = [
     icon: <Settings2 />,
     name: "Settings",
     roles: ["ADMIN", "SUPER_ADMIN"],
-    subItems: [{ name: "Landing", path: "/landing" }],
+    subItems: [{ name: "Landing Page", path: "/landing" }],
   },
 ];
 
@@ -418,10 +453,11 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(
-                filterNavItemsByRole(navItems, user.role),
-                "main"
-              )}
+              {user.roleId &&
+                renderMenuItems(
+                  filterNavItemsByRole(navItems, user.role.name),
+                  "main"
+                )}
             </div>
             <div className="">
               <h2
@@ -437,14 +473,15 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots />
                 )}
               </h2>
-              {renderMenuItems(
-                filterNavItemsByRole(manage, user.role),
-                "others"
-              )}
+              {user.roleId &&
+                renderMenuItems(
+                  filterNavItemsByRole(manage, user.role.name),
+                  "others"
+                )}
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
     </aside>
   );

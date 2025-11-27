@@ -22,7 +22,7 @@ interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: Role;
+  role: string;
 }
 type FormErrors = {
   [K in keyof RegisterRequest]?: string;

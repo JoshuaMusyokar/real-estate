@@ -13,6 +13,7 @@ import { StatusBadge } from "./StatusBadge";
 import { ReviewPropertyModal } from "./ReviewPropertyModal";
 import { QuickReviewActions } from "./QuickReviewAction";
 import { getCurrencySymbol } from "../../utils/currency-utils";
+import { useAuth } from "../../hooks/useAuth";
 
 interface PropertyCardProps {
   property: Property;
@@ -29,6 +30,7 @@ export const PropertyCard: FC<PropertyCardProps> = ({
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const { user } = useAuth();
   // const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   const coverImage =
@@ -111,7 +113,7 @@ export const PropertyCard: FC<PropertyCardProps> = ({
         <div className="flex items-center gap-2 text-gray-600 text-sm mb-4">
           <MapPin className="w-4 h-4 flex-shrink-0" />
           <span className="line-clamp-1">
-            {property.locality}, {property.city}
+            {property.locality}, {property.city.name}
           </span>
         </div>
 
@@ -153,12 +155,15 @@ export const PropertyCard: FC<PropertyCardProps> = ({
             {new Date(property.createdAt).toLocaleDateString()}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 text-xs">
-          <QuickReviewActions
-            property={property}
-            /*onSuccess={() => refetch()}*/ onSuccess={() => {}}
-          />
-        </div>
+
+        {user?.role.name === "ADMIN" || user?.role.name === "SUPER_ADMIN" ? (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 text-xs">
+            <QuickReviewActions
+              property={property}
+              /*onSuccess={() => refetch()}*/ onSuccess={() => {}}
+            />
+          </div>
+        ) : null}
       </div>
       <ReviewPropertyModal
         isOpen={showReviewModal}

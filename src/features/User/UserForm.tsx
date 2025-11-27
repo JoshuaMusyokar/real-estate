@@ -1,16 +1,24 @@
-// TODO: CONSIDER REFACTORING THE FORM
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { X, Save, Eye, EyeOff } from "lucide-react";
+import { X, Save, Eye, EyeOff, Loader2, MapPin, Building } from "lucide-react";
 import {
   useCreateUserMutation,
+  useGetUsersQuery,
   useUpdateUserMutation,
 } from "../../services/userApi";
+import { useGetRolesQuery } from "../../services/rbacApi";
+import {
+  useGetCitiesQuery,
+  useGetLocalitiesQuery,
+} from "../../services/locationApi";
 import type {
   UserResponse,
   CreateUserRequest,
   UpdateUserRequest,
   Role,
   UserStatus,
+  City,
+  Locality,
 } from "../../types";
 
 interface UserFormProps {
@@ -27,12 +35,12 @@ interface FormData {
   phone: string;
   password: string;
   confirmPassword: string;
-  role: Role;
+  roleId: string;
   status: UserStatus;
-  avatar: string;
-  allowedCities: string[];
-  allowedLocalities: string[];
-  permissions: any;
+  avatar?: string;
+  cities: string[];
+  localities: string[];
+  managerId?: string;
 }
 
 interface FormErrors {
@@ -42,82 +50,15 @@ interface FormErrors {
   phone?: string;
   password?: string;
   confirmPassword?: string;
-  role?: string;
-  allowedCities?: string;
-  allowedLocalities?: string;
+  roleId?: string;
+  cities?: string;
 }
-
-const ROLE_OPTIONS: { value: Role; label: string; description: string }[] = [
-  {
-    value: "SUPER_ADMIN",
-    label: "Super Admin",
-    description: "Full system access",
-  },
-  { value: "ADMIN", label: "Admin", description: "Administrative access" },
-  {
-    value: "SALES_MANAGER",
-    label: "Sales Manager",
-    description: "Manage sales team and leads",
-  },
-  {
-    value: "SALES_AGENT",
-    label: "Sales Agent",
-    description: "Handle leads and appointments",
-  },
-  {
-    value: "MARKETING",
-    label: "Marketing",
-    description: "Marketing campaigns and analytics",
-  },
-  { value: "VIEWER", label: "Viewer", description: "Read-only access" },
-  {
-    value: "PROPERTY_OWNER",
-    label: "Property Owner",
-    description: "Submit and manage properties",
-  },
-  {
-    value: "BUYER",
-    label: "Buyer",
-    description: "Browse properties and schedule viewings",
-  },
-  {
-    value: "AGENT_EXTERNAL",
-    label: "External Agent",
-    description: "External partner agent",
-  },
-];
 
 const STATUS_OPTIONS: { value: UserStatus; label: string }[] = [
   { value: "ACTIVE", label: "Active" },
   { value: "INACTIVE", label: "Inactive" },
   { value: "SUSPENDED", label: "Suspended" },
   { value: "PENDING_VERIFICATION", label: "Pending Verification" },
-];
-
-const CITY_OPTIONS = [
-  "New York",
-  "Los Angeles",
-  "Chicago",
-  "Houston",
-  "Phoenix",
-  "Philadelphia",
-  "San Antonio",
-  "San Diego",
-  "Dallas",
-  "San Jose",
-];
-
-const LOCALITY_OPTIONS = [
-  "Manhattan",
-  "Brooklyn",
-  "Queens",
-  "Bronx",
-  "Staten Island",
-  "Downtown",
-  "Uptown",
-  "Midtown",
-  "Financial District",
-  "Upper East Side",
 ];
 
 export const UserForm: React.FC<UserFormProps> = ({
@@ -133,12 +74,10 @@ export const UserForm: React.FC<UserFormProps> = ({
     phone: "",
     password: "",
     confirmPassword: "",
-    role: "BUYER",
+    roleId: "",
     status: "PENDING_VERIFICATION",
-    avatar: "",
-    allowedCities: [],
-    allowedLocalities: [],
-    permissions: {},
+    cities: [],
+    localities: [],
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -146,9 +85,41 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [selectedCityId, setSelectedCityId] = useState<string>("");
+  const [selectedCityForLocalities, setSelectedCityForLocalities] =
+    useState<string>("");
 
+  // API Hooks
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
+
+  const { data: rolesData, isLoading: isLoadingRoles } = useGetRolesQuery({
+    page: 1,
+    limit: 100,
+  });
+  const { data: managersData, isLoading: isLoadingManagers } = useGetUsersQuery(
+    {
+      roleNames: ["BUILDER", "AGENT", "OWNER"],
+      status: ["ACTIVE"],
+      page: 1,
+      limit: 100,
+    }
+  );
+  const { data: citiesData, isLoading: isLoadingCities } = useGetCitiesQuery({
+    page: 1,
+    limit: 100,
+  });
+
+  const { data: localitiesData, isLoading: isLoadingLocalities } =
+    useGetLocalitiesQuery(
+      { cityId: selectedCityForLocalities },
+      { skip: !selectedCityForLocalities }
+    );
+
+  const roles = rolesData?.data || [];
+  const cities = citiesData?.data || [];
+  const localities = localitiesData?.data || [];
+  const managers = managersData?.users || [];
 
   useEffect(() => {
     if (user) {
@@ -159,13 +130,17 @@ export const UserForm: React.FC<UserFormProps> = ({
         phone: user.phone || "",
         password: "",
         confirmPassword: "",
-        role: user.role,
+        roleId: user.role?.id || "",
         status: user.status,
-        avatar: user.avatar || "",
-        allowedCities: user.allowedCities || [],
-        allowedLocalities: user.allowedLocalities || [],
-        permissions: user.permissions || {},
+        avatar: user.avatar ?? undefined,
+        cities: user.cities?.map((city) => city.id) || [],
+        localities: user.localities?.map((locality) => locality.id) || [],
       });
+
+      // Set first city as selected for localities dropdown
+      if (user.cities && user.cities.length > 0) {
+        setSelectedCityId(user.cities[0].id);
+      }
     } else {
       // Reset form for new user
       setFormData({
@@ -175,13 +150,12 @@ export const UserForm: React.FC<UserFormProps> = ({
         phone: "",
         password: "",
         confirmPassword: "",
-        role: "BUYER",
+        roleId: "",
         status: "PENDING_VERIFICATION",
-        avatar: "",
-        allowedCities: [],
-        allowedLocalities: [],
-        permissions: {},
+        cities: [],
+        localities: [],
       });
+      setSelectedCityId("");
     }
     setErrors({});
     setTouched(new Set());
@@ -235,11 +209,11 @@ export const UserForm: React.FC<UserFormProps> = ({
           return "Passwords do not match";
         break;
 
-      case "role":
+      case "roleId":
         if (!value) return "Role is required";
         break;
 
-      case "allowedCities":
+      case "cityIds":
         if (value.length === 0) return "At least one city must be selected";
         break;
 
@@ -276,6 +250,15 @@ export const UserForm: React.FC<UserFormProps> = ({
         [field]: error,
       }));
     }
+
+    if (field === "cities") {
+      setFormData((prev) => ({ ...prev, localities: [] }));
+      if (value.length > 0) {
+        setSelectedCityId(value[0]); // Use first selected city for localities
+      } else {
+        setSelectedCityId("");
+      }
+    }
   };
 
   const handleFieldBlur = (field: string) => {
@@ -287,10 +270,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     }));
   };
 
-  const handleArrayToggle = (
-    field: "allowedCities" | "allowedLocalities",
-    value: string
-  ) => {
+  const handleArrayToggle = (field: "cities" | "localities", value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: prev[field].includes(value)
@@ -305,6 +285,8 @@ export const UserForm: React.FC<UserFormProps> = ({
         [field]: error,
       }));
     }
+
+    console.log(formData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -325,11 +307,11 @@ export const UserForm: React.FC<UserFormProps> = ({
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
         phone: formData.phone.trim() || undefined,
-        role: formData.role,
+        roleId: formData.roleId,
         status: formData.status,
-        allowedCities: formData.allowedCities,
-        allowedLocalities: formData.allowedLocalities,
-        permissions: formData.permissions,
+        cities: formData.cities,
+        localities: formData.localities,
+        managerId: formData.managerId,
       };
 
       if (formData.avatar) {
@@ -346,11 +328,27 @@ export const UserForm: React.FC<UserFormProps> = ({
           id: user.id,
           data: submitData as UpdateUserRequest,
         }).unwrap();
+
+        // Assign cities and localities separately
+        if (formData.cities.length > 0) {
+          // You would call assignCitiesToUser mutation here
+        }
+        if (formData.localities.length > 0) {
+          // You would call assignLocalitiesToUser mutation here
+        }
       } else {
         if (onSubmit) {
           onSubmit(submitData as CreateUserRequest);
         } else {
           await createUser(submitData as CreateUserRequest).unwrap();
+
+          // Assign cities and localities separately after user creation
+          if (formData.cities.length > 0) {
+            // You would call assignCitiesToUser mutation here
+          }
+          if (formData.localities.length > 0) {
+            // You would call assignLocalitiesToUser mutation here
+          }
         }
       }
 
@@ -388,7 +386,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -396,7 +394,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
           >
             <X size={24} />
           </button>
@@ -524,7 +522,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
@@ -556,7 +554,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={20} />
@@ -585,23 +583,30 @@ export const UserForm: React.FC<UserFormProps> = ({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Role *
                 </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    handleFieldChange("role", e.target.value as Role)
-                  }
-                  onBlur={() => handleFieldBlur("role")}
-                  className={getFieldClassName("role")}
-                >
-                  {ROLE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.role && (
+                <div className="relative">
+                  <select
+                    value={formData.roleId}
+                    onChange={(e) =>
+                      handleFieldChange("roleId", e.target.value)
+                    }
+                    onBlur={() => handleFieldBlur("roleId")}
+                    className={getFieldClassName("roleId")}
+                    disabled={isLoadingRoles}
+                  >
+                    <option value="">Select a role</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                  {isLoadingRoles && (
+                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                  )}
+                </div>
+                {errors.roleId && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {errors.role}
+                    {errors.roleId}
                   </p>
                 )}
               </div>
@@ -626,6 +631,29 @@ export const UserForm: React.FC<UserFormProps> = ({
               </div>
             </div>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Manager
+            </label>
+            <div className="relative">
+              <select
+                value={formData.managerId || ""}
+                onChange={(e) => handleFieldChange("managerId", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                disabled={isLoadingManagers || managers.length === 0}
+              >
+                <option value="">Select a manager</option>
+                {managers.map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.firstName} {manager.lastName} ({manager.email})
+                  </option>
+                ))}
+              </select>
+              {isLoadingManagers && (
+                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+              )}
+            </div>
+          </div>
 
           {/* Access Control */}
           <div>
@@ -633,69 +661,147 @@ export const UserForm: React.FC<UserFormProps> = ({
               Access Control
             </h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Cities Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Allowed Cities *
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {CITY_OPTIONS.map((city) => (
-                    <label key={city} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.allowedCities.includes(city)}
-                        onChange={() =>
-                          handleArrayToggle("allowedCities", city)
-                        }
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {city}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {errors.allowedCities && (
+                {isLoadingCities ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-600 mr-2" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Loading cities...
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    {cities.map((city) => (
+                      <label
+                        key={city.id}
+                        className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.cities.includes(city.id)}
+                          onChange={() => handleArrayToggle("cities", city.id)}
+                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
+                            <MapPin className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                            {city.name}
+                          </div>
+                          {(city.state || city.country) && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {city.state && `${city.state}, `}
+                              {city.country}
+                            </p>
+                          )}
+                          {city._count && (
+                            <div className="flex items-center mt-1 text-xs text-gray-400">
+                              <span className="bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded">
+                                {city._count.properties || 0} properties
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+
+                    {cities.length === 0 && (
+                      <div className="col-span-full text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                        No cities available
+                      </div>
+                    )}
+                  </div>
+                )}
+                {errors.cities && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {errors.allowedCities}
+                    {errors.cities}
                   </p>
                 )}
               </div>
 
+              {/* Localities Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Allowed Localities
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  {LOCALITY_OPTIONS.map((locality) => (
-                    <label
-                      key={locality}
-                      className="flex items-center space-x-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.allowedLocalities.includes(locality)}
-                        onChange={() =>
-                          handleArrayToggle("allowedLocalities", locality)
-                        }
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {locality}
-                      </span>
+
+                {formData.cities.length === 0 ? (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Select City for Localities
                     </label>
-                  ))}
-                </div>
+                    <select
+                      value={selectedCityForLocalities}
+                      onChange={(e) =>
+                        setSelectedCityForLocalities(e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Select a city to view localities</option>
+                      {cities
+                        .filter((city) => formData.cities.includes(city.id))
+                        .map((city) => (
+                          <option key={city.id} value={city.id}>
+                            {city.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                ) : isLoadingLocalities ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-600 mr-2" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Loading localities...
+                    </span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    {localities.map((locality) => (
+                      <label
+                        key={locality.id}
+                        className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.localities.includes(locality.id)}
+                          onChange={() =>
+                            handleArrayToggle("localities", locality.id)
+                          }
+                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
+                            <Building className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                            {locality.name}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {locality.city.name}
+                          </p>
+                          {locality._count && (
+                            <div className="flex items-center mt-1 text-xs text-gray-400">
+                              <span className="bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded">
+                                {locality._count.users || 0} users
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+
+                    {localities.length === 0 && (
+                      <div className="col-span-full text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                        No localities available for selected cities
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Form-level error */}
-          {/* {errors._form && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-sm text-red-600 dark:text-red-400">{errors._form}</p>
-            </div>
-          )} */}
 
           {/* Actions */}
           <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
@@ -703,6 +809,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               type="button"
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
@@ -713,7 +820,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   {user ? "Updating..." : "Creating..."}
                 </>
               ) : (

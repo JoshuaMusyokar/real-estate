@@ -27,6 +27,7 @@ import { UserTable } from "./UserTable";
 import { UserTableSkeleton } from "./UserTableSkeleton";
 import { Pagination } from "./Pagination";
 import { roles, userStatuses } from "../../utils/user-utils";
+import { useGetRolesQuery } from "../../services/rbacApi";
 
 export const UserManagement: React.FC = () => {
   const [filters, setFilters] = useState<UserFilter>({});
@@ -38,6 +39,11 @@ export const UserManagement: React.FC = () => {
   const [viewingUser, setViewingUser] = useState<UserResponse | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const { data: rolesData } = useGetRolesQuery({
+    page: 1,
+    limit: 100,
+  });
+  const roles = rolesData?.data || [];
 
   const limit = 10;
 
@@ -238,15 +244,19 @@ export const UserManagement: React.FC = () => {
             <div className="flex flex-wrap gap-3">
               <FilterDropdown
                 label="Role"
-                options={roles}
-                value={filters.role}
-                onChange={(value) =>
-                  handleFilterChange({ role: value as Role[] })
-                }
+                options={roles.map((role) => ({
+                  id: role.id,
+                  name: role.name,
+                }))}
+                value={filters.roleId}
+                onChange={(value) => handleFilterChange({ roleId: value })}
               />
               <FilterDropdown
                 label="Status"
-                options={userStatuses}
+                options={userStatuses.map((status: string) => ({
+                  id: status,
+                  name: status,
+                }))}
                 value={filters.status}
                 onChange={(value) =>
                   handleFilterChange({ status: value as UserStatus[] })

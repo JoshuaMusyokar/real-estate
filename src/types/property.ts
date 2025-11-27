@@ -2,6 +2,8 @@
 // PROPERTY MANAGEMENT
 // ============================================
 
+import type { City, ResCity } from "./location";
+
 export type PropertyType =
   | "RESIDENTIAL"
   | "COMMERCIAL"
@@ -36,7 +38,7 @@ export type PropertyStatus =
   | "DRAFT";
 
 export type PropertyPurpose = "SALE" | "RENT" | "LEASE";
-
+// TODO: edit the city type to match the location service
 export interface Property {
   id: string;
   title: string;
@@ -47,9 +49,13 @@ export interface Property {
   status: PropertyStatus;
   price: number;
   priceNegotiable: boolean;
+  builderName: string | null;
+  reraNumber: string | null;
+  hasBalcony: boolean;
   currency: string;
   address: string;
-  city: string;
+  cityId: string;
+  city: City;
   locality: string;
   state: string | null;
   country: string | null;
@@ -95,6 +101,7 @@ export interface PropertyImage {
   propertyId: string;
   url: string;
   caption: string | null;
+  key: string | null;
   order: number;
   isCover: boolean;
   viewableUrl: string;
@@ -150,6 +157,9 @@ export interface PropertyCreateInput {
   address: string;
   city: string;
   locality: string;
+  builderName?: string;
+  reraNumber?: string;
+  hasBalcony: boolean;
   state?: string;
   country: string;
   zipCode?: string;
@@ -183,8 +193,12 @@ export interface PropertyCreateRequest {
   priceNegotiable: boolean;
   currency: string;
   address: string;
+  cityId: string;
   city: string;
   locality: string;
+  builderName: string | null;
+  reraNumber: string | null;
+  hasBalcony: boolean;
   state: string | null;
   country: string;
   zipCode: string | null;
@@ -211,9 +225,13 @@ export interface PropertyUpdateRequest {
   purpose?: PropertyPurpose;
   status?: PropertyStatus;
   price?: number;
+  builderName?: string;
+  reraNumber?: string;
+  hasBalcony?: boolean;
   priceNegotiable?: boolean;
   currency?: string;
   address?: string;
+  cityId?: string;
   city?: string;
   locality?: string;
   state?: string;
@@ -236,6 +254,8 @@ export interface PropertyUpdateRequest {
 export interface PropertyImageInput {
   url: string;
   order?: number;
+  caption?: string;
+  key?: string;
   isCover?: boolean;
 }
 
@@ -275,6 +295,7 @@ export interface PropertySearchFilters {
   subType?: PropertySubType;
   purpose?: PropertyPurpose;
   status?: PropertyStatus;
+  cityId?: string;
   city?: string[];
   locality?: string[];
   minPrice?: number;
@@ -310,24 +331,52 @@ export interface SimilarPropertiesResponse {
     id: string;
     title: string;
     price: number;
-    city: string;
+    city: ResCity;
+    currency: string;
     locality: string;
     propertyType: string;
     purpose: string;
     bedrooms?: number;
     bathrooms?: number;
     squareFeet?: number;
+    propertyOwnerRole?: string;
     coverImage?: string;
+    viewableCoverImage?: string;
     amenities: string[];
     isSaved: boolean;
   }>;
 }
-
+export interface CategorizedProperty {
+  id: string;
+  title: string;
+  price: number;
+  city: City;
+  locality: string;
+  propertyType: "RESIDENTIAL" | "COMMERCIAL" | string;
+  purpose: "SALE" | "RENT" | "LEASE" | string;
+  bedrooms: number;
+  bathrooms: number;
+  squareFeet: number;
+  featured: boolean;
+  coverImage: string;
+  viewableCoverImage: string;
+  amenities: string[];
+  createdAt: string;
+}
 export interface CategorizedPropertiesResponse {
-  featured: PropertiesResponse["data"];
-  recent: PropertiesResponse["data"];
-  luxury: PropertiesResponse["data"];
-  affordable: PropertiesResponse["data"];
+  featured: CategorizedProperty[];
+  recent: CategorizedProperty[];
+  luxury: CategorizedProperty[];
+  affordable: CategorizedProperty[];
+}
+export interface PropertyImageFile {
+  file?: File;
+  url?: string;
+  caption?: string;
+  key?: string;
+  order: number;
+  isCover: boolean;
+  preview?: string;
 }
 
 // export interface FavoriteProperty {

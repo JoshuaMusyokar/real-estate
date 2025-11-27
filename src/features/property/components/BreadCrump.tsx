@@ -12,7 +12,7 @@ export const Breadcrumb: React.FC<{ property: Property }> = ({ property }) => (
     </span>
     <ChevronRight className="w-4 h-4" />
     <span className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer">
-      {property.city}
+      {property.city.name}
     </span>
     <ChevronRight className="w-4 h-4" />
     <span className="text-gray-900 dark:text-white font-medium truncate">

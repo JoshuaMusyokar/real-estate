@@ -243,12 +243,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 Applied Filters
               </h4>
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                {filters.role && (
+                {filters.roleNames && (
                   <div>
                     Role:{" "}
-                    {Array.isArray(filters.role)
-                      ? filters.role.join(", ")
-                      : filters.role}
+                    {Array.isArray(filters.roleNames)
+                      ? filters.roleNames.join(", ")
+                      : filters.roleNames}
                   </div>
                 )}
                 {filters.status && (

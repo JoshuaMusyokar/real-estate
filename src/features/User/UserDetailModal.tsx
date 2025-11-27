@@ -11,7 +11,8 @@ import {
   UserX,
   Clock,
 } from "lucide-react";
-import type { UserResponse, Role, UserStatus } from "../../types";
+import type { UserResponse, UserStatus } from "../../types";
+// import { useGetRolesQuery } from "../../services/rbacApi";
 
 interface UserDetailsModalProps {
   user: UserResponse;
@@ -26,6 +27,22 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   onClose,
   onEdit,
 }) => {
+  // Fetch roles from API
+  // const { data: rolesData } = useGetRolesQuery({
+  //   page: 1,
+  //   limit: 100,
+  // });
+
+  // const roles = rolesData?.data || [];
+
+  // Get role name from user's roleId
+  const getUserRoleName = () => {
+    if (!user.roleId) return null;
+    return user.role.name;
+    // const userRole = roles.find((role) => role.id === user.role.id);
+    // return userRole?.name || user.role.name || "Unknown Role";
+  };
+
   const getStatusColor = (status: UserStatus) => {
     const colors = {
       ACTIVE:
@@ -38,8 +55,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     return colors[status];
   };
 
-  const getRoleColor = (role: Role) => {
-    const colors = {
+  const getRoleColor = (roleName: string) => {
+    const colors: Record<string, string> = {
       SUPER_ADMIN:
         "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
       ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -57,7 +74,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
       AGENT_EXTERNAL:
         "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
     };
-    return colors[role] || "bg-gray-100 text-gray-800";
+    return colors[roleName] || "bg-gray-100 text-gray-800";
   };
 
   const formatDate = (date: Date | string | undefined) => {
@@ -70,6 +87,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
       minute: "2-digit",
     });
   };
+
+  const roleName = getUserRoleName();
 
   if (!isOpen) return null;
 
@@ -128,14 +147,16 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
               {user.status === "PENDING_VERIFICATION" && <Clock size={14} />}
               {user.status.replace("_", " ")}
             </span>
-            <span
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(
-                user.role
-              )}`}
-            >
-              <Shield size={14} />
-              {user.role.replace("_", " ")}
-            </span>
+            {user.roleId && (
+              <span
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(
+                  roleName || ""
+                )}`}
+              >
+                <Shield size={14} />
+                {roleName}
+              </span>
+            )}
             {user.twoFactorEnabled && (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                 <Shield size={14} />
@@ -178,13 +199,32 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             </div>
           </div>
 
+          {user.manager && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Manager
+              </h3>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <UserCheck className="text-gray-400" size={20} />
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {user.manager.firstName} {user.manager.lastName}
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {user.manager.email}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Access Information */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Access Information
             </h3>
             <div className="space-y-4">
-              {user.allowedCities.length > 0 && (
+              {user.cities.length > 0 && (
                 <div className="flex items-start gap-3">
                   <MapPin className="text-gray-400 mt-0.5" size={20} />
                   <div>
@@ -192,12 +232,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                       Allowed Cities
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {user.allowedCities.map((city) => (
+                      {user.cities.map((city) => (
                         <span
-                          key={city}
+                          key={city.id}
                           className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm rounded"
                         >
-                          {city}
+                          {city.name}
                         </span>
                       ))}
                     </div>
@@ -205,7 +245,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 </div>
               )}
 
-              {user.allowedLocalities.length > 0 && (
+              {user.localities.length > 0 && (
                 <div className="flex items-start gap-3">
                   <MapPin className="text-gray-400 mt-0.5" size={20} />
                   <div>
@@ -213,12 +253,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                       Allowed Localities
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {user.allowedLocalities.map((locality) => (
+                      {user.localities.map((locality) => (
                         <span
-                          key={locality}
+                          key={locality.id}
                           className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm rounded"
                         >
-                          {locality}
+                          {locality.name}
                         </span>
                       ))}
                     </div>

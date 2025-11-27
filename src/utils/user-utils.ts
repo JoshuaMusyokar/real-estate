@@ -1,12 +1,10 @@
-import type { Role } from "../types";
-
 export const userStatuses = [
   "ACTIVE",
   "INACTIVE",
   "SUSPENDED",
   "PENDING_VERIFICATION",
 ];
-export const roles: Role[] = [
+export const roles: string[] = [
   "ADMIN",
   "AGENT_EXTERNAL",
   "BUYER",

@@ -1,11 +1,10 @@
 import { useAuth } from "../../hooks/useAuth";
-import { type Role } from "../../types";
 import ProtectedRoute from "./ProtectedRoute";
 import { Navigate } from "react-router";
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
-  allowedRoles: Role[];
+  allowedRoles: string[];
   fallbackPath?: string;
 }
 
@@ -17,7 +16,7 @@ export default function RoleBasedRoute({
   const { user } = useAuth();
 
   // Check if user has one of the allowed roles
-  const hasRequiredRole = user?.role && allowedRoles.includes(user.role);
+  const hasRequiredRole = user?.role && allowedRoles.includes(user.role.name);
 
   if (!hasRequiredRole) {
     // Redirect to unauthorized page or home based on user role
@@ -27,7 +26,7 @@ export default function RoleBasedRoute({
 
   return (
     <ProtectedRoute
-      requiredRole={hasRequiredRole ? user.role : undefined}
+      requiredRole={hasRequiredRole ? user.role.name : undefined}
       fallbackPath={fallbackPath}
     >
       {children}

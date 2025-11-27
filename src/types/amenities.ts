@@ -8,6 +8,14 @@ export interface AmenityCreateRequest {
   isActive?: boolean;
 }
 
+export interface AmenityFormData {
+  name: string;
+  icon: string;
+  category: string;
+  order: number;
+  isActive: boolean;
+}
+
 export interface AmenityUpdateRequest {
   name?: string;
   icon?: string;

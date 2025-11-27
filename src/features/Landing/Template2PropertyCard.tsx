@@ -151,7 +151,7 @@ export const Template2PropertyCard = ({
         <div className="flex items-start gap-2 mb-2">
           <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-gray-700 font-medium line-clamp-2">
-            {property.locality}, {property.city}
+            {property.locality}, {property.city.name}
           </div>
         </div>
 

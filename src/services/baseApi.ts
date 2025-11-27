@@ -9,10 +9,10 @@ import type {
 } from "@reduxjs/toolkit/query";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl:
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://api.bengalproperty.com/api/v1",
-  // baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
+  // baseUrl:
+  //   import.meta.env.VITE_API_BASE_URL ||
+  //   "https://api.bengalproperty.com/api/v1",
+  baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
     if (token) {
@@ -92,6 +92,17 @@ export const baseApi = createApi({
     "UserStats",
     "Agent",
     "LandingPage",
+    "Role",
+    "Permission",
+    "Location",
+    "City",
+    "Locality",
+    "LocalityRating",
+    "LocalityStats",
+    "PropertyReview",
+    "PropertyReviewStats",
+    "UserReviews",
+    "TopRatedProperties",
   ],
   baseQuery: baseQueryWithReauth,
   endpoints: () => ({}),

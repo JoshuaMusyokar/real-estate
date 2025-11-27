@@ -37,6 +37,7 @@ import {
   type PropertyType,
 } from "../../types";
 import {
+  useGetCategorizedPropertiesQuery,
   useGetUserFavoritesQuery,
   useSearchPropertiesQuery,
 } from "../../services/propertyApi";
@@ -44,6 +45,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { PublicHeader } from "../../layout/PublicHeader";
 import { useAuth } from "../../hooks/useAuth";
 import { Footer } from "../../layout/Footer";
+import { useDefaultCity } from "../../hooks/useDefaultCity";
+import { CategorizedPropertySection } from "./CategorizedSection";
 
 // Import types and hooks from parent context
 // These will be available through the React component props
@@ -59,6 +62,9 @@ export const PropertyLandingPage = () => {
   const { data: favouriteData, refetch } = useGetUserFavoritesQuery(undefined, {
     skip: !isAuthenticated,
   });
+  // const [selectedCityId, setSelectedCityId] = useState<string>("");
+  const { selectedCityId, selectedCityName, handleCityChange } =
+    useDefaultCity();
 
   const { data, isLoading } = useSearchPropertiesQuery({
     ...filters,
@@ -67,9 +73,25 @@ export const PropertyLandingPage = () => {
     sortOrder: "desc",
     status: "AVAILABLE",
   });
+  const { data: categorizedData, isLoading: isCategorizedLoading } =
+    useGetCategorizedPropertiesQuery({
+      limit: 8,
+    });
   useEffect(() => {
     if (isAuthenticated) refetch();
   }, [isAuthenticated, refetch]);
+  useEffect(() => {
+    if (selectedCityId) {
+      setFilters((prev) => ({ ...prev, cityId: selectedCityId }));
+    }
+  }, [selectedCityId]);
+  // useEffect(() => {
+  //   // Get default city from localStorage or use first city
+  //   const savedCityId = localStorage.getItem("selectedCityId");
+  //   if (savedCityId) {
+  //     setSelectedCityId(savedCityId);
+  //   }
+  // }, []);
   useEffect(() => {
     if (isAuthenticated && favouriteData && favouriteData.data) {
       setFavPropertiesIds(favouriteData.data);
@@ -93,6 +115,13 @@ export const PropertyLandingPage = () => {
     // Navigate to appointments page
     navigate("/appointments");
   };
+  // const handleCityChange = (cityId: string) => {
+  //   setSelectedCityId(cityId);
+  //   localStorage.setItem("selectedCityId", cityId);
+  //   // Reset other filters when city changes
+  //   setFilters({ cityId });
+  //   setSearchInput("");
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -101,6 +130,8 @@ export const PropertyLandingPage = () => {
         theme="vibrant"
         onShowFavorites={handleShowFavorites}
         onShowAppointments={handleShowAppointments}
+        selectedCityId={selectedCityId}
+        onCityChange={handleCityChange}
       />
 
       {/* Hero Section with Advanced Animations */}
@@ -385,6 +416,20 @@ export const PropertyLandingPage = () => {
         </div>
       </section>
 
+      {/* Categorized Properties Section */}
+      {categorizedData && (
+        <CategorizedPropertySection
+          categorizedProperties={
+            categorizedData.data || {
+              featured: [],
+              recent: [],
+              luxury: [],
+              affordable: [],
+            }
+          }
+          isLoading={isCategorizedLoading}
+        />
+      )}
       {/* Premium Stats Section with Animated Counters */}
       <section className="relative py-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
@@ -721,6 +766,33 @@ export const PropertyLandingPage = () => {
             transition-duration: 0.01ms !important;
           }
         }
+        .animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Ensure smooth animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation: none;
+  }
       `}</style>
     </div>
   );

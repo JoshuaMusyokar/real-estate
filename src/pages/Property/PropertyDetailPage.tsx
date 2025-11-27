@@ -42,7 +42,7 @@ const PropertyDetailPage: FC = () => {
       <div className="container mx-auto px-4 py-6">
         <PropertyDetail
           slug={slug}
-          userRole={user.role ?? "guest"}
+          userRole={user.role.name ?? "guest"}
           userId={user?.id ?? ""}
         />
       </div>

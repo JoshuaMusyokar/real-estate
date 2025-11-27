@@ -23,6 +23,7 @@ import type {
   RegisterRequest,
   AuthResponse,
 } from "../types";
+import { baseApi } from "../services/baseApi";
 
 interface UseAuthReturn {
   // State
@@ -41,8 +42,8 @@ interface UseAuthReturn {
   isTokenValid: () => boolean;
 
   // Permission checks
-  hasRole: (role: Role) => boolean;
-  hasAnyRole: (roles: Role[]) => boolean;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
   canAccess: (requiredRole?: Role) => boolean;
 
   // Loading states
@@ -70,9 +71,9 @@ export const useAuth = (): UseAuthReturn => {
     dispatch(validateToken());
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log("user", authState);
-  }, [authState]);
+  // useEffect(() => {
+  //   console.log("user", authState);
+  // }, [authState]);
 
   // Handle profile fetch errors (likely token issues)
   useEffect(() => {
@@ -85,6 +86,7 @@ export const useAuth = (): UseAuthReturn => {
   const handleAutoLogout = (): void => {
     dispatch(logout());
     tokenService.triggerLogout();
+    dispatch(baseApi.util.resetApiState());
     navigate("/signin?session=expired");
   };
 
@@ -121,6 +123,7 @@ export const useAuth = (): UseAuthReturn => {
   const handleLogout = (): void => {
     dispatch(logout());
     tokenService.triggerLogout();
+    dispatch(baseApi.util.resetApiState());
     navigate("/signin");
   };
 
@@ -129,12 +132,12 @@ export const useAuth = (): UseAuthReturn => {
   };
 
   // Permission checking functions
-  const hasRole = (role: Role): boolean => {
-    return authState.user?.role === role;
+  const hasRole = (role: string): boolean => {
+    return authState.user?.role.name === role;
   };
 
-  const hasAnyRole = (roles: Role[]): boolean => {
-    return !!authState.user?.role && roles.includes(authState.user.role);
+  const hasAnyRole = (roles: string[]): boolean => {
+    return !!authState.user?.role && roles.includes(authState.user.role.name);
   };
 
   const canAccess = (requiredRole?: Role): boolean => {

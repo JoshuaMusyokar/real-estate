@@ -2,6 +2,7 @@ import { Calendar, Loader2, X } from "lucide-react";
 import type { Property } from "../../types";
 import { useState } from "react";
 import { useCreateAppointmentMutation } from "../../services/appointmentApi";
+import { useToast } from "../../hooks/useToast";
 
 interface ScheduleViewingModalProps {
   property: Property;
@@ -24,6 +25,7 @@ export const ScheduleViewingModal: React.FC<ScheduleViewingModalProps> = ({
     preferredTime: "",
     message: "",
   });
+  const { success, error: showError } = useToast();
 
   const handleSubmit = async (): Promise<void> => {
     try {
@@ -44,8 +46,9 @@ export const ScheduleViewingModal: React.FC<ScheduleViewingModalProps> = ({
       }).unwrap();
 
       onClose();
-      alert("Viewing scheduled successfully!");
+      success("Success", "Viewing scheduled successfully!");
     } catch (error) {
+      showError("Failed", "Failed to schedule viewing");
       console.error("Failed to schedule viewing:", error);
     }
   };

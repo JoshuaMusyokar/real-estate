@@ -230,7 +230,7 @@ export interface LeadCreateRequest {
   email: string;
   phone: string;
   alternatePhone?: string;
-  city?: string;
+  cityId?: string;
   localities?: string[];
   propertyType?: string;
   purpose?: string;
@@ -252,7 +252,7 @@ export interface LeadUpdateRequest {
   email?: string;
   phone?: string;
   alternatePhone?: string;
-  city?: string;
+  cityId?: string;
   localities?: string[];
   propertyType?: string;
   purpose?: string;

@@ -217,7 +217,7 @@ export const LandingPropertyCard: FC<PropertyCardProps> = ({
           <div className="flex items-start gap-2 text-gray-600 text-sm">
             <MapPin className="w-4 h-4 flex-shrink-0 text-blue-500 mt-0.5" />
             <span className="line-clamp-1 font-semibold">
-              {property.locality}, {property.city}
+              {property.locality}, {property.city.name}
             </span>
           </div>
         </div>

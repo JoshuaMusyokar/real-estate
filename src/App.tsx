@@ -39,6 +39,9 @@ import UserManagementPage from "./pages/UserPage/UserPage";
 import AgentsPage from "./pages/Agents/AgentsPage";
 import AmenityPage from "./pages/Amenity/AmenityPage";
 import LandingPagesAdmin from "./features/Settings/Landing/LandingAmin";
+import RBACPage from "./pages/rbac/RBACPage";
+import LocalityPage from "./pages/Location/CitiesPage";
+import CitiesPage from "./pages/Location/LocalityPage";
 // import {Role } from "./types";
 
 export default function App() {
@@ -139,6 +142,12 @@ export default function App() {
             <Route path="/profile" element={<UserProfiles />} />
             {/* User Profile - All authenticated users */}
             <Route path="/users" element={<UserManagementPage />} />
+            {/* RBAC - Roles and permissions */}
+            <Route path="/rbac" element={<RBACPage />} />
+            {/* Cities -  */}
+            <Route path="/cities" element={<CitiesPage />} />
+            {/* User Profile - All authenticated users */}
+            <Route path="/localities" element={<LocalityPage />} />
             {/* User Profile - All authenticated users */}
             <Route path="/landing" element={<LandingPagesAdmin />} />
 

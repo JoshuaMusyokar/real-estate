@@ -20,16 +20,16 @@ import { PropertyDetailSkeleton } from "./components/PropertyDetailSkeleton";
 import { MediaSection } from "./components/MediaSection";
 import { AmenitiesSection } from "./components/AmenitiesSection";
 import { DocumentsSection } from "./components/DocumentSection";
+import { useAuth } from "../../hooks/useAuth";
 
 interface PropertyDetailProps {
   slug: string;
-  userRole?: Role;
+  userRole?: string;
   userId?: string;
 }
 
 export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   slug,
-  userRole = "BUYER",
   userId,
 }) => {
   const { data, isLoading, error } = useGetPropertyBySlugQuery(slug);
@@ -45,9 +45,10 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
       skip: !propertyId,
     }
   );
-
+  const { user } = useAuth();
   const amenities: Amenity[] = amenitiesData?.data || [];
   const isOwner = userId === property?.ownerId;
+  const userRole = user?.role.name || "BUYER";
 
   const handleEdit = () => {
     console.log("Edit property:", property?.id);
@@ -106,7 +107,6 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <PropertyHeader
                 property={property}
-                userRole={userRole}
                 isOwner={isOwner}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

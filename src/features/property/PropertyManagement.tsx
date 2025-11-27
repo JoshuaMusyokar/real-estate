@@ -73,7 +73,7 @@ export const PropertyManagement: React.FC = () => {
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
       property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.city.toLowerCase().includes(searchQuery.toLowerCase());
+      property.city.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || property.status === statusFilter;
     return matchesSearch && matchesStatus;

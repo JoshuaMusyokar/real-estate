@@ -46,3 +46,10 @@ export interface ErrorResponse {
     message: string;
   }>;
 }
+
+export interface BulkOperationResponse {
+  success: boolean;
+  message: string;
+  count?: number;
+}
+export type ViewMode = "grid" | "table";

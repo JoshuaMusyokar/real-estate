@@ -31,7 +31,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     email: "",
     phone: "",
     source: "MANUAL_ENTRY",
-    city: "",
+    cityId: "",
     localities: [],
   });
 
@@ -46,7 +46,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
         email: "",
         phone: "",
         source: "MANUAL_ENTRY",
-        city: "",
+        cityId: "",
         localities: [],
       });
     } catch (error) {
@@ -158,9 +158,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               </label>
               <input
                 type="text"
-                value={formData.city || ""}
+                value={formData.cityId || ""}
                 onChange={(e) =>
-                  setFormData({ ...formData, city: e.target.value })
+                  setFormData({ ...formData, cityId: e.target.value })
                 }
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />

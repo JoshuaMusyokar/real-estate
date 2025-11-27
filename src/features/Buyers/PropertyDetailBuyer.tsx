@@ -1,12 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  Check,
-  ChevronRight,
-  Home,
-  Loader2,
-  MapPin,
-  Navigation,
-} from "lucide-react";
+import { Check, ChevronRight, Home, Loader2 } from "lucide-react";
 import { PropertyHeader } from "./components/PropertyHeader";
 import { PropertyStats } from "./components/PropertyStats";
 import { ImageGallery } from "./components/ImageGallery";
@@ -20,15 +13,23 @@ import { PriceSidebar } from "./components/PriceSidebar";
 import { InquiryFormModal } from "../../components/form/InquiryForm";
 import { ScheduleViewingModal } from "../../components/form/ScheduleViewingForm";
 import type { Amenity, Role } from "../../types";
+import { useNavigate } from "react-router-dom"; // Add this import
 
-// NEW IMPORTS
+// IMPORTS
 import { ContactCard } from "./components/ContactCard";
 import { DocumentsSection } from "./components/DocumentSection";
 import { SimilarPropertiesSection } from "./components/SimilarPropertiesSection";
-import { OwnerPropertiesSection } from "./components/OwnerPropertySection";
+import { OwnerPropertiesSlider } from "./components/OwnerPropertySection";
 import { useAuth } from "../../hooks/useAuth";
 import { LocationSection } from "../property/components/LocationSection";
 import { MediaSection } from "../property/components/MediaSection";
+import { useGetLocalityByNameQuery } from "../../services/locationApi";
+import { LocalityHighlightsSection } from "./components/LocalitiesHighlightSection";
+import { RatingsAndReviewsSection } from "./components/ReviewAndLocality";
+import { AmenitiesSection } from "./components/AmenitySection";
+import { AboutProperty } from "./components/AboutProperty";
+import { PropertyDetails } from "./components/PropertyDetail";
+import { PropertyShowcase } from "./components/PropertyShowcase";
 
 interface PropertyDetailBuyerProps {
   id: string;
@@ -39,6 +40,7 @@ interface PropertyDetailBuyerProps {
 export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
   id,
 }) => {
+  const navigate = useNavigate();
   const { data, isLoading, error } = useGetPropertyQuery(id);
   const property = data?.data;
   const propertyId = property?.id;
@@ -47,20 +49,32 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
     propertyId || "",
     { skip: !propertyId }
   );
+  const localityName = property?.locality;
+  const cityId = property?.cityId;
+
+  const { data: localityData } = useGetLocalityByNameQuery(
+    { name: localityName || "", cityId: cityId || "" },
+    { skip: !localityName || !cityId }
+  );
   const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
   const { isAuthenticated } = useAuth();
   const { data: favouriteData, refetch } = useGetUserFavoritesQuery(undefined, {
     skip: !isAuthenticated,
   });
 
+  const localityHighlights = localityData?.data?.highlights
+    ? typeof localityData.data.highlights === "string"
+      ? JSON.parse(localityData.data.highlights)
+      : localityData.data.highlights
+    : [];
   const amenities: Amenity[] = amenitiesData?.data || [];
-  const [isSaved, setIsSaved] = useState(false);
   const [showInquiry, setShowInquiry] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) refetch();
   }, [isAuthenticated, refetch]);
+
   useEffect(() => {
     if (isAuthenticated && favouriteData && favouriteData.data) {
       setFavPropertiesIds(favouriteData.data);
@@ -81,6 +95,17 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert("Link copied to clipboard!");
+    }
+  };
+
+  // Navigation handlers for "View All" buttons
+  const handleViewAllPropertyReviews = () => {
+    navigate(`/properties/${propertyId}/reviews`);
+  };
+
+  const handleViewAllLocalityRatings = () => {
+    if (localityData?.data?.id) {
+      navigate(`/localities/${localityData.data.id}/ratings`);
     }
   };
 
@@ -106,7 +131,10 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
           <p className="text-gray-600 mb-6">
             The property you're looking for doesn't exist or has been removed.
           </p>
-          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+          <button
+            onClick={() => navigate("/properties")}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
             Back to Properties
           </button>
         </div>
@@ -120,14 +148,25 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="hover:text-blue-600 cursor-pointer">Home</span>
+            <span
+              onClick={() => navigate("/")}
+              className="hover:text-blue-600 cursor-pointer"
+            >
+              Home
+            </span>
             <ChevronRight className="w-4 h-4" />
-            <span className="hover:text-blue-600 cursor-pointer">
+            <span
+              onClick={() => navigate("/properties")}
+              className="hover:text-blue-600 cursor-pointer"
+            >
               Properties
             </span>
             <ChevronRight className="w-4 h-4" />
-            <span className="hover:text-blue-600 cursor-pointer">
-              {property.city}
+            <span
+              onClick={() => navigate(`/properties?city=${property.city.name}`)}
+              className="hover:text-blue-600 cursor-pointer"
+            >
+              {property.city.name}
             </span>
             <ChevronRight className="w-4 h-4" />
             <span className="text-gray-900 font-medium truncate">
@@ -141,9 +180,11 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
         {/* Image Gallery */}
         <div className="relative mb-10 w-full overflow-hidden rounded-xl">
           <div className="w-full">
-            <ImageGallery
-              images={property.images || []}
-              propertyTitle={property.title}
+            {/* Combined Showcase */}
+            <PropertyShowcase
+              property={property}
+              onShare={handleShare}
+              favProperties={favPropertiesIds}
             />
           </div>
         </div>
@@ -151,84 +192,22 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Header */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <PropertyHeader
-                property={property}
-                onShare={handleShare}
-                favProperties={favPropertiesIds}
-              />
-            </div>
-
-            {/* Stats */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <PropertyStats property={property} />
-            </div>
-
-            {/* Description */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                About This Property
-              </h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {property.description}
-              </p>
-            </div>
+            {/* About Property */}
+            <AboutProperty description={property.description} />
 
             {/* Property Details */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-5">
-                Property Details
-              </h2>
-              <div className="grid grid-cols-2 gap-5">
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">
-                    Property Type
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    {property.propertyType}
-                  </div>
-                </div>
-                {property.subType && (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Sub Type</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.subType}
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <div className="text-sm text-gray-600 mb-1">Purpose</div>
-                  <div className="font-semibold text-gray-900">
-                    {property.purpose}
-                  </div>
-                </div>
-                {property.furnishingStatus && (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Furnishing</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.furnishingStatus}
-                    </div>
-                  </div>
-                )}
-                {property.yearBuilt && (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Year Built</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.yearBuilt}
-                    </div>
-                  </div>
-                )}
-                {property.floors && (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-1">Floors</div>
-                    <div className="font-semibold text-gray-900">
-                      {property.floors}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PropertyDetails
+              propertyType={property.propertyType}
+              subType={property.subType}
+              purpose={property.purpose}
+              furnishingStatus={property.furnishingStatus}
+              yearBuilt={property.yearBuilt}
+              floors={property.floors}
+              builderName={property.builderName}
+              hasBalcony={property.hasBalcony}
+              reraNumber={property.reraNumber}
+            />
+
             {/* Media Section */}
             {(property.images?.length > 0 ||
               property.youtubeVideoUrl ||
@@ -241,30 +220,28 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
             )}
 
             {/* Amenities */}
-            {amenities.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-5">
-                  Amenities
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {amenities.map((item: Amenity) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100"
-                    >
-                      <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4" />
-                      </div>
-                      <span className="font-medium text-gray-900 text-sm">
-                        {item.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {amenities.length > 0 && <AmenitiesSection amenities={amenities} />}
+            {/* Locality Highlights */}
+            {localityHighlights.length > 0 && (
+              <LocalityHighlightsSection
+                localityName={property.locality}
+                highlights={localityHighlights}
+                cityName={property.city.name}
+              />
             )}
 
-            {/* NEW: Documents Section */}
+            {/* ⭐ NEW: Combined Ratings & Reviews Section */}
+            <RatingsAndReviewsSection
+              propertyId={property.id}
+              propertyTitle={property.title}
+              localityId={localityData?.data?.id}
+              localityName={property.locality}
+              cityName={property.city.name}
+              onViewAllPropertyReviews={handleViewAllPropertyReviews}
+              onViewAllLocalityRatings={handleViewAllLocalityRatings}
+            />
+
+            {/* Documents Section */}
             {property.documents && property.documents.length > 0 && (
               <DocumentsSection
                 documents={property.documents}
@@ -275,15 +252,15 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
             {/* Location */}
             <LocationSection property={property} />
 
-            {/* NEW: Similar Properties Section */}
+            {/* Similar Properties Section */}
             <SimilarPropertiesSection
               propertyId={property.id}
               currentPropertyTitle={property.title}
             />
 
-            {/* NEW: Owner's Other Properties Section */}
+            {/* Owner's Other Properties Section */}
             {property.owner && (
-              <OwnerPropertiesSection
+              <OwnerPropertiesSlider
                 ownerId={property.ownerId}
                 ownerName={
                   property.owner.firstName + " " + property.owner.lastName
@@ -302,7 +279,7 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
               onSchedule={() => setShowSchedule(true)}
             />
 
-            {/* NEW: Contact Card (Masked Contact) */}
+            {/* Contact Card */}
             <ContactCard
               property={property}
               onInquire={() => setShowInquiry(true)}
@@ -373,7 +350,10 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
           </div>
         </div>
       </div>
-
+      <SimilarPropertiesSection
+        propertyId={property.id}
+        currentPropertyTitle={property.title}
+      />
       {/* Modals */}
       <InquiryFormModal
         property={property}

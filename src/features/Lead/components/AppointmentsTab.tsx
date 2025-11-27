@@ -463,7 +463,8 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 {appointment.property.title}
               </div>
               <div className="text-sm text-gray-600">
-                {appointment.property.locality}, {appointment.property.city}
+                {appointment.property.locality},{" "}
+                {appointment.property.city.name}
               </div>
             </div>
           )}

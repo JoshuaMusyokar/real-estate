@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useCreateLeadMutation } from "../../services/leadApi";
 import type { LeadCreateRequest, Property } from "../../types";
 import { Loader2, Mail, X } from "lucide-react";
+import { useToast } from "../../hooks/useToast";
 
 interface InquiryFormModalProps {
   property: Property;
@@ -22,6 +23,7 @@ export const InquiryFormModal: React.FC<InquiryFormModalProps> = ({
     phone: "",
     message: `I'm interested in ${property.title}`,
   });
+  const { success, error: showError } = useToast();
 
   const handleSubmit = async (): Promise<void> => {
     try {
@@ -30,19 +32,24 @@ export const InquiryFormModal: React.FC<InquiryFormModalProps> = ({
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        city: property.city,
+        cityId: property.cityId,
         localities: [property.locality],
         propertyType: property.propertyType,
         purpose: property.purpose,
         requirements: formData.message,
         source: "PROPERTY_INQUIRY",
         sourcePage: window.location.href,
-        tags: [`property:${property.id}`, property.locality, property.city],
+        tags: [
+          `property:${property.id}`,
+          property.locality,
+          property.city.name,
+        ],
       } as LeadCreateRequest).unwrap();
 
       onClose();
-      alert("Inquiry sent successfully!");
+      success("Inquiry", "Inquiry sent successfully!");
     } catch (error) {
+      showError("Failed!", "Failed to send inquiry");
       console.error("Failed to send inquiry:", error);
     }
   };

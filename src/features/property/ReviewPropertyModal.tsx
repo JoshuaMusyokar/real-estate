@@ -121,7 +121,7 @@ export const ReviewPropertyModal: React.FC<ReviewPropertyModalProps> = ({
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <MapPin className="w-4 h-4" />
                   <span>
-                    {property.locality}, {property.city}
+                    {property.locality}, {property.city.name}
                   </span>
                 </div>
 

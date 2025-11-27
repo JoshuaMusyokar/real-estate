@@ -22,3 +22,5 @@ export * from "./form";
 export * from "./agent";
 export * from "./toast";
 export * from "./landing";
+export * from "./location";
+export * from "./rbac";

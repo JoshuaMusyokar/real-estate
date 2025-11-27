@@ -105,7 +105,7 @@ export default function UserInfoCard() {
                 Bio
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.role || "N/A"}
+                {user?.role.name || "N/A"}
               </p>
             </div>
 
@@ -115,7 +115,7 @@ export default function UserInfoCard() {
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                 {user?.role
-                  ? user.role
+                  ? user.role.name
                       .split("_")
                       .map(
                         (word) => word.charAt(0) + word.slice(1).toLowerCase()

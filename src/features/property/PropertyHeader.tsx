@@ -12,22 +12,24 @@ import {
 } from "lucide-react";
 import { useState, type FC } from "react";
 import type { Property } from "../../types";
+import { useAuth } from "../../hooks/useAuth";
 interface PropertyHeaderProps {
   property: Property;
-  userRole?: string;
   isOwner: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }
 export const PropertyHeader: FC<PropertyHeaderProps> = ({
   property,
-  userRole,
+
   isOwner,
   onEdit,
   onDelete,
 }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const { user } = useAuth();
+  const userRole = user?.role.name || "BUYER";
 
   const canEdit = isOwner || userRole === "ADMIN" || userRole === "SUPER_ADMIN";
 
@@ -68,7 +70,7 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
         <div className="flex items-center gap-2 text-gray-600 mb-4">
           <MapPin className="w-5 h-5 text-gray-400" />
           <span className="text-lg">
-            {property.address}, {property.locality}, {property.city}
+            {property.address}, {property.locality}, {property.city.name}
           </span>
         </div>
 

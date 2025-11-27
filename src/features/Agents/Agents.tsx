@@ -366,7 +366,7 @@ export const Agents: React.FC = () => {
                       {agent.firstName} {agent.lastName}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      {agent.role}
+                      {agent.role?.name}
                     </p>
 
                     {/* Contact Info */}
@@ -438,24 +438,24 @@ export const Agents: React.FC = () => {
                     </div>
 
                     {/* Locations */}
-                    {agent.allowedCities.length > 0 && (
+                    {agent.cities.length > 0 && (
                       <div className="mb-4">
                         <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
                           Coverage Areas
                         </p>
                         <div className="flex flex-wrap gap-1">
-                          {agent.allowedCities.slice(0, 3).map((city) => (
+                          {agent.cities.slice(0, 3).map((city) => (
                             <span
-                              key={city}
+                              key={city.id}
                               className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg text-xs"
                             >
-                              {city}
+                              {city.name}
                             </span>
                           ))}
-                          {agent.allowedCities.length > 3 && (
+                          {agent.cities.length > 3 && (
                             <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg text-xs">
-                              +{agent.allowedCities.length - 3} more
+                              +{agent.cities.length - 3} more
                             </span>
                           )}
                         </div>
@@ -489,7 +489,7 @@ export const Agents: React.FC = () => {
                             {agent.firstName} {agent.lastName}
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {agent.role}
+                            {agent.role?.name}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -558,16 +558,16 @@ export const Agents: React.FC = () => {
                         </div>
                       </div>
 
-                      {agent.allowedCities.length > 0 && (
+                      {agent.cities.length > 0 && (
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-gray-400" />
                           <div className="flex flex-wrap gap-1">
-                            {agent.allowedCities.slice(0, 5).map((city) => (
+                            {agent.cities.slice(0, 5).map((city) => (
                               <span
-                                key={city}
+                                key={city.id}
                                 className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs"
                               >
-                                {city}
+                                {city.name}
                               </span>
                             ))}
                           </div>

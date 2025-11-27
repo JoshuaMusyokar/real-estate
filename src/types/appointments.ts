@@ -4,6 +4,7 @@
 
 import type { JSONContent } from "./common";
 import type { Lead } from "./lead";
+import type { City } from "./location";
 import type { Property } from "./property";
 import type { User } from "./user";
 
@@ -74,7 +75,7 @@ export interface AppointmentResponse {
     id: string;
     title: string;
     price: number;
-    city: string;
+    city: City;
     locality: string;
   };
   type: string;
