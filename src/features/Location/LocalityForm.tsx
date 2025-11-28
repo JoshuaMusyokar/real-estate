@@ -110,10 +110,21 @@ export function LocalityForm({
       setFormData({
         name: locality.name,
         cityId: locality.cityId,
-        highlights: locality.highlights || [],
+        highlights: parseHighlights(locality.highlights),
       });
     }
   }, [locality]);
+
+  function parseHighlights(value: any) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    try {
+      return JSON.parse(value); // <-- convert string → array
+    } catch (e) {
+      console.log(e);
+      return []; // fallback
+    }
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
