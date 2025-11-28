@@ -42,9 +42,9 @@ const baseQueryWithReauth: BaseQueryFn<
     console.warn("Token expired or invalid, logging out...");
     api.dispatch(logout());
 
-    if (typeof window !== "undefined") {
-      window.location.href = "/signin?session=expired";
-    }
+    // if (typeof window !== "undefined") {
+    //   window.location.href = "/signin?session=expired";
+    // }
 
     return result;
   }
@@ -61,9 +61,9 @@ const baseQueryWithReauth: BaseQueryFn<
       console.warn("Token validation failed, logging out...");
       api.dispatch(logout());
 
-      if (typeof window !== "undefined") {
-        window.location.href = "/signin?session=invalid";
-      }
+      // if (typeof window !== "undefined") {
+      //   window.location.href = "/signin?session=invalid";
+      // }
     }
   }
 

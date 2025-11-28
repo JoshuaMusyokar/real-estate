@@ -14,7 +14,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useToast } from "../../hooks/useToast";
 
 // Mock types - replace with your actual types
-type Role = "PROPERTY_OWNER" | "AGENT_EXTERNAL" | "BUILDER" | "BUYER";
+type Role = "OWNER" | "AGENT" | "BUILDER" | "BUYER";
 
 interface RegisterRequest {
   email: string;
@@ -22,7 +22,7 @@ interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: string;
+  roleName: string;
 }
 type FormErrors = {
   [K in keyof RegisterRequest]?: string;
@@ -39,7 +39,7 @@ export default function SignUpForm() {
     email: "",
     password: "",
     phone: null,
-    role: "" as Role,
+    roleName: "" as Role,
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const { register, isLoading, error } = useAuth();
@@ -57,7 +57,7 @@ export default function SignUpForm() {
       color: "blue",
     },
     {
-      value: "AGENT_EXTERNAL" as Role,
+      value: "AGENT" as Role,
       label: "Broker",
       icon: Users,
       description: "Real Estate Broker",
@@ -100,7 +100,7 @@ export default function SignUpForm() {
 
   const handleRoleSelect = (role: Role) => {
     setFormData((prev) => ({ ...prev, role }));
-    if (errors.role) {
+    if (errors.roleName) {
       setErrors((prev) => ({ ...prev, role: undefined }));
     }
   };
@@ -108,8 +108,8 @@ export default function SignUpForm() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.role) {
-      newErrors.role = "Please select your account type";
+    if (!formData.roleName) {
+      newErrors.roleName = "Please select your account type";
     }
 
     if (!formData.firstName?.trim()) {
@@ -151,11 +151,9 @@ export default function SignUpForm() {
       const result = await register(formData);
 
       // Show success message based on role
-      const isPosterRole = [
-        "PROPERTY_OWNER",
-        "AGENT_EXTERNAL",
-        "BUILDER",
-      ].includes(formData.role);
+      const isPosterRole = ["PROPERTY_OWNER", "AGENT", "BUILDER"].includes(
+        formData.roleName
+      );
 
       // if (result.success) {
 
@@ -254,7 +252,7 @@ export default function SignUpForm() {
             </label>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {userTypes.map((type) => {
-                const isSelected = formData.role === type.value;
+                const isSelected = formData.roleName === type.value;
                 const colorClasses = getColorClasses(type.color, isSelected);
                 const Icon = type.icon;
 
@@ -281,9 +279,9 @@ export default function SignUpForm() {
                 );
               })}
             </div>
-            {errors.role && (
+            {errors.roleName && (
               <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                {errors.role}
+                {errors.roleName}
               </p>
             )}
           </div>
