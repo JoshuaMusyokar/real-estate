@@ -90,6 +90,30 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           {formData.title.length}/200 characters (min: 10)
         </p>
       </div>
+      {/* Complex Name */}
+      <div>
+        <label className="block text-sm font-bold text-gray-900 mb-2">
+          Complex Name
+        </label>
+        <input
+          type="text"
+          value={formData.complexName || ""}
+          onChange={(e) => onUpdate({ complexName: e.target.value })}
+          onBlur={() => onBlur("complexName")}
+          placeholder="e.g., Palm Grove Residency"
+          className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+            touched.complexName && errors.complexName
+              ? "border-red-500"
+              : "border-gray-200"
+          }`}
+        />
+        {touched.complexName && errors.complexName && (
+          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+            <AlertCircle className="w-4 h-4" />
+            {errors.complexName}
+          </p>
+        )}
+      </div>
 
       {/* Description */}
       <div>

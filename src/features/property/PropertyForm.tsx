@@ -90,6 +90,16 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     longitude: null,
     bedrooms: null,
     bathrooms: null,
+    balconies: null,
+    totalFlats: null,
+    totalBuildings: null,
+    totalFloors: null,
+    complexName: null,
+    superBuiltArea: null,
+    builtUpArea: null,
+    carpetArea: null,
+    possessionStatus: null,
+    possessionDate: null,
     squareFeet: null,
     squareMeters: undefined,
     floors: null,
@@ -168,6 +178,16 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         longitude: property.longitude,
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
+        balconies: property.balconies,
+        totalFlats: property.totalFlats,
+        totalBuildings: property.totalBuildings,
+        totalFloors: property.totalFloors,
+        complexName: property.complexName,
+        superBuiltArea: property.superBuiltArea,
+        builtUpArea: property.builtUpArea,
+        carpetArea: property.carpetArea,
+        possessionStatus: property.possessionStatus,
+        possessionDate: property.possessionDate,
         squareFeet: property.squareFeet,
         squareMeters: property.squareMeters || undefined,
         floors: property.floors,
@@ -299,6 +319,16 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         longitude: formData.longitude,
         bedrooms: formData.bedrooms,
         bathrooms: formData.bathrooms,
+        complexName: formData.complexName || "",
+        balconies: formData.balconies || 0,
+        totalFlats: formData.totalFlats || 0,
+        totalBuildings: formData.totalBuildings || 0,
+        totalFloors: formData.totalFloors || 0,
+        superBuiltArea: formData.superBuiltArea || 0,
+        builtUpArea: formData.builtUpArea || 0,
+        carpetArea: formData.carpetArea || 0,
+        possessionStatus: formData.possessionStatus || "READY_TO_MOVE", // or "UNDER_CONSTRUCTION"
+        possessionDate: formData.possessionDate,
         squareFeet: formData.squareFeet,
         squareMeters: formData.squareMeters,
         floors: formData.floors,
@@ -318,10 +348,17 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           })),
       };
 
-      console.log("Property Data:", propertyData);
+      // console.log("Property Data:", propertyData);
 
-      // Add data as JSON string
-      formDataToSend.append("data", JSON.stringify(propertyData));
+      const propertyDataToSend = {
+        ...propertyData,
+        possessionDate: formData.possessionDate
+          ? formData.possessionDate.toISOString()
+          : null,
+      };
+
+      // Append as JSON string
+      formDataToSend.append("data", JSON.stringify(propertyDataToSend));
 
       // Add image files
       imageFiles.forEach((img) => {

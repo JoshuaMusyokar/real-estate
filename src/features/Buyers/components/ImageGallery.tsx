@@ -5,11 +5,13 @@ import type { PropertyImage } from "../../../types";
 interface PropertyImageGalleryProps {
   images: PropertyImage[];
   propertyTitle: string;
+  complexName?: string;
 }
 
 export const ImageGallery: React.FC<PropertyImageGalleryProps> = ({
   images,
   propertyTitle,
+  complexName,
 }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null
@@ -89,6 +91,12 @@ export const ImageGallery: React.FC<PropertyImageGalleryProps> = ({
 
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Complex Name Overlay */}
+          {complexName && (
+            <div className="absolute top-3 right-3 bg-black/70 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
+              {complexName}
+            </div>
+          )}
 
           {/* Photo Count Badge */}
           <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">

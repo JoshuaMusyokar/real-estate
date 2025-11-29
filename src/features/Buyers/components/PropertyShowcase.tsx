@@ -273,6 +273,14 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
 
           {/* Bottom Info Overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
+            {property.complexName && (
+              <div className="w-50 flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 shadow-lg">
+                <Building2 className="w-3.5 h-3.5 text-white" />
+                <span className="text-xs font-semibold text-white">
+                  {property.complexName}
+                </span>
+              </div>
+            )}
             {/* Title & Location */}
             <div className="mb-4">
               <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">

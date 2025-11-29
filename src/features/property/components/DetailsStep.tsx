@@ -104,6 +104,174 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
           )}
         </div>
       </div>
+      {/* Additional Property Details Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {/* Balconies */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            <Building2 className="w-4 h-4 inline mr-1" />
+            Total Balconies
+          </label>
+          <input
+            type="number"
+            value={formData.balconies || ""}
+            onChange={(e) =>
+              onUpdate({ balconies: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        {/* Total Flats */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Total Flats
+          </label>
+          <input
+            type="number"
+            value={formData.totalFlats || ""}
+            onChange={(e) =>
+              onUpdate({ totalFlats: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        {/* Total Buildings */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Total Buildings
+          </label>
+          <input
+            type="number"
+            value={formData.totalBuildings || ""}
+            onChange={(e) =>
+              onUpdate({ totalBuildings: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        {/* Total Floors */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Total Floors
+          </label>
+          <input
+            type="number"
+            value={formData.totalFloors || ""}
+            onChange={(e) =>
+              onUpdate({ totalFloors: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+      </div>
+
+      {/* Area Details Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        {/* Super Built Area */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Super Built Area (sq ft)
+          </label>
+          <input
+            type="number"
+            value={formData.superBuiltArea || ""}
+            onChange={(e) =>
+              onUpdate({ superBuiltArea: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        {/* Built Up Area */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Built Up Area (sq ft)
+          </label>
+          <input
+            type="number"
+            value={formData.builtUpArea || ""}
+            onChange={(e) =>
+              onUpdate({ builtUpArea: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        {/* Carpet Area */}
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Carpet Area (sq ft)
+          </label>
+          <input
+            type="number"
+            value={formData.carpetArea || ""}
+            onChange={(e) =>
+              onUpdate({ carpetArea: parseInt(e.target.value) || null })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+      </div>
+
+      {/* Possession Status */}
+      <div>
+        <label className="block text-sm font-bold text-gray-900 mb-2">
+          Possession Status
+        </label>
+        <select
+          value={formData.possessionStatus || ""}
+          onChange={(e) =>
+            onUpdate({ possessionStatus: e.target.value || null })
+          }
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+        >
+          <option value="">Select Possession Status</option>
+          <option value="READY_TO_MOVE">Ready to Move</option>
+          <option value="UNDER_CONSTRUCTION">Under Construction</option>
+        </select>
+      </div>
+
+      {/* Possession Date */}
+      {formData.possessionStatus === "UNDER_CONSTRUCTION" && (
+        <div>
+          <label className="block text-sm font-bold text-gray-900 mb-2">
+            Expected Ready Date
+          </label>
+          <input
+            type="date"
+            value={
+              formData.possessionDate
+                ? formData.possessionDate.toISOString().split("T")[0]
+                : ""
+            }
+            onChange={(e) =>
+              onUpdate({
+                possessionDate: e.target.value
+                  ? new Date(e.target.value)
+                  : null,
+              })
+            }
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
+          />
+        </div>
+      )}
 
       {/* Area Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

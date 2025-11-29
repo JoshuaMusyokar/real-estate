@@ -196,17 +196,7 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
             <AboutProperty description={property.description} />
 
             {/* Property Details */}
-            <PropertyDetails
-              propertyType={property.propertyType}
-              subType={property.subType}
-              purpose={property.purpose}
-              furnishingStatus={property.furnishingStatus}
-              yearBuilt={property.yearBuilt}
-              floors={property.floors}
-              builderName={property.builderName}
-              hasBalcony={property.hasBalcony}
-              reraNumber={property.reraNumber}
-            />
+            <PropertyDetails property={property} />
 
             {/* Media Section */}
             {(property.images?.length > 0 ||

@@ -64,6 +64,19 @@ export interface Property {
   longitude: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  balconies: number | null; // Total number of balconies
+  totalFlats: number | null; // Total number of flats in the complex
+  totalBuildings: number | null; // Total number of buildings in the project
+  totalFloors: number | null; // Total floors in the building
+  complexName: string | null; // Name of the residential complex
+  // Area Measurements
+  superBuiltArea: number | null; // In sq ft
+  builtUpArea: number | null; // In sq ft
+  carpetArea: number | null; // In sq ft
+
+  // Possession
+  possessionStatus: string | null; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
+  possessionDate: Date | null; // ISO Date for completion
   squareFeet: number | null;
   squareMeters: number | null;
   floors: number | null;
@@ -167,6 +180,19 @@ export interface PropertyCreateInput {
   longitude?: number;
   bedrooms?: number;
   bathrooms?: number;
+  balconies?: number; // Total number of balconies
+  totalFlats?: number; // Total number of flats in the complex
+  totalBuildings?: number; // Total number of buildings in the project
+  totalFloors?: number; // Total floors in the building
+  complexName?: string; // Name of the residential complex
+  // Area Measurements
+  superBuiltArea?: number; // In sq ft
+  builtUpArea?: number; // In sq ft
+  carpetArea?: number; // In sq ft
+
+  // Possession
+  possessionStatus?: string; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
+  possessionDate?: Date; // ISO Date for completion
   squareFeet?: number;
   squareMeters?: number;
   floors?: number;
@@ -206,6 +232,20 @@ export interface PropertyCreateRequest {
   longitude: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  balconies: number | null; // Total number of balconies
+  totalFlats: number | null; // Total number of flats in the complex
+  totalBuildings: number | null; // Total number of buildings in the project
+  totalFloors: number | null; // Total floors in the building
+  complexName: string | null; // Name of the residential complex
+
+  // Area Measurements
+  superBuiltArea: number | null; // In sq ft
+  builtUpArea: number | null; // In sq ft
+  carpetArea: number | null; // In sq ft
+
+  // Possession
+  possessionStatus: string | null; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
+  possessionDate: Date | null; // ISO Date for completion
   squareFeet: number | null;
   squareMeters?: number;
   floors: number | null;
@@ -241,6 +281,20 @@ export interface PropertyUpdateRequest {
   longitude?: number;
   bedrooms?: number;
   bathrooms?: number;
+  balconies?: number; // Total number of balconies
+  totalFlats?: number; // Total number of flats in the complex
+  totalBuildings?: number; // Total number of buildings in the project
+  totalFloors?: number; // Total floors in the building
+  complexName?: string; // Name of the residential complex
+
+  // Area Measurements
+  superBuiltArea?: number; // In sq ft
+  builtUpArea?: number; // In sq ft
+  carpetArea?: number; // In sq ft
+
+  // Possession
+  possessionStatus?: string; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
+  possessionDate?: Date; // ISO Date for completion
   squareFeet?: number;
   squareMeters?: number;
   floors?: number;
