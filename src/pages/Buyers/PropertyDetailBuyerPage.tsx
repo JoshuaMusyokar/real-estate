@@ -40,11 +40,12 @@ const PropertyDetailBuyerPage: FC = () => {
         title={`Property Details`}
         description="View detailed information and analytics for a selected property."
       />
-      <PublicHeader
-        onShowFavorites={handleShowFavorites}
-        onShowAppointments={handleShowAppointments}
-      />
+
       <div className="mx-auto px-4 py-6">
+        <PublicHeader
+          onShowFavorites={handleShowFavorites}
+          onShowAppointments={handleShowAppointments}
+        />
         <PropertyDetailBuyer
           id={id}
           //   userRole={user ? user.role : undefined}

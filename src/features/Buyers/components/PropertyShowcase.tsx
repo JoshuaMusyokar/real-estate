@@ -179,28 +179,39 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
       <div className="relative overflow-hidden rounded-2xl shadow-2xl">
         {/* Main Image Container with Carousel */}
         <div className="relative h-[500px] md:h-[600px] bg-black">
-          {/* Current Image */}
-          <img
-            src={sortedImages[currentImageIndex].viewableUrl}
-            alt={property.title}
-            className="w-full h-full object-cover"
-          />
+          {/* Current Image - Clickable to expand */}
+          <div
+            className="absolute inset-0 cursor-pointer"
+            onClick={() => openLightbox(currentImageIndex)}
+          >
+            <img
+              src={sortedImages[currentImageIndex].viewableUrl}
+              alt={property.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
 
           {/* Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40 pointer-events-none" />
 
           {/* Navigation Arrows */}
           {sortedImages.length > 1 && (
             <>
               <button
-                onClick={prevImage}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-10 group"
               >
                 <ChevronLeft className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
               </button>
               <button
-                onClick={nextImage}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-10 group"
               >
                 <ChevronRight className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
@@ -409,37 +420,41 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
       {/* Lightbox Modal */}
       {selectedImageIndex !== null && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
+          {/* Close button - Bottom Right */}
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white hover:bg-white/10 transition-all z-50 p-2 rounded-full"
+            className="fixed bottom-6 right-6 w-14 h-14 bg-red-500/90 backdrop-blur-md border border-red-400/50 rounded-full flex items-center justify-center hover:bg-red-600 hover:scale-110 transition-all z-50 group shadow-2xl"
+            aria-label="Close lightbox"
           >
-            <X size={28} />
+            <X className="w-7 h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
           </button>
 
           {sortedImages.length > 1 && (
             <>
               <button
                 onClick={goToPrevious}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 transition-all z-50 p-3 rounded-full"
+                className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-50 shadow-xl"
+                aria-label="Previous image"
               >
-                <ChevronLeft size={32} />
+                <ChevronLeft className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </button>
               <button
                 onClick={goToNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 transition-all z-50 p-3 rounded-full"
+                className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-50 shadow-xl"
+                aria-label="Next image"
               >
-                <ChevronRight size={32} />
+                <ChevronRight className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </button>
             </>
           )}
 
-          <div className="relative w-full h-full flex items-center justify-center p-8">
+          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-8">
             <img
               src={sortedImages[selectedImageIndex].viewableUrl}
               alt={property.title}
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
             />
-            <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+            <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-black/70 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-semibold border border-white/20 shadow-xl">
               {selectedImageIndex + 1} / {sortedImages.length}
             </div>
           </div>
