@@ -102,6 +102,12 @@ export default function App() {
                     "SALES_MANAGER",
 
                     "ADMIN",
+                    "BUILDER",
+                    "BUILDER_STAFF",
+                    "OWNER",
+                    "OWNER_STAFF",
+                    "AGENT",
+                    "AGENT_STAFF",
 
                     "SUPER_ADMIN",
                   ]}
@@ -122,6 +128,12 @@ export default function App() {
                     "SALES_MANAGER",
                     "ADMIN",
                     "SUPER_ADMIN",
+                    "BUILDER",
+                    "BUILDER_STAFF",
+                    "OWNER",
+                    "OWNER_STAFF",
+                    "AGENT",
+                    "AGENT_STAFF",
                   ]}
                 >
                   <PropertyUpdatePage />

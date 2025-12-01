@@ -49,7 +49,7 @@ export default function SignUpForm() {
   // User type options with detailed information
   const userTypes = [
     {
-      value: "PROPERTY_OWNER" as Role,
+      value: "OWNER" as Role,
       label: "Owner",
       icon: Home,
       description: "Property Owner",
@@ -99,9 +99,9 @@ export default function SignUpForm() {
   };
 
   const handleRoleSelect = (role: Role) => {
-    setFormData((prev) => ({ ...prev, role }));
+    setFormData((prev) => ({ ...prev, roleName: role }));
     if (errors.roleName) {
-      setErrors((prev) => ({ ...prev, role: undefined }));
+      setErrors((prev) => ({ ...prev, roleName: undefined }));
     }
   };
 
