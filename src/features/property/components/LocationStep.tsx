@@ -241,7 +241,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             onChange={(e) => onUpdate({ state: e.target.value || null })}
             className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50"
             placeholder="Auto-filled from city selection"
-            readOnly
+            // readOnly
           />
         </div>
 
