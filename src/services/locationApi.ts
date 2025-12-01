@@ -111,8 +111,7 @@ export const locationApi = baseApi.injectEndpoints({
         method: "GET",
         params: {
           page: params.page || 1,
-          limit: 500,
-          // limit: params.limit || 500,
+          limit: params.limit || 500,
           search: params.search,
           cityId: params.cityId,
           cityName: params.cityName,
