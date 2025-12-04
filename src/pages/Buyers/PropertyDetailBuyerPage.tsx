@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { type FC } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import PageMeta from "../../components/common/PageMeta";
 import { useAuth } from "../../hooks/useAuth";
 import { PropertyDetailBuyer } from "../../features/Buyers/PropertyDetailBuyer";
@@ -16,7 +16,47 @@ const PropertyDetailBuyerPage: FC = () => {
   //   const { user } = useAuth();
   const { id } = useParams<RouteParams>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  const handleLocalityChange = (localityId: string, localityName?: string) => {
+    if (localityId) {
+      const newParams = new URLSearchParams(searchParams);
+
+      // Set locality parameters
+      newParams.set("localityId", localityId);
+
+      if (localityName) {
+        newParams.set("search", localityName);
+        newParams.set("locality", localityName);
+      }
+      newParams.delete("page");
+
+      // Update URL immediately
+      navigate(`/listings/buy?${newParams.toString()}`, { replace: true });
+    } else {
+      // Clear locality
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("localityId");
+      newParams.delete("locality");
+      newParams.delete("page");
+
+      // Update URL immediately
+      navigate(`/listings/buy?${newParams.toString()}`, { replace: true });
+    }
+  };
+  // Handle city change from header
+  const handleCityChange = (cityId: string, cityName?: string) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    // Update URL query params
+    newParams.set("cityId", cityId);
+    if (cityName) newParams.set("city", cityName);
+    newParams.delete("localityId");
+    newParams.delete("locality");
+    newParams.delete("page");
+
+    navigate(`/listings/buy?${newParams.toString()}`, { replace: true });
+  };
   // Handle invalid or missing slug
   if (!id) {
     return (
@@ -46,6 +86,8 @@ const PropertyDetailBuyerPage: FC = () => {
           onShowFavorites={handleShowFavorites}
           onShowAppointments={handleShowAppointments}
           displaySearchBar={true}
+          onLocalityChange={handleLocalityChange}
+          onCityChange={handleCityChange}
         />
         <PropertyDetailBuyer
           id={id}

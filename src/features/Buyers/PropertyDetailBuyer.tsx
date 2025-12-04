@@ -194,6 +194,17 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
           <div className="lg:col-span-2 space-y-6">
             {/* Property Details */}
             <PropertyDetails property={property} />
+
+            {/* Amenities */}
+            {amenities.length > 0 && <AmenitiesSection amenities={amenities} />}
+            {/* Locality Highlights */}
+            {localityHighlights.length > 0 && (
+              <LocalityHighlightsSection
+                localityName={property.locality}
+                highlights={localityHighlights}
+                cityName={property.city.name}
+              />
+            )}
             {/* About Property */}
             <AboutProperty description={property.description} />
 
@@ -207,18 +218,6 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
                 images={property.images || []}
               />
             )}
-
-            {/* Amenities */}
-            {amenities.length > 0 && <AmenitiesSection amenities={amenities} />}
-            {/* Locality Highlights */}
-            {localityHighlights.length > 0 && (
-              <LocalityHighlightsSection
-                localityName={property.locality}
-                highlights={localityHighlights}
-                cityName={property.city.name}
-              />
-            )}
-
             {/* ⭐ NEW: Combined Ratings & Reviews Section */}
             <RatingsAndReviewsSection
               propertyId={property.id}
