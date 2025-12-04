@@ -15,7 +15,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       CreatePropertyReviewRequest
     >({
       query: (data) => ({
-        url: "/properties/reviews",
+        url: "/properties/rv/reviews",
         method: "POST",
         body: data,
       }),
@@ -35,7 +35,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       }
     >({
       query: ({ id, data }) => ({
-        url: `/properties/reviews/${id}`,
+        url: `/properties/rv/reviews/${id}`,
         method: "PUT",
         body: data,
       }),
@@ -55,7 +55,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       { id: string; propertyId: string }
     >({
       query: ({ id }) => ({
-        url: `/properties/reviews/${id}`,
+        url: `/properties/rv/reviews/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: (_result, _error, { propertyId }) => [
@@ -77,7 +77,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       }
     >({
       query: ({ propertyId, limit, offset, sortBy, sortOrder }) => ({
-        url: `/properties/${propertyId}/reviews`,
+        url: `/properties/rv/${propertyId}/reviews`,
         method: "GET",
         params: {
           limit,
@@ -100,7 +100,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       }
     >({
       query: ({ propertyId, userId }) => ({
-        url: `/properties/${propertyId}/reviews/user/${userId}`,
+        url: `/properties/rv/${propertyId}/reviews/user/${userId}`,
         method: "GET",
       }),
       providesTags: (_result, _error, { propertyId, userId }) => [
@@ -114,7 +114,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       string
     >({
       query: (propertyId) => ({
-        url: `/properties/${propertyId}/reviews/stats`,
+        url: `/properties/rv/${propertyId}/reviews/stats`,
         method: "GET",
       }),
       providesTags: (_result, _error, propertyId) => [
@@ -150,7 +150,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       string
     >({
       query: (propertyId) => ({
-        url: `/properties/${propertyId}/reviews/can-review`,
+        url: `/properties/rv/${propertyId}/reviews/can-review`,
         method: "GET",
       }),
     }),
@@ -163,7 +163,7 @@ export const propertyReviewApi = baseApi.injectEndpoints({
       }
     >({
       query: ({ limit = 10 }) => ({
-        url: `/properties/top-rated`,
+        url: `/properties/rv/top-rated`,
         method: "GET",
         params: {
           limit,
