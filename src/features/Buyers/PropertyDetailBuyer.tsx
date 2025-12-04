@@ -205,6 +205,8 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
                 cityName={property.city.name}
               />
             )}
+            {/* Location */}
+            <LocationSection property={property} />
             {/* About Property */}
             <AboutProperty description={property.description} />
 
@@ -236,9 +238,6 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
                 propertyTitle={property.title}
               />
             )}
-
-            {/* Location */}
-            <LocationSection property={property} />
 
             {/* Similar Properties Section */}
             <SimilarPropertiesSection
