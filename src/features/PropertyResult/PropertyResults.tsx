@@ -27,7 +27,11 @@ export const PropertySearchResults = () => {
       if (value !== undefined && value !== null && value !== "") {
         if (Array.isArray(value)) {
           if (value.length > 0) {
-            params.set(key, value.join(","));
+            if (key === "listingSource" && Array.isArray(value)) {
+              params.set(key, value.join(","));
+            } else {
+              params.set(key, value.join(","));
+            }
           }
         } else if (typeof value === "boolean") {
           params.set(key, value.toString());
@@ -116,7 +120,20 @@ export const PropertySearchResults = () => {
     if (params.get("verified")) {
       filters.verified = params.get("verified") === "true";
     }
-
+    if (params.get("listingSource")) {
+      const listingSourceParam = params.get("listingSource")!;
+      if (listingSourceParam.includes(",")) {
+        // Multiple values (comma-separated)
+        filters.listingSource = listingSourceParam.split(",") as Array<
+          "AGENT" | "BUILDER" | "OWNER"
+        >;
+      } else {
+        // Single value
+        filters.listingSource = [
+          listingSourceParam as "AGENT" | "BUILDER" | "OWNER",
+        ];
+      }
+    }
     return filters;
   };
 

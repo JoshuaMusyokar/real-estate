@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
 import { Search, MapPin, Building2, Home, X, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -5,7 +6,12 @@ import {
   useGetCitiesQuery,
   useGetLocalitiesQuery,
 } from "../../services/locationApi";
-import type { City, Locality } from "../../types";
+import type {
+  City,
+  Locality,
+  PropertyPurpose,
+  PropertyType,
+} from "../../types";
 import { Dropdown } from "../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../components/ui/dropdown/DropdownItem";
 
@@ -13,8 +19,10 @@ interface SearchComponentProps {
   variant?: "default" | "compact";
   onSearch?: (params: SearchParams) => void;
   initialCity?: string;
-  onPurposeChange?: (purpose: string) => void;
-  initialPurpose?: string;
+  onPurposeChange?: (purpose: PropertyPurpose) => void;
+  initialPurpose?: PropertyPurpose;
+  onPropertyTypeChange?: (propertyType: PropertyType) => void;
+  onPropertyPurposeChange?: (propertyPurpose: PropertyPurpose) => void;
 }
 
 interface SearchParams {
@@ -23,6 +31,8 @@ interface SearchParams {
   localityId?: string;
   localityName?: string;
   searchText?: string;
+  propertyType?: string;
+  propertyPurpose?: string;
 }
 
 interface SuggestionItem {
@@ -35,11 +45,26 @@ interface SuggestionItem {
 }
 
 const PURPOSE_OPTIONS = [
-  { value: "buy", label: "BUY", icon: Home },
-  { value: "rent", label: "RENT", icon: Home },
-  { value: "commercial", label: "COMMERCIAL", icon: Building2 },
-  { value: "pg", label: "PG/CO-LIVING", icon: Home },
-  { value: "plots", label: "PLOTS", icon: MapPin },
+  { value: "buy", label: "BUY", icon: Home, propertyType: "RESIDENTIAL" },
+  { value: "rent", label: "RENT", icon: Home, propertyType: "RESIDENTIAL" },
+  {
+    value: "commercial",
+    label: "COMMERCIAL",
+    icon: Building2,
+    propertyType: "COMMERCIAL",
+  },
+  {
+    value: "pg",
+    label: "PG/CO-LIVING",
+    icon: Home,
+    propertyType: "RESIDENTIAL",
+  },
+  { value: "plots", label: "PLOTS", icon: MapPin, propertyType: "LAND" },
+];
+
+const COMMERCIAL_SUB_PURPOSES = [
+  { value: "buy", label: "BUY" },
+  { value: "lease", label: "LEASE" },
 ];
 
 const POPULAR_SEARCHES = [
@@ -59,9 +84,13 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   initialCity,
   onPurposeChange,
   initialPurpose = "buy",
+  onPropertyPurposeChange,
+  onPropertyTypeChange,
 }) => {
   const navigate = useNavigate();
   const [purpose, setPurpose] = useState<string>(initialPurpose);
+  const [commercialSubPurpose, setCommercialSubPurpose] =
+    useState<string>("buy");
   const [selectedCityId, setSelectedCityId] = useState<string>("");
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const cityModalRef = useRef<HTMLDivElement>(null);
@@ -132,6 +161,20 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       }
     }
   }, [cities, initialCity]);
+  useEffect(() => {
+    // Propagate initial property type and purpose when component mounts
+    const initialPropertyType = getPropertyTypeFromPurpose(initialPurpose);
+    const initialPropertyPurpose =
+      getPropertyPurposeFromPurpose(initialPurpose);
+
+    if (onPropertyTypeChange) {
+      onPropertyTypeChange(initialPropertyType);
+    }
+
+    if (onPropertyPurposeChange) {
+      onPropertyPurposeChange(initialPropertyPurpose);
+    }
+  }, []); // Empty dependency array - runs once on mount
   // useEffect hook for click outside detection
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -298,12 +341,60 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     }
   };
 
+  const getPropertyTypeFromPurpose = (purpose: string): PropertyType => {
+    switch (purpose) {
+      case "commercial":
+        return "COMMERCIAL" as PropertyType;
+      case "plots":
+        return "LAND" as PropertyType;
+      case "pg":
+        return "RESIDENTIAL" as PropertyType; // PG is also residential
+      default:
+        return "RESIDENTIAL" as PropertyType;
+    }
+  };
+  const getPropertyPurposeFromPurpose = (
+    purpose: string,
+    commercialSubPurpose?: string
+  ): PropertyPurpose => {
+    if (purpose === "commercial") {
+      return commercialSubPurpose === "lease"
+        ? "LEASE"
+        : ("SALE" as PropertyPurpose);
+    } else if (purpose === "buy" || purpose === "plots") {
+      return "SALE" as PropertyPurpose;
+    } else if (purpose === "rent" || purpose === "pg") {
+      return "RENT" as PropertyPurpose;
+    }
+    return "SALE" as PropertyPurpose; // default
+  };
   const handleSuggestionSelect = (suggestion: SuggestionItem) => {
     // Build query parameters based on suggestion type
     const queryParams = new URLSearchParams();
 
+    // Get final purpose and property type
+    const finalPropertyPurpose = getPropertyPurposeFromPurpose(
+      purpose,
+      commercialSubPurpose
+    );
+    const finalPropertyType = getPropertyTypeFromPurpose(purpose);
+
     // Add purpose parameter
-    queryParams.set("purpose", purpose);
+    queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
+
+    // Add property type parameter
+    queryParams.set("propertyType", finalPropertyType);
+
+    // Add property type parameter
+    if (purpose === "commercial") {
+      queryParams.set("propertyType", "COMMERCIAL");
+    } else if (purpose === "plots") {
+      queryParams.set("propertyType", "LAND");
+    } else if (purpose === "pg") {
+      queryParams.set("propertyType", "RESIDENTIAL");
+    } else {
+      queryParams.set("propertyType", "RESIDENTIAL");
+    }
 
     // Add city information
     if (suggestion.cityId) {
@@ -368,8 +459,18 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     // Build query parameters
     const queryParams = new URLSearchParams();
 
+    // Get final purpose and property type
+    const finalPropertyPurpose = getPropertyPurposeFromPurpose(
+      purpose,
+      commercialSubPurpose
+    );
+    const finalPropertyType = getPropertyTypeFromPurpose(purpose);
+
     // Add purpose parameter
-    queryParams.set("purpose", purpose);
+    queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
+
+    // Add property type parameter
+    queryParams.set("propertyType", finalPropertyType);
 
     // Add city information
     if (selectedCityId) {
@@ -382,25 +483,55 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     // Add search text
     queryParams.set("search", searchInput.trim());
 
-    // Navigate to search results page with query parameters
-    navigate(`/listings/buy?${queryParams.toString()}`);
+    // Navigate to appropriate listings page
+    navigate(
+      `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`
+    );
 
     if (onSearch) {
       const params: SearchParams = {
         cityId: selectedCityId,
         cityName: selectedCityName,
         searchText: searchInput.trim(),
+        propertyType: finalPropertyType,
+        propertyPurpose: finalPropertyPurpose,
       };
       onSearch(params);
     }
   };
   const handlePurposeChange = (newPurpose: string) => {
+    const oldPurpose = purpose;
     setPurpose(newPurpose);
 
-    // Propagate to parent
-    if (onPurposeChange) {
-      onPurposeChange(newPurpose);
+    if (newPurpose === "commercial") {
+      setCommercialSubPurpose("buy");
     }
+
+    const newPropertyType = getPropertyTypeFromPurpose(newPurpose);
+    const oldPropertyType = getPropertyTypeFromPurpose(oldPurpose);
+
+    const newPropertyPurpose = getPropertyPurposeFromPurpose(
+      newPurpose,
+      newPurpose === "commercial" ? commercialSubPurpose : undefined
+    );
+    const oldPropertyPurpose = getPropertyPurposeFromPurpose(
+      oldPurpose,
+      oldPurpose === "commercial" ? commercialSubPurpose : undefined
+    );
+
+    // Only call if values actually changed
+    if (onPropertyTypeChange && newPropertyType !== oldPropertyType) {
+      onPropertyTypeChange(newPropertyType);
+    }
+
+    if (onPropertyPurposeChange && newPropertyPurpose !== oldPropertyPurpose) {
+      onPropertyPurposeChange(newPropertyPurpose);
+    }
+
+    // Propagate to parent
+    // if (onPurposeChange) {
+    //   onPurposeChange(newPurpose);
+    // }
   };
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -413,6 +544,21 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     setShowSuggestions(false);
     if (inputRef.current) {
       inputRef.current.focus();
+    }
+  };
+
+  const handleCommercialSubPurposeChange = (subPurpose: string) => {
+    setCommercialSubPurpose(subPurpose);
+
+    // When commercial sub-purpose changes, propagate property purpose
+    if (purpose === "commercial") {
+      const propertyPurpose = getPropertyPurposeFromPurpose(
+        "commercial",
+        subPurpose
+      );
+      if (onPropertyPurposeChange) {
+        onPropertyPurposeChange(propertyPurpose);
+      }
     }
   };
 
@@ -854,6 +1000,27 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
               </button>
             )}
           </div>
+          {purpose === "commercial" && (
+            <div className="flex items-center border-l-2 border-gray-300 bg-gradient-to-b from-gray-50 to-gray-100">
+              <div className="flex gap-2 mx-4">
+                {COMMERCIAL_SUB_PURPOSES.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() =>
+                      handleCommercialSubPurposeChange(option.value)
+                    }
+                    className={`px-4 py-3 text-sm font-semibold rounded-lg transition-all ${
+                      commercialSubPurpose === option.value
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl"
+                        : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border border-gray-200"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleSearch}
@@ -1009,6 +1176,40 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
           ))}
         </div>
       </div>
+      <style>{inlineStyles}</style>
     </div>
   );
 };
+const inlineStyles = `
+  .commercial-tabs-right {
+    display: flex;
+    gap: 2px;
+    padding: 0 8px;
+  }
+  
+  .commercial-tab-right {
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  
+  .commercial-tab-right:hover {
+    transform: translateY(-1px);
+  }
+  
+  /* Animation for tab switch */
+  @keyframes tabSwitch {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  .commercial-tab-right.active {
+    animation: tabSwitch 0.2s ease-out;
+  }
+  
+  /* Ensure proper spacing for the entire search bar */
+  .search-bar-with-commercial {
+    display: flex;
+    align-items: stretch;
+  }
+`;

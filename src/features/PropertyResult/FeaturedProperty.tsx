@@ -43,7 +43,11 @@ export const CompactFeaturedPropertyCard: React.FC<
   const coverImage = images?.[0]?.viewableUrl;
 
   return (
-    <Link to={`/property-detail/${id}`} className="block group w-full">
+    <Link
+      to={`/property-detail/${id}`}
+      className="block group w-full"
+      target="_blank"
+    >
       <div className="relative bg-white rounded-lg overflow-hidden border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200">
         {/* Image Container - Ultra Compact */}
         <div className={`relative ${imageHeight} overflow-hidden`}>

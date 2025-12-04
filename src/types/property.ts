@@ -359,6 +359,7 @@ export interface PropertySearchFilters {
   bathrooms?: number[];
   minSquareFeet?: number;
   maxSquareFeet?: number;
+  listingSource?: string[];
   amenities?: string[];
   featured?: boolean;
   localityId?: string;
@@ -433,7 +434,8 @@ export interface CategorizedPropertiesFilters {
   limit?: number;
   cityId?: string;
   city?: string;
-  purpose?: "buy" | "rent" | "commercial" | "pg" | "plots";
+  purpose?: PropertyPurpose;
+  propertyType?: PropertyType;
 }
 export interface PropertyImageFile {
   file?: File;

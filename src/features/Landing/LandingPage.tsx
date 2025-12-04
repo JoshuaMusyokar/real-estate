@@ -35,6 +35,7 @@ import React, { useEffect, useState } from "react";
 import { FilterPanel } from "./FilterPanel";
 import { LandingPropertyCard } from "./LandingPropertyCard";
 import {
+  type PropertyPurpose,
   type PropertySearchFilters,
   type PropertySubType,
   type PropertyType,
@@ -59,7 +60,10 @@ import { CategorySkeletonLoader } from "./CategorySkeletonLoader";
 export const PropertyLandingPage = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<PropertySearchFilters>({});
-  const [selectedPurpose, setSelectedPurpose] = useState<string>("");
+  const [selectedPurpose, setSelectedPurpose] = useState<PropertyPurpose>();
+  const [propertyType, setPropertyType] = useState<PropertyType>("RESIDENTIAL");
+  const [propertyPurpose, setPropertyPurpose] =
+    useState<PropertyPurpose>("SALE");
   const [searchInput, setSearchInput] = useState("");
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [sortBy, setSortBy] = useState("");
@@ -82,7 +86,8 @@ export const PropertyLandingPage = () => {
   });
   const { data: categorizedData, isLoading: isCategorizedLoading } =
     useGetCategorizedPropertiesQuery({
-      purpose: selectedPurpose as any,
+      purpose: propertyPurpose as any,
+      propertyType: propertyType,
       cityId: selectedCityId || undefined,
       limit: 8,
     });
@@ -163,7 +168,7 @@ export const PropertyLandingPage = () => {
     // Search is reactive through useSearchPropertiesQuery
   };
   // Handle purpose change from search component
-  const handlePurposeChange = (purpose: string) => {
+  const handlePurposeChange = (purpose: PropertyPurpose) => {
     setSelectedPurpose(purpose);
     // You might want to refresh data or scroll to properties section
   };
@@ -215,6 +220,8 @@ export const PropertyLandingPage = () => {
                 onPurposeChange={handlePurposeChange}
                 initialPurpose={selectedPurpose}
                 initialCity={selectedCityName}
+                onPropertyTypeChange={setPropertyType}
+                onPropertyPurposeChange={setPropertyPurpose}
               />
             </div>
 

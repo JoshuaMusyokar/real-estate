@@ -7,8 +7,6 @@ import {
   Bed,
   Bath,
   Maximize,
-  Home,
-  Check,
   User,
   Phone,
   Shield,
@@ -31,9 +29,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
 
-  const coverImage =
-    property.images.find((img) => img.isCover)?.viewableUrl ||
-    property.images[0]?.viewableUrl;
+  // const coverImage =
+  //   property.images.find((img) => img.isCover)?.viewableUrl ||
+  //   property.images[0]?.viewableUrl;
 
   const formatPrice = (price: number) => {
     if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
@@ -42,7 +40,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
   };
 
   const handleCardClick = () => {
-    navigate(`/property-detail/${property.id}`);
+    window.open(`/property-detail/${property.id}`, "_blank");
+
+    // navigate(`/property-detail/${property.id}`);
   };
 
   const avgPricePerSqFt = property.carpetArea
@@ -207,7 +207,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
               <p className="text-sm font-medium text-gray-800 line-clamp-1">
                 {property.builderName || property.ownerName || "Property Agent"}
               </p>
-              <p className="text-xs text-gray-500">Agent</p>
+              <p className="text-xs text-gray-500">Build by</p>
             </div>
           </div>
 

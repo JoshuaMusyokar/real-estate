@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Maximize,
   Package,
+  User,
 } from "lucide-react";
 import type {
   PropertySearchFilters,
@@ -153,6 +154,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   const bhkOptions = [1, 2, 3, 4, 5, 6];
 
+  const listingSources: Array<{
+    value: "AGENT" | "BUILDER" | "OWNER";
+    label: string;
+  }> = [
+    { value: "AGENT", label: "Agent" },
+    { value: "BUILDER", label: "Builder" },
+    { value: "OWNER", label: "Owner" },
+  ];
+
   const priceRanges = [
     { label: "₹0 - ₹50 L", min: 1, max: 5000000 },
     { label: "₹50 L - ₹1 Cr", min: 5000000, max: 10000000 },
@@ -178,6 +188,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     if (filters.possessionStatus) count++;
     if (filters.verified) count++;
     if (filters.purpose) count++;
+
+    if (filters.listingSource) count++;
 
     // Check bedrooms (array) and hasBalcony (boolean in More Filters)
     if (filters.bedrooms && filters.bedrooms.length > 0) count++;
@@ -304,7 +316,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               ))}
             </div>
           </Dropdown>
-
           {/* 2. BHK Type Filter */}
           <Dropdown
             label="BHK Type"
@@ -346,7 +357,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               </button>
             </div>
           </Dropdown>
-
           {/* 3. Price Range Filter */}
           <Dropdown
             label="Price Range"
@@ -390,7 +400,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               })}
             </div>
           </Dropdown>
-
           {/* 4. Sale Type Filter */}
           <Dropdown
             label="Sale Type"
@@ -422,7 +431,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               })}
             </div>
           </Dropdown>
-
           {/* 5. Construction Status Filter */}
           <Dropdown
             label="Construction Status"
@@ -456,7 +464,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               })}
             </div>
           </Dropdown>
-
           {/* 6. Verified Filter */}
           <Dropdown
             label="Verified"
@@ -485,7 +492,43 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               </button>
             </div>
           </Dropdown>
-
+          <Dropdown
+            label="Listing Source"
+            id="listing-source"
+            count={filters.listingSource ? 1 : 0}
+            activeDropdown={activeDropdown}
+            setActiveDropdown={setActiveDropdown}
+          >
+            <div className="p-3 space-y-1">
+              {listingSources.map((source) => {
+                const isActive = filters.listingSource === source.value;
+                return (
+                  <button
+                    key={source.value}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFilterToggle("listingSource", source.value);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
+                      isActive
+                        ? "bg-purple-50 text-purple-600 font-semibold"
+                        : "hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {source.value === "AGENT" && <User className="w-4 h-4" />}
+                      {source.value === "BUILDER" && (
+                        <Building2 className="w-4 h-4" />
+                      )}
+                      {source.value === "OWNER" && <Home className="w-4 h-4" />}
+                      {source.label}
+                    </span>
+                    {isActive && <Check className="w-4 h-4 text-purple-600" />}
+                  </button>
+                );
+              })}
+            </div>
+          </Dropdown>
           {/* 7. More Filters */}
           <Dropdown
             label="More Filters"
@@ -532,7 +575,66 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               </div>
             </div>
           </Dropdown>
-
+          {/* If you want multiselect, use this enhanced
+          version: */}
+          {/* <Dropdown
+            label="Listing Source"
+            id="listing-source"
+            count={filters.listingSource?.length || 0}
+            activeDropdown={activeDropdown}
+            setActiveDropdown={setActiveDropdown}
+          >
+            <div className="p-4">
+              <div className="space-y-2">
+                {listingSources.map((source) => {
+                  const isActive = filters.listingSource?.includes(
+                    source.value
+                  );
+                  return (
+                    <button
+                      key={source.value}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFilters((prev) => {
+                          const current: Array<"AGENT" | "BUILDER" | "OWNER"> =
+                            prev.listingSource || [];
+                          const updated = current.includes(source.value)
+                            ? current.filter((v) => v !== source.value)
+                            : [...current, source.value];
+                          return {
+                            ...prev,
+                            listingSource: updated.length ? updated : undefined,
+                          };
+                        });
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
+                        isActive
+                          ? "bg-purple-50 text-purple-600 font-semibold border border-purple-200"
+                          : "hover:bg-gray-50 text-gray-700 border border-transparent"
+                      }`}
+                    >
+                      {source.value === "AGENT" && <User className="w-4 h-4" />}
+                      {source.value === "BUILDER" && (
+                        <Building2 className="w-4 h-4" />
+                      )}
+                      {source.value === "OWNER" && <Home className="w-4 h-4" />}
+                      <span>{source.label}</span>
+                      {isActive && <Check className="w-4 h-4 ml-auto" />}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveDropdown(null);
+                }}
+                className="w-full mt-4 text-center py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold"
+              >
+                Apply
+              </button>
+            </div>
+          </Dropdown> */}
           {/* Reset Filters Button */}
           {totalActiveFilters > 0 && (
             <button

@@ -90,7 +90,11 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
         {/* CTA */}
         <button
           className={`w-full bg-gradient-to-r ${color} text-white py-2 rounded-xl font-bold text-xs hover:shadow-lg transition-all`}
-          onClick={() => navigate(`/property-detail/${property.id}`)}
+          onClick={() => {
+            window.open(`/property-detail/${property.id}`, "_blank");
+
+            // navigate(`/property-detail/${property.id}`);
+          }}
         >
           View Details
         </button>

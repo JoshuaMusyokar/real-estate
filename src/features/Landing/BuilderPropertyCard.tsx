@@ -144,7 +144,11 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
         {/* CTA Button */}
         <button
           className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-2xl font-black text-sm hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-          onClick={() => navigate(`/property-detail/${property.id}`)}
+          onClick={() => {
+            window.open(`/property-detail/${property.id}`, "_blank");
+
+            // navigate(`/property-detail/${property.id}`);
+          }}
         >
           <span>View Details</span>
           <ArrowRight className="w-4 h-4" />
