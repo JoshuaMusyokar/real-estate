@@ -1,3 +1,4 @@
+// components/property/PropertyCard.tsx
 import { useState, type FC } from "react";
 import type { Property } from "../../types";
 import {
@@ -8,18 +9,21 @@ import {
   MapPin,
   Home,
   Calendar,
+  Star,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { ReviewPropertyModal } from "./ReviewPropertyModal";
 import { QuickReviewActions } from "./QuickReviewAction";
 import { getCurrencySymbol } from "../../utils/currency-utils";
 import { useAuth } from "../../hooks/useAuth";
+import { FeaturedToggle } from "./components/FeaturedToggle";
+import { FeaturedBadge } from "./components/FeaturedBadge";
 
 interface PropertyCardProps {
   property: Property;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onView: (id: string) => void;
+  onFeaturedToggle?: (propertyId: string, isFeatured: boolean) => void;
 }
 
 export const PropertyCard: FC<PropertyCardProps> = ({
@@ -27,15 +31,21 @@ export const PropertyCard: FC<PropertyCardProps> = ({
   onEdit,
   onDelete,
   onView,
+  onFeaturedToggle,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const { user } = useAuth();
-  // const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   const coverImage =
     property.images?.find((img) => img.isCover)?.viewableUrl ||
     property.images?.[0]?.viewableUrl;
+
+  const handleFeaturedToggle = () => {
+    if (onFeaturedToggle) {
+      onFeaturedToggle(property.id, !property.featured);
+    }
+  };
 
   return (
     <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
@@ -51,11 +61,14 @@ export const PropertyCard: FC<PropertyCardProps> = ({
             <Home className="w-16 h-16 text-gray-300" />
           </div>
         )}
+
+        {/* Featured badge */}
         {property.featured && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-xs font-bold shadow-lg">
-            FEATURED
+          <div className="absolute top-3 left-3 z-10">
+            <FeaturedBadge compact />
           </div>
         )}
+
         <div className="absolute top-3 right-3 relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
@@ -69,7 +82,44 @@ export const PropertyCard: FC<PropertyCardProps> = ({
                 className="fixed inset-0 z-10"
                 onClick={() => setShowMenu(false)}
               />
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-20 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-20 overflow-hidden">
+                {/* Admin actions section */}
+                {(user?.role.name === "ADMIN" ||
+                  user?.role.name === "SUPER_ADMIN") && (
+                  <>
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                      Admin Actions
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowReviewModal(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-blue-50 flex items-center gap-3 text-blue-600 font-medium transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" /> Review Property
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleFeaturedToggle();
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-amber-50 flex items-center gap-3 text-amber-600 font-medium transition-colors"
+                    >
+                      <Star
+                        className={`w-4 h-4 ${
+                          property.featured ? "fill-current" : ""
+                        }`}
+                      />
+                      {property.featured
+                        ? "Remove from Featured"
+                        : "Add to Featured"}
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
+                  </>
+                )}
+
+                {/* Regular actions */}
                 <button
                   onClick={() => {
                     onView(property.id);
@@ -108,6 +158,16 @@ export const PropertyCard: FC<PropertyCardProps> = ({
           <h3 className="font-bold text-lg text-gray-900 line-clamp-1 flex-1 pr-2 group-hover:text-blue-600 transition-colors">
             {property.title}
           </h3>
+          {/* Inline featured toggle for admins */}
+          {(user?.role.name === "ADMIN" ||
+            user?.role.name === "SUPER_ADMIN") && (
+            <FeaturedToggle
+              propertyId={property.id}
+              isFeatured={property.featured}
+              compact
+              onToggle={handleFeaturedToggle}
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-2 text-gray-600 text-sm mb-4">
@@ -156,22 +216,13 @@ export const PropertyCard: FC<PropertyCardProps> = ({
           </span>
         </div>
 
-        {user?.role.name === "ADMIN" || user?.role.name === "SUPER_ADMIN" ? (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 text-xs">
-            <QuickReviewActions
-              property={property}
-              /*onSuccess={() => refetch()}*/ onSuccess={() => {}}
-            />
+        {/* Admin quick actions */}
+        {(user?.role.name === "ADMIN" || user?.role.name === "SUPER_ADMIN") && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <QuickReviewActions property={property} onSuccess={() => {}} />
           </div>
-        ) : null}
+        )}
       </div>
-      <ReviewPropertyModal
-        isOpen={showReviewModal}
-        onClose={() => setShowReviewModal(false)}
-        property={property!}
-        // onSuccess={() => refetch()}
-        onSuccess={() => {}}
-      />
     </div>
   );
 };

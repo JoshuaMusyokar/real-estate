@@ -348,6 +348,7 @@ export interface PropertySearchFilters {
   propertyType?: PropertyType;
   subType?: PropertySubType;
   purpose?: PropertyPurpose;
+  possessionStatus?: string;
   status?: PropertyStatus;
   cityId?: string;
   city?: string[];
@@ -360,6 +361,8 @@ export interface PropertySearchFilters {
   maxSquareFeet?: number;
   amenities?: string[];
   featured?: boolean;
+  localityId?: string;
+  hasBalcony?: boolean;
   verified?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
@@ -406,6 +409,7 @@ export interface CategorizedProperty {
   price: number;
   city: City;
   locality: string;
+  slug: string;
   propertyType: "RESIDENTIAL" | "COMMERCIAL" | string;
   purpose: "SALE" | "RENT" | "LEASE" | string;
   bedrooms: number;
@@ -418,10 +422,18 @@ export interface CategorizedProperty {
   createdAt: string;
 }
 export interface CategorizedPropertiesResponse {
-  featured: CategorizedProperty[];
-  recent: CategorizedProperty[];
-  luxury: CategorizedProperty[];
-  affordable: CategorizedProperty[];
+  top: CategorizedProperty[];
+  featuredBuilders: CategorizedProperty[];
+  featuredOwners: CategorizedProperty[];
+  featuredAgents: CategorizedProperty[];
+  recentlyAdded: CategorizedProperty[];
+}
+
+export interface CategorizedPropertiesFilters {
+  limit?: number;
+  cityId?: string;
+  city?: string;
+  purpose?: "buy" | "rent" | "commercial" | "pg" | "plots";
 }
 export interface PropertyImageFile {
   file?: File;

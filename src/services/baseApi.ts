@@ -103,6 +103,7 @@ export const baseApi = createApi({
     "PropertyReviewStats",
     "UserReviews",
     "TopRatedProperties",
+    "PropertyStats",
   ],
   baseQuery: baseQueryWithReauth,
   endpoints: () => ({}),

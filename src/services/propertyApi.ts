@@ -15,6 +15,7 @@ import type {
   PropertySearchFilters,
   PropertyUpdateRequest,
   ApiResponse,
+  CategorizedPropertiesFilters,
 } from "../types";
 
 export const propertyApi = baseApi.injectEndpoints({
@@ -185,10 +186,19 @@ export const propertyApi = baseApi.injectEndpoints({
     // Get categorized properties for home page
     getCategorizedProperties: builder.query<
       ApiResponse<CategorizedPropertiesResponse>,
-      { limit?: number }
+      CategorizedPropertiesFilters
     >({
-      query: ({ limit = 8 } = {}) =>
-        `/properties/cat/categorized?limit=${limit}`,
+      query: (filters) => {
+        const params = new URLSearchParams();
+
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, value.toString());
+          }
+        });
+
+        return `/properties/cat/categorized?${params.toString()}`;
+      },
       providesTags: ["Property"],
     }),
 
@@ -313,6 +323,85 @@ export const propertyApi = baseApi.injectEndpoints({
         { type: "Property", id: propertyId },
       ],
     }),
+    // Admin only: Toggle featured status
+    toggleFeatured: builder.mutation<PropertyResponse, { propertyId: string }>({
+      query: ({ propertyId }) => ({
+        url: `/featured/${propertyId}/toggle`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+        "Property",
+      ],
+    }),
+
+    // Admin only: Add to featured
+    addToFeatured: builder.mutation<PropertyResponse, { propertyId: string }>({
+      query: ({ propertyId }) => ({
+        url: `/featured/${propertyId}`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+        "Property",
+      ],
+    }),
+
+    // Admin only: Remove from featured
+    removeFromFeatured: builder.mutation<
+      PropertyResponse,
+      { propertyId: string }
+    >({
+      query: ({ propertyId }) => ({
+        url: `/featured/${propertyId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { propertyId }) => [
+        { type: "Property", id: propertyId },
+        "Property",
+      ],
+    }),
+
+    // Admin only: Get featured properties
+    getFeaturedProperties: builder.query<
+      PropertiesResponse,
+      { page?: number; limit?: number; search?: string }
+    >({
+      query: ({ page = 1, limit = 20, search } = {}) => {
+        const params = new URLSearchParams();
+        params.append("page", page.toString());
+        params.append("limit", limit.toString());
+        if (search) params.append("search", search);
+        return `/featured?${params.toString()}`;
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map(({ id }) => ({
+                type: "Property" as const,
+                id,
+              })),
+              { type: "Property", id: "FEATURED_LIST" },
+            ]
+          : [{ type: "Property", id: "FEATURED_LIST" }],
+    }),
+
+    // Admin only: Get featured stats
+    getFeaturedStats: builder.query<
+      {
+        success: boolean;
+        data: {
+          total: number;
+          byType: Array<{ propertyType: string; count: number }>;
+          byStatus: Array<{ status: string; count: number }>;
+          byCity: Array<{ cityId: string; cityName: string; count: number }>;
+        };
+      },
+      void
+    >({
+      query: () => "/featured/stats",
+      providesTags: ["PropertyStats"],
+    }),
 
     // Delete property document
     deletePropertyDocument: builder.mutation<
@@ -331,6 +420,11 @@ export const propertyApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useAddToFeaturedMutation,
+  useGetFeaturedPropertiesQuery,
+  useGetFeaturedStatsQuery,
+  useToggleFeaturedMutation,
+  useRemoveFromFeaturedMutation,
   useGetPropertiesByOwnerQuery,
   useGetCategorizedPropertiesQuery,
   useAddToFavoritesMutation,

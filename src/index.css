@@ -845,3 +845,13 @@ span.flatpickr-weekday,
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.5);
 }
+/* Ensure no parent elements clip the dropdowns */
+html,
+body {
+  overflow-x: visible !important;
+}
+
+/* Ensure dropdowns can render outside containers */
+.sticky {
+  overflow: visible !important;
+}

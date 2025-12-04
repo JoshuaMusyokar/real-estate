@@ -27,8 +27,11 @@ import {
   Zap,
   Phone,
   Mail,
+  Trophy,
+  User,
+  Briefcase,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FilterPanel } from "./FilterPanel";
 import { LandingPropertyCard } from "./LandingPropertyCard";
 import {
@@ -46,16 +49,19 @@ import { PublicHeader } from "../../layout/PublicHeader";
 import { useAuth } from "../../hooks/useAuth";
 import { Footer } from "../../layout/Footer";
 import { useDefaultCity } from "../../hooks/useDefaultCity";
-import { CategorizedPropertySection } from "./CategorizedSection";
-
-// Import types and hooks from parent context
-// These will be available through the React component props
+import { CategorizedSection } from "./CategorizedSection";
+import { SearchComponent } from "./SearchComponent";
+import { HorizontalScrollSection } from "./HorizontalSection";
+import { AdBanner } from "./AddBanner";
+import { BuilderPropertyCard } from "./BuilderPropertyCard";
+import { StandardPropertyCard } from "./StandardPropertyCard";
 export const PropertyLandingPage = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<PropertySearchFilters>({});
+  const [selectedPurpose, setSelectedPurpose] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [sortBy, setSortBy] = useState("featured");
+  const [sortBy, setSortBy] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
   const { isAuthenticated } = useAuth();
@@ -75,23 +81,72 @@ export const PropertyLandingPage = () => {
   });
   const { data: categorizedData, isLoading: isCategorizedLoading } =
     useGetCategorizedPropertiesQuery({
+      purpose: selectedPurpose as any,
+      cityId: selectedCityId || undefined,
       limit: 8,
     });
+
+  // Categories configuration
+  const categories = [
+    {
+      id: "top",
+      title: "Top Properties",
+      description:
+        "Smart-picked properties based on engagement, quality, and value",
+      icon: <Trophy className="w-6 h-6 text-white" />,
+      color: "from-amber-500 to-orange-500",
+      CardComponent: StandardPropertyCard,
+      properties: categorizedData?.data?.top || [],
+      adBanner: true,
+    },
+    {
+      id: "featuredBuilders",
+      title: "Premium Builder Projects",
+      description: "Exclusive projects from verified builders",
+      icon: <Building2 className="w-6 h-6 text-white" />,
+      color: "from-blue-500 to-indigo-600",
+      properties: categorizedData?.data?.featuredBuilders || [],
+      CardComponent: BuilderPropertyCard,
+    },
+    {
+      id: "featuredOwners",
+      title: "Featured Owner Properties",
+      description: "Direct listings from property owners",
+      icon: <User className="w-6 h-6 text-white" />,
+      color: "from-green-500 to-emerald-600",
+      properties: categorizedData?.data?.featuredOwners || [],
+      CardComponent: StandardPropertyCard,
+    },
+    {
+      id: "featuredAgents",
+      title: "Agent Recommended",
+      description: "Curated properties by professional agents",
+      icon: <Briefcase className="w-6 h-6 text-white" />,
+      color: "from-purple-500 to-pink-500",
+      properties: categorizedData?.data?.featuredAgents || [],
+      CardComponent: StandardPropertyCard,
+    },
+    {
+      id: "recentlyAdded",
+      title: "Recently Added",
+      description: "Fresh listings just added to our platform",
+      icon: <Clock className="w-6 h-6 text-white" />,
+      color: "from-red-500 to-rose-500",
+      properties: categorizedData?.data?.recentlyAdded || [],
+      CardComponent: StandardPropertyCard,
+    },
+  ];
+
   useEffect(() => {
     if (isAuthenticated) refetch();
   }, [isAuthenticated, refetch]);
+
   useEffect(() => {
     if (selectedCityId) {
       setFilters((prev) => ({ ...prev, cityId: selectedCityId }));
     }
   }, [selectedCityId]);
-  // useEffect(() => {
-  //   // Get default city from localStorage or use first city
-  //   const savedCityId = localStorage.getItem("selectedCityId");
-  //   if (savedCityId) {
-  //     setSelectedCityId(savedCityId);
-  //   }
-  // }, []);
+
   useEffect(() => {
     if (isAuthenticated && favouriteData && favouriteData.data) {
       setFavPropertiesIds(favouriteData.data);
@@ -106,22 +161,18 @@ export const PropertyLandingPage = () => {
   const handleSearch = () => {
     // Search is reactive through useSearchPropertiesQuery
   };
+  // Handle purpose change from search component
+  const handlePurposeChange = (purpose: string) => {
+    setSelectedPurpose(purpose);
+    // You might want to refresh data or scroll to properties section
+  };
   const handleShowFavorites = () => {
-    // Navigate to favorites page or show favorites modal
     navigate("/saved-properties");
   };
 
   const handleShowAppointments = () => {
-    // Navigate to appointments page
     navigate("/appointments");
   };
-  // const handleCityChange = (cityId: string) => {
-  //   setSelectedCityId(cityId);
-  //   localStorage.setItem("selectedCityId", cityId);
-  //   // Reset other filters when city changes
-  //   setFilters({ cityId });
-  //   setSearchInput("");
-  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -135,7 +186,7 @@ export const PropertyLandingPage = () => {
       />
 
       {/* Hero Section with Advanced Animations */}
-      <section className="relative pt-32 pb-4 overflow-hidden">
+      <section className="relative pt-32 pb-4 overflow-visible">
         {/* Animated Gradient Mesh Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50" />
@@ -152,107 +203,18 @@ export const PropertyLandingPage = () => {
           <div className="text-center mb-16">
             {/* Floating Badge with Pulse Animation */}
             <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-2xl shadow-blue-500/20 mb-8 border border-blue-100 animate-fade-in hover:scale-105 transition-transform duration-300">
-              <div className="relative">
-                <Sparkles className="w-4 h-4 text-yellow-500 animate-spin-slow" />
-                <span className="absolute inset-0 animate-ping">
-                  <Sparkles className="w-4 h-4 text-yellow-500 opacity-75" />
-                </span>
-              </div>
               <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 #1 Trusted Real Estate Platform in 2025
               </span>
             </div>
 
-            {/* Main Headline with Gradient Animation */}
-            {/* <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black mb-6 leading-[1.1] animate-slide-up">
-              <span className="block bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-2">
-                Discover Your Perfect
-              </span>
-              <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent animate-gradient">
-                Dream Home Today
-              </span>
-            </h1> */}
-
-            <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed animate-fade-in-delay font-medium">
-              Explore{" "}
-              <span className="text-blue-600 font-bold">
-                exclusive properties
-              </span>{" "}
-              curated by top real estate experts. Find luxury homes, modern
-              apartments, and prime investment opportunities.
-            </p>
-
             {/* Premium Search Bar with Enhanced Styling */}
-            <div className="max-w-5xl mx-auto mb-4 animate-slide-up-delay">
-              <div className="bg-white rounded-3xl shadow-2xl shadow-blue-900/10 p-3 sm:p-4 flex flex-col lg:flex-row gap-3 border-2 border-gray-100 hover:border-blue-200 hover:shadow-3xl transition-all duration-500 group">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="City, neighborhood, or property type..."
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                    className="w-full pl-14 pr-4 py-4 text-gray-900 placeholder-gray-400 focus:outline-none rounded-2xl font-semibold text-lg bg-gray-50/50 focus:bg-white transition-all"
-                  />
-                </div>
-                <button
-                  onClick={() => setShowFilterPanel(true)}
-                  className="relative px-6 py-4 bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 rounded-2xl transition-all text-gray-700 font-bold flex items-center justify-center gap-2 hover:scale-105 hover:shadow-lg"
-                >
-                  <Filter className="w-5 h-5" />
-                  <span className="hidden sm:inline">Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -top-2 -right-2 min-w-[28px] h-7 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-black px-2 shadow-lg animate-bounce">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={handleSearch}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-2xl font-black hover:shadow-2xl hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 group/btn"
-                >
-                  <span>Search Now</span>
-                  <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-                </button>
-              </div>
-
-              {/* Quick Filter Pills with Enhanced Design */}
-              <div className="flex flex-wrap gap-3 mt-2 justify-center">
-                {[
-                  {
-                    label: "🏰 Luxury Villas",
-                    value: { propertyType: "RESIDENTIAL", subType: "VILLA" },
-                  },
-                  {
-                    label: "🏢 Modern Apartments",
-                    value: {
-                      propertyType: "RESIDENTIAL",
-                      subType: "APARTMENT",
-                    },
-                  },
-                  {
-                    label: "🏪 Commercial",
-                    value: { propertyType: "COMMERCIAL" },
-                  },
-                  { label: "🌳 Land Plots", value: { propertyType: "LAND" } },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    // onClick={() => setFilters({ ...filters, ...item.value })}
-                    onClick={() =>
-                      setFilters({
-                        ...filters,
-                        propertyType: item.value.propertyType as PropertyType,
-                        subType: item.value.subType as PropertySubType,
-                      })
-                    }
-                    className="px-6 py-3 bg-white/90 backdrop-blur-sm border-2 border-gray-200 hover:border-blue-400 rounded-2xl text-sm font-bold hover:bg-white hover:shadow-xl hover:scale-110 transition-all duration-300 text-gray-700 hover:text-blue-600"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+            <div className="max-w-6xl mx-auto animate-slide-up-delay">
+              <SearchComponent
+                onPurposeChange={handlePurposeChange}
+                initialPurpose={selectedPurpose}
+                initialCity={selectedCityName}
+              />
             </div>
 
             {/* Trust Signals */}
@@ -274,164 +236,32 @@ export const PropertyLandingPage = () => {
         </div>
       </section>
 
-      {/* Main Content - Properties Listing */}
-      <section
-        id="properties"
-        className="py-6 bg-gradient-to-br from-gray-50 via-white to-blue-50"
-      >
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header with Enhanced Typography */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
-            <div className="space-y-2">
-              <h2 className="text-1xl lg:text-2xl font-black text-gray-900">
-                {isLoading ? (
-                  <span className="animate-pulse bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent">
-                    Loading Properties...
-                  </span>
-                ) : (
-                  <>
-                    <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                      {properties.length}
-                    </span>
-                    <span className="text-gray-900"> Exclusive Properties</span>
-                  </>
-                )}
-              </h2>
-            </div>
-
-            {/* Enhanced Sort Dropdown */}
-            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-2xl shadow-lg border-2 border-gray-100 hover:border-blue-200 transition-all">
-              <span className="text-sm text-gray-600 font-bold hidden sm:inline">
-                Sort by:
-              </span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-2 py-2 border-0 focus:ring-2 focus:ring-blue-500 bg-transparent font-bold text-gray-900 cursor-pointer appearance-none pr-8 focus:outline-none"
-              >
-                <option value="featured">⭐ Featured First</option>
-                <option value="price">💰 Price: Low to High</option>
-                <option value="price">💎 Price: High to Low</option>
-                <option value="createdAt">🆕 Newest First</option>
-                <option value="viewCount">👁️ Most Viewed</option>
-              </select>
-              <ChevronDown className="w-5 h-5 text-gray-400 -ml-6 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Active Filters Display with Enhanced Design */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap items-center gap-3 mb-10 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 shadow-lg animate-slide-down">
-              <span className="text-sm font-black text-blue-900 flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Active Filters:
-              </span>
-              {Object.entries(filters).map(([key, value]) => {
-                if (!value) return null;
-                const label = Array.isArray(value)
-                  ? `${key}: ${value.join(", ")}`
-                  : `${key}: ${value}`;
-                return (
-                  <span
-                    key={key}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white text-blue-700 rounded-xl text-sm font-bold border-2 border-blue-300 hover:border-blue-400 hover:shadow-md transition-all group"
-                  >
-                    {label}
-                    <button
-                      onClick={() => {
-                        const newFilters = { ...filters };
-                        delete newFilters[key as keyof PropertySearchFilters];
-                        setFilters(newFilters);
-                      }}
-                      className="hover:bg-blue-100 rounded-full p-1 transition-all group-hover:rotate-90"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                );
-              })}
-              <button
-                onClick={() => setFilters({})}
-                className="ml-auto text-sm text-red-600 hover:text-red-700 font-black hover:underline transition-all flex items-center gap-1 hover:scale-105"
-              >
-                <X className="w-4 h-4" />
-                Clear All
-              </button>
-            </div>
-          )}
-
-          {/* Properties Grid with Enhanced Cards */}
-          {isLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-3xl border-2 border-gray-200 overflow-hidden shadow-xl animate-pulse"
-                >
-                  <div className="h-80 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 animate-shimmer" />
-                  <div className="p-7 space-y-4">
-                    <div className="h-7 bg-gray-200 rounded-xl w-3/4 animate-shimmer" />
-                    <div className="h-5 bg-gray-200 rounded-lg w-1/2 animate-shimmer" />
-                    <div className="h-12 bg-gray-200 rounded-xl w-2/5 animate-shimmer" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : properties.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {properties.map((property, index) => (
-                <LandingPropertyCard
-                  key={property.id}
-                  property={property}
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                  favProperties={favPropertiesIds}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-28 bg-white rounded-3xl border-2 border-dashed border-gray-300 shadow-2xl animate-fade-in">
-              <div className="w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-                <Home className="w-16 h-16 text-gray-400" />
-              </div>
-              <h3 className="text-4xl font-black text-gray-900 mb-4">
-                No Properties Found
-              </h3>
-              <p className="text-gray-600 mb-10 text-xl font-medium max-w-md mx-auto">
-                Try adjusting your filters or search criteria to discover more
-                properties
-              </p>
-              <button
-                onClick={() => {
-                  setFilters({});
-                  setSearchInput("");
-                }}
-                className="px-10 py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-2xl hover:shadow-2xl hover:scale-105 transition-all font-black inline-flex items-center gap-3 text-lg"
-              >
-                Reset All Filters
-                <ArrowRight className="w-6 h-6" />
-              </button>
-            </div>
-          )}
+      {/* Categorized Properties Sections */}
+      {/* {!isCategorizedLoading && categorizedData?.data && (
+        <div className="space-y-1">
+          {categories.map((category, index) => (
+            <CategorizedSection
+              key={category.id}
+              title={category.title}
+              description={category.description}
+              icon={category.icon}
+              properties={category.properties}
+              color={category.color}
+              index={index}
+            />
+          ))}
         </div>
-      </section>
+      )} */}
 
-      {/* Categorized Properties Section */}
-      {categorizedData && (
-        <CategorizedPropertySection
-          categorizedProperties={
-            categorizedData.data || {
-              featured: [],
-              recent: [],
-              luxury: [],
-              affordable: [],
-            }
-          }
-          isLoading={isCategorizedLoading}
-        />
-      )}
+      {categories.map((category, index) => (
+        <React.Fragment key={category.id}>
+          <HorizontalScrollSection {...category} />
+          {(index === 1 || index === 3) && <AdBanner />}
+        </React.Fragment>
+      ))}
+
       {/* Premium Stats Section with Animated Counters */}
-      <section className="relative py-10 overflow-hidden">
+      {/* <section className="relative py-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
         <div className="absolute inset-0 bg-grid-pattern opacity-10" />
 
@@ -477,10 +307,10 @@ export const PropertyLandingPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Why Choose Us Section with Card Hover Effects */}
-      <section
+      {/* <section
         id="how-it-works"
         className="py-24 bg-white relative overflow-hidden"
       >
@@ -561,71 +391,7 @@ export const PropertyLandingPage = () => {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* CTA Section with Parallax Effect */}
-      <section className="relative py-28 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-
-        {/* Animated Orbs */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-float-delayed" />
-        </div>
-
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-8 border border-white/30">
-            <Clock className="w-4 h-4 text-white" />
-            <span className="text-sm font-bold text-white">
-              Limited Time Offer
-            </span>
-          </div>
-
-          <h2 className="text-5xl lg:text-6xl font-black text-white mb-6 leading-tight">
-            Ready to Find Your
-            <span className="block">Dream Property?</span>
-          </h2>
-
-          <p className="text-xl lg:text-2xl text-blue-100 mb-12 max-w-2xl mx-auto font-semibold">
-            Join <span className="text-white font-black">10,000+</span>{" "}
-            satisfied clients who found their perfect home with us
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-5 justify-center">
-            <Link
-              to="/signup"
-              className="group px-10 py-5 bg-white text-blue-600 rounded-2xl font-black hover:shadow-2xl hover:scale-105 transition-all inline-flex items-center justify-center gap-3 text-lg"
-            >
-              Get Started Free
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-            </Link>
-            <Link
-              to="/properties"
-              className="px-10 py-5 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-2xl font-black hover:bg-white/20 transition-all inline-flex items-center justify-center gap-3 text-lg"
-            >
-              <Search className="w-5 h-5" />
-              Browse Properties
-            </Link>
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-white/80">
-            <div className="flex items-center gap-2">
-              <Check className="w-5 h-5" />
-              <span className="font-semibold">No Credit Card Required</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              <span className="font-semibold">Secure & Private</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              <span className="font-semibold">Instant Access</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      </section> */}
 
       {/* Filter Panel Modal */}
       {showFilterPanel && (

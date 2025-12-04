@@ -42,6 +42,7 @@ import LandingPagesAdmin from "./features/Settings/Landing/LandingAmin";
 import RBACPage from "./pages/rbac/RBACPage";
 import LocalityPage from "./pages/Location/CitiesPage";
 import CitiesPage from "./pages/Location/LocalityPage";
+import { PropertySearchResults } from "./features/PropertyResult/PropertyResults";
 // import {Role } from "./types";
 
 export default function App() {
@@ -52,6 +53,7 @@ export default function App() {
         <Routes>
           {/* Public Landing Page */}
           <Route path="/" element={<MainLanding />} />
+          <Route path="/listings/buy" element={<PropertySearchResults />} />
           <Route path="/:template" element={<MainLanding />} />
 
           {/* Auth Routes - Only accessible when not authenticated */}

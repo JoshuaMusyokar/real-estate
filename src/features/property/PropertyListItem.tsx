@@ -1,15 +1,18 @@
-import { Eye, Home, MapPin } from "lucide-react";
+import { Eye, Home, MapPin, Star } from "lucide-react";
 import type { FC } from "react";
 import type { Property } from "../../types";
 import { StatusBadge } from "./StatusBadge";
 import { QuickReviewActions } from "./QuickReviewAction";
 import { useAuth } from "../../hooks/useAuth";
 import { getCurrencySymbol } from "../../utils/currency-utils";
+import { FeaturedToggle } from "./components/FeaturedToggle";
+
 interface PropertyListItemProps {
   property: Property;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onView: (id: string) => void;
+  onFeaturedToggle?: (propertyId: string, isFeatured: boolean) => void;
 }
 
 export const PropertyListItem: FC<PropertyListItemProps> = ({
@@ -17,11 +20,18 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
   onEdit,
   onDelete,
   onView,
+  onFeaturedToggle,
 }) => {
   const { user } = useAuth();
   const coverImage =
     property.images?.find((img) => img.isCover)?.viewableUrl ||
     property.images?.[0]?.viewableUrl;
+
+  const handleFeaturedToggle = () => {
+    if (onFeaturedToggle) {
+      onFeaturedToggle(property.id, !property.featured);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg hover:border-gray-300 transition-all duration-300">
@@ -39,8 +49,11 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
             </div>
           )}
           {property.featured && (
-            <div className="absolute top-2 left-2 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded text-xs font-bold">
-              FEATURED
+            <div className="absolute top-2 left-2">
+              <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded text-xs font-bold">
+                <Star className="w-3 h-3 fill-current" />
+                <span>FEATURED</span>
+              </div>
             </div>
           )}
         </div>
@@ -48,9 +61,20 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
         <div className="flex-1 min-w-0 flex flex-col">
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1 min-w-0 pr-4">
-              <h3 className="font-bold text-xl text-gray-900 mb-1 line-clamp-1 hover:text-blue-600 transition-colors cursor-pointer">
-                {property.title}
-              </h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-xl text-gray-900 mb-1 line-clamp-1 hover:text-blue-600 transition-colors cursor-pointer">
+                  {property.title}
+                </h3>
+                {(user?.role.name === "ADMIN" ||
+                  user?.role.name === "SUPER_ADMIN") && (
+                  <FeaturedToggle
+                    propertyId={property.id}
+                    isFeatured={property.featured}
+                    compact
+                    onToggle={handleFeaturedToggle}
+                  />
+                )}
+              </div>
               <div className="flex items-center gap-2 text-gray-600 text-sm">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span className="line-clamp-1">
@@ -111,10 +135,10 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
               >
                 Delete
               </button>
-              {user?.role.name === "ADMIN" ||
-              user?.role.name === "SUPER_ADMIN" ? (
+              {(user?.role.name === "ADMIN" ||
+                user?.role.name === "SUPER_ADMIN") && (
                 <QuickReviewActions property={property} onSuccess={() => {}} />
-              ) : null}
+              )}
             </div>
           </div>
         </div>
