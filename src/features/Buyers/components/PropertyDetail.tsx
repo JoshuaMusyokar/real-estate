@@ -12,6 +12,7 @@ import {
   Maximize,
   Calendar,
   LayoutGrid,
+  Rows,
 } from "lucide-react";
 import type { Property } from "../../../types";
 
@@ -56,7 +57,12 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
     {
       icon: ClipboardList,
       label: "Floors",
-      value: property.floors || property.totalFloors,
+      value: property.floors || null,
+    },
+    {
+      icon: Rows,
+      label: "Total Floors",
+      value: property.totalFloors || null,
     },
     { icon: LayoutGrid, label: "Total Flats", value: property.totalFlats },
     { icon: Building2, label: "Buildings", value: property.totalBuildings },
