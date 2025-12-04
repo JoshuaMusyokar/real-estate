@@ -64,10 +64,11 @@ export const HorizontalScrollSection: React.FC<
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-            <button className="flex items-center gap-2 px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold transition-colors">
+            {/* TODO: ENABLE LATER */}
+            {/* <button className="flex items-center gap-2 px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold transition-colors">
               <span>View All</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </button> */}
           </div>
         </div>
 
