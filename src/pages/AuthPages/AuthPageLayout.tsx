@@ -4,9 +4,65 @@ import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 
 export default function AuthLayout({
   children,
+  theme = "vibrant",
 }: {
   children: React.ReactNode;
+  theme?: "vibrant" | "clean" | "dark";
 }) {
+  const getThemeStyles = () => {
+    switch (theme) {
+      case "clean":
+        return {
+          bg: "bg-white border-b border-gray-200",
+          accent: "blue",
+          logoText: "text-gray-900",
+          logoSubtext: "text-blue-600",
+          navLink: "text-gray-700 hover:text-blue-600 hover:bg-blue-50",
+          button: "bg-blue-600 hover:bg-blue-700 text-white",
+          buttonSecondary: "text-gray-700 hover:bg-gray-100",
+          iconButton: "text-gray-700 hover:text-blue-600 hover:bg-blue-50",
+          cityButton:
+            "bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200",
+          dropdown: "bg-white border-gray-200",
+          searchBg: "bg-white",
+          searchBorder: "border-gray-300",
+        };
+      case "dark":
+        return {
+          bg: "bg-slate-900 border-b border-slate-800",
+          accent: "red",
+          logoText: "text-white",
+          logoSubtext: "text-red-400",
+          navLink: "text-slate-300 hover:text-red-400 hover:bg-slate-800",
+          button:
+            "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white",
+          buttonSecondary: "text-slate-300 hover:bg-slate-800",
+          iconButton: "text-slate-300 hover:text-red-400 hover:bg-slate-800",
+          cityButton:
+            "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700",
+          dropdown: "bg-slate-800 border-slate-700",
+          searchBg: "bg-slate-700",
+          searchBorder: "border-slate-600",
+        };
+      default: // 'vibrant' theme
+        return {
+          bg: "bg-purple-700 shadow-xl",
+          logoText: "text-yellow-400 font-extrabold",
+          logoSubtext: "text-dark",
+          accent: "purple",
+          navLink: "text-white/80 hover:text-white hover:bg-purple-800/50",
+          button: "bg-white hover:bg-gray-100 text-purple-700",
+          buttonAccent: "bg-pink-600 hover:bg-pink-700 text-white",
+          iconButton: "text-white hover:bg-purple-800 rounded-full",
+          searchBarBg: "bg-white",
+          cityButton:
+            "bg-purple-500 hover:bg-purple-600 text-white border-none",
+          dropdown: "bg-white border-gray-200",
+        };
+    }
+  };
+
+  const styles = getThemeStyles();
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-white via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
       {/* Animated Background Elements */}
@@ -31,26 +87,16 @@ export default function AuthLayout({
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-gray-700/30 shadow-2xl shadow-blue-500/10 dark:shadow-gray-900/20 p-8 lg:p-10">
               {/* Logo */}
               <div className="flex justify-center mb-8">
-                <Link to="/" className="inline-block">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <svg
-                        className="w-6 h-6 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2zM9 7h6v6H9V7zm0 8h6v2H9v-2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        Bengal Properties
-                      </span>
-                      <span className="block text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        REAL ESTATE CRM
-                      </span>
-                    </div>
-                  </div>
+                <Link
+                  to="/"
+                  className="flex items-center gap-0 group flex-shrink-0"
+                >
+                  <span className={`text-2xl font-black ${styles.logoText}`}>
+                    BENGALPROPERTY
+                  </span>
+                  <span className={`text-xl font-bold ${styles.logoSubtext}`}>
+                    .COM
+                  </span>
                 </Link>
               </div>
 
@@ -78,20 +124,24 @@ export default function AuthLayout({
             <div className="max-w-md text-center text-white">
               {/* Icon */}
               <div className="mb-8">
-                <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto border border-white/20 shadow-2xl">
-                  <svg
-                    className="w-10 h-10 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-2xl">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-0 group flex-shrink-0"
                   >
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2zM9 7h6v6H9V7zm0 8h6v2H9v-2z" />
-                  </svg>
+                    <span className={`text-2xl font-black ${styles.logoText}`}>
+                      BENGALPROPERTY
+                    </span>
+                    <span className={`text-xl font-bold ${styles.logoSubtext}`}>
+                      .COM
+                    </span>
+                  </Link>
                 </div>
               </div>
 
               {/* Heading */}
               <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                Welcome to <span className="block">Bengal Properties</span>
+                Welcome to <span>Bengal Properties</span>{" "}
               </h1>
 
               {/* Description */}

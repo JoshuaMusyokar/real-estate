@@ -45,6 +45,7 @@ const PropertyDetailBuyerPage: FC = () => {
         <PublicHeader
           onShowFavorites={handleShowFavorites}
           onShowAppointments={handleShowAppointments}
+          displaySearchBar={true}
         />
         <PropertyDetailBuyer
           id={id}

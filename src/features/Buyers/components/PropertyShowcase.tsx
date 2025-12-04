@@ -419,11 +419,11 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
 
       {/* Lightbox Modal */}
       {selectedImageIndex !== null && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
-          {/* Close button - Bottom Right */}
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[100] flex items-center justify-center">
+          {/* Close button - Top Right (moved from bottom) */}
           <button
             onClick={closeLightbox}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-red-500/90 backdrop-blur-md border border-red-400/50 rounded-full flex items-center justify-center hover:bg-red-600 hover:scale-110 transition-all z-50 group shadow-2xl"
+            className="fixed top-26 right-6 w-14 h-14 bg-red-500/90 backdrop-blur-md border border-red-400/50 rounded-full flex items-center justify-center hover:bg-red-600 hover:scale-110 transition-all z-[110] group shadow-2xl"
             aria-label="Close lightbox"
           >
             <X className="w-7 h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
@@ -433,14 +433,14 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
             <>
               <button
                 onClick={goToPrevious}
-                className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-50 shadow-xl"
+                className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-[110] shadow-xl"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-6 h-6 md:w-7 md:h-7 text-white" />
               </button>
               <button
                 onClick={goToNext}
-                className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-50 shadow-xl"
+                className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-[110] shadow-xl"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-6 h-6 md:w-7 md:h-7 text-white" />

@@ -291,7 +291,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold transition-all rounded-lg 
                     ${styles.iconButton} md:bg-transparent md:hover:bg-purple-800`}
                 >
-                  <span className="hidden md:inline">Buy in </span>
+                  {/* <span className="hidden md:inline">Buy in </span> */}
                   <span className="text-white font-bold">
                     {selectedCity?.name || "Select City"}
                   </span>
