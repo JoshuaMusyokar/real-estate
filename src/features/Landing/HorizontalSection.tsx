@@ -31,7 +31,7 @@ export const HorizontalScrollSection: React.FC<
     }
   };
 
-  if (!properties || properties.length === 0) return null;
+  // if (!properties || properties.length === 0) return null;
 
   return (
     <section className="py-12 bg-white">

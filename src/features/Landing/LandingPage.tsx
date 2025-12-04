@@ -55,6 +55,7 @@ import { HorizontalScrollSection } from "./HorizontalSection";
 import { AdBanner } from "./AddBanner";
 import { BuilderPropertyCard } from "./BuilderPropertyCard";
 import { StandardPropertyCard } from "./StandardPropertyCard";
+import { CategorySkeletonLoader } from "./CategorySkeletonLoader";
 export const PropertyLandingPage = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<PropertySearchFilters>({});
@@ -253,12 +254,116 @@ export const PropertyLandingPage = () => {
         </div>
       )} */}
 
-      {categories.map((category, index) => (
-        <React.Fragment key={category.id}>
-          <HorizontalScrollSection {...category} />
-          {(index === 1 || index === 3) && <AdBanner />}
-        </React.Fragment>
-      ))}
+      {categories.map((category, index) => {
+        // Check if category has no properties
+        if (
+          !isCategorizedLoading &&
+          (!category.properties || category.properties.length === 0)
+        ) {
+          return (
+            <section key={category.id} className="py-12 bg-white">
+              <div className="max-w-full mx-auto px-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`p-4 rounded-2xl bg-gradient-to-r ${category.color} shadow-lg`}
+                    >
+                      {category.icon}
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-gray-900">
+                        {category.title}
+                      </h2>
+                      <p className="text-gray-600 mt-1 font-medium">
+                        {category.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* No Properties Card */}
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl border-2 border-dashed border-gray-300 p-12 text-center">
+                  <div className="max-w-md mx-auto">
+                    <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Search className="w-12 h-12 text-gray-400" />
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                      No properties found in {selectedCityName}
+                    </h3>
+
+                    <p className="text-gray-600 mb-8">
+                      We couldn't find any {category.title.toLowerCase()} in{" "}
+                      {selectedCityName}. Try searching in a different city or
+                      check back later.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <button
+                        onClick={() => {
+                          // Optionally change city or show city selector
+                          const popularCities = [
+                            "Delhi",
+                            "Mumbai",
+                            "Bangalore",
+                            "Hyderabad",
+                          ];
+                          const randomCity =
+                            popularCities[
+                              Math.floor(Math.random() * popularCities.length)
+                            ];
+                          // You would need to map city names to IDs
+                          // handleCityChange(cityId);
+                        }}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
+                      >
+                        Try Different City
+                      </button>
+
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+                      >
+                        Refresh Results
+                      </button>
+                    </div>
+
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                      <p className="text-sm text-gray-500 mb-3">
+                        Looking for something specific?
+                      </p>
+                      <button
+                        onClick={() => {
+                          // Focus on search input
+                          // document.querySelector('input[type="text"]')?.focus();
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                      >
+                        <Search className="w-4 h-4" />
+                        Search Different Property
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        }
+
+        // Show skeleton loader while loading
+        if (isCategorizedLoading) {
+          return <CategorySkeletonLoader key={category.id} />;
+        }
+
+        // Show actual content when data is loaded and has properties
+        return (
+          <React.Fragment key={category.id}>
+            <HorizontalScrollSection {...category} />
+            {(index === 1 || index === 3) && <AdBanner />}
+          </React.Fragment>
+        );
+      })}
 
       {/* Premium Stats Section with Animated Counters */}
       {/* <section className="relative py-10 overflow-hidden">

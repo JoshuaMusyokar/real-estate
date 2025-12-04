@@ -63,6 +63,8 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   const navigate = useNavigate();
   const [purpose, setPurpose] = useState<string>(initialPurpose);
   const [selectedCityId, setSelectedCityId] = useState<string>("");
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const cityModalRef = useRef<HTMLDivElement>(null);
   const [selectedCityName, setSelectedCityName] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
@@ -130,7 +132,38 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       }
     }
   }, [cities, initialCity]);
+  // useEffect hook for click outside detection
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Close suggestions dropdown if clicked outside
+      if (
+        showSuggestions &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
 
+      // Close city dropdown if clicked outside
+      if (
+        showCityDropdown &&
+        cityModalRef.current &&
+        !cityModalRef.current.contains(event.target as Node) &&
+        cityDropdownRef.current &&
+        !cityDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowCityDropdown(false);
+        setSearchCityInput("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSuggestions, showCityDropdown]);
   // Generate popular localities when city changes
   useEffect(() => {
     if (selectedCityId && localitiesData?.data) {
@@ -476,7 +509,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 }}
                 className="left-0 mt-1 min-w-[200px] max-h-64"
               >
-                <div className="p-2">
+                <div ref={cityModalRef} className="p-2">
                   {/* City Search */}
                   <div className="relative mb-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -558,7 +591,10 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
 
           {/* Suggestions Dropdown */}
           {showSuggestions && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-80 overflow-y-auto">
+            <div
+              ref={suggestionsRef}
+              className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-80 overflow-y-auto"
+            >
               {/* Empty state suggestions */}
               {(!searchInput || searchInput.length === 0) &&
                 getInitialSuggestions().length > 0 && (
@@ -829,7 +865,10 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
 
         {/* Suggestions Dropdown */}
         {showSuggestions && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+          <div
+            ref={suggestionsRef}
+            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
+          >
             {/* Empty state suggestions */}
             {(!searchInput || searchInput.length === 0) &&
               getInitialSuggestions().length > 0 && (
