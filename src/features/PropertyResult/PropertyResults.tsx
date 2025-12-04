@@ -11,6 +11,7 @@ import type { PropertySearchFilters } from "../../types";
 import { FilterBar } from "./FilterBar";
 import { PropertyList } from "./PropertyList";
 import { PublicHeader } from "../../layout/PublicHeader";
+import { Footer } from "../../layout/Footer";
 
 export const PropertySearchResults = () => {
   const navigate = useNavigate();
@@ -318,6 +319,7 @@ export const PropertySearchResults = () => {
         onToggleFavorite={handleToggleFavorite}
         onPageChange={handlePageChange}
       />
+      <Footer />
     </div>
   );
 };
