@@ -501,7 +501,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           >
             <div className="p-3 space-y-1">
               {listingSources.map((source) => {
-                const isActive = filters.listingSource === source.value;
+                // const isActive = filters.listingSource === source.value;
+                const isActive =
+                  filters.listingSource?.includes(source.value) ?? false;
                 return (
                   <button
                     key={source.value}
