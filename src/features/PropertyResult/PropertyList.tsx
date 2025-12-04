@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // components/PropertyList.tsx
 import React from "react";
 import { Home } from "lucide-react";
@@ -114,7 +115,7 @@ export const PropertyList: React.FC<PropertyListProps> = ({
                 </div>
               </div>
             )} */}
-            {featuredProperties.length > 0 && (
+            {/* {featuredProperties.length > 0 && (
               <div className="mb-8">
                 <div className="flex overflow-x-scroll gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <FeaturedPropertiesCarousel
@@ -123,7 +124,7 @@ export const PropertyList: React.FC<PropertyListProps> = ({
                   />
                 </div>
               </div>
-            )}
+            )} */}
             {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (

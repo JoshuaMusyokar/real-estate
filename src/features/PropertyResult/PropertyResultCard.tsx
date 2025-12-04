@@ -158,6 +158,14 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
                 <span className="font-medium">{property.bathrooms} Bath</span>
               </div>
             )}
+            {property.superBuiltArea && (
+              <div className="flex items-center gap-1">
+                <Maximize className="w-4 h-4 text-gray-600" />
+                <span className="font-medium">
+                  {property.superBuiltArea} sq.ft
+                </span>
+              </div>
+            )}
             {property.carpetArea && (
               <div className="flex items-center gap-1">
                 <Maximize className="w-4 h-4 text-gray-600" />
