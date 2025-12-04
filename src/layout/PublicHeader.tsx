@@ -34,6 +34,7 @@ interface PublicHeaderProps {
   onLocalityChange?: (localityId: string, localityName?: string) => void; // Add localityName
   onSearch?: (searchTerm: string) => void;
   initialSearchTerm?: string;
+  displaySearchBar?: boolean;
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({
@@ -46,6 +47,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onLocalityChange,
   onSearch,
   initialSearchTerm = "",
+  displaySearchBar = false,
 }) => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -275,10 +277,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                 className="flex items-center gap-0 group flex-shrink-0"
               >
                 <span className={`text-2xl font-black ${styles.logoText}`}>
-                  BENGAL
+                  BENGALPROPERTY
                 </span>
                 <span className={`text-xl font-bold ${styles.logoSubtext}`}>
-                  PROPERTY
+                  .COM
                 </span>
               </Link>
 
@@ -348,84 +350,89 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
             </div>
 
             {/* 2. Central Search Bar with Locality */}
-            <div className="flex-1 max-w-xl hidden md:flex items-center bg-white rounded-lg border border-gray-300 shadow-md">
-              <div className="relative flex items-center w-full">
-                <Search className="w-5 h-5 text-gray-500 ml-4" />
+            {displaySearchBar && (
+              <div className="flex-1 max-w-xl hidden md:flex items-center bg-white rounded-lg border border-gray-300 shadow-md">
+                <div className="relative flex items-center w-full">
+                  <Search className="w-5 h-5 text-gray-500 ml-4" />
 
-                {/* Selected Locality Badge */}
-                {selectedLocality && (
-                  <div className="flex items-center gap-2 ml-3 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                    <MapPin className="w-3.5 h-3.5" />
-                    {selectedLocality.name}
-                    <button
-                      onClick={handleClearLocality}
-                      className="hover:bg-purple-200 rounded-full p-0.5"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-
-                {/* "New" Button for Locality Search */}
-                <div className="relative ml-auto mr-2" ref={localitySearchRef}>
-                  <button
-                    type="button"
-                    onClick={() => setLocalitySearchOpen(!localitySearchOpen)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-purple-400 text-purple-600 bg-purple-50 text-sm font-medium hover:bg-purple-100 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" /> New
-                  </button>
-
-                  {/* Locality Search Dropdown */}
-                  {localitySearchOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-80 rounded-xl shadow-2xl border bg-white border-gray-200 z-50">
-                      <div className="p-3 border-b border-gray-100">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            type="text"
-                            placeholder="Search localities..."
-                            value={localitySearchTerm}
-                            onChange={(e) =>
-                              setLocalitySearchTerm(e.target.value)
-                            }
-                            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border focus:ring-purple-500 focus:border-purple-500"
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <div className="max-h-64 overflow-y-auto p-2">
-                        {isLoadingLocalities ? (
-                          <div className="p-3 text-center text-gray-500 text-sm">
-                            Loading localities...
-                          </div>
-                        ) : filteredLocalities.length > 0 ? (
-                          filteredLocalities.map((locality) => (
-                            <button
-                              key={locality.id}
-                              onClick={() => handleLocalitySelect(locality)}
-                              className="w-full px-3 py-2 text-left rounded-lg text-sm transition-all hover:bg-gray-100"
-                            >
-                              <div className="font-medium text-gray-900">
-                                {locality.name}
-                              </div>
-                              <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                <MapPin className="w-3 h-3" />
-                                {locality.city.name}
-                              </div>
-                            </button>
-                          ))
-                        ) : (
-                          <div className="p-3 text-center text-gray-500 text-sm">
-                            No localities found
-                          </div>
-                        )}
-                      </div>
+                  {/* Selected Locality Badge */}
+                  {selectedLocality && (
+                    <div className="flex items-center gap-2 ml-3 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                      <MapPin className="w-3.5 h-3.5" />
+                      {selectedLocality.name}
+                      <button
+                        onClick={handleClearLocality}
+                        className="hover:bg-purple-200 rounded-full p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
+
+                  {/* "New" Button for Locality Search */}
+                  <div
+                    className="relative ml-auto mr-2"
+                    ref={localitySearchRef}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setLocalitySearchOpen(!localitySearchOpen)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-purple-400 text-purple-600 bg-purple-50 text-sm font-medium hover:bg-purple-100 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" /> New
+                    </button>
+
+                    {/* Locality Search Dropdown */}
+                    {localitySearchOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-80 rounded-xl shadow-2xl border bg-white border-gray-200 z-50">
+                        <div className="p-3 border-b border-gray-100">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              placeholder="Search localities..."
+                              value={localitySearchTerm}
+                              onChange={(e) =>
+                                setLocalitySearchTerm(e.target.value)
+                              }
+                              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border focus:ring-purple-500 focus:border-purple-500"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto p-2">
+                          {isLoadingLocalities ? (
+                            <div className="p-3 text-center text-gray-500 text-sm">
+                              Loading localities...
+                            </div>
+                          ) : filteredLocalities.length > 0 ? (
+                            filteredLocalities.map((locality) => (
+                              <button
+                                key={locality.id}
+                                onClick={() => handleLocalitySelect(locality)}
+                                className="w-full px-3 py-2 text-left rounded-lg text-sm transition-all hover:bg-gray-100"
+                              >
+                                <div className="font-medium text-gray-900">
+                                  {locality.name}
+                                </div>
+                                <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                  <MapPin className="w-3 h-3" />
+                                  {locality.city.name}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-3 text-center text-gray-500 text-sm">
+                              No localities found
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* 3. Action Buttons & User Menu (Right) */}
             <div className="flex items-center gap-3 flex-shrink-0">

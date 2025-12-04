@@ -295,6 +295,7 @@ export const PropertySearchResults = () => {
         selectedLocalityId={filters.localityId}
         onCityChange={handleCityChange}
         onLocalityChange={handleLocalityChange}
+        displaySearchBar={true}
       />
 
       <FilterBar

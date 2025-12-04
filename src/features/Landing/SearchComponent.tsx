@@ -433,7 +433,8 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     }
 
     // Navigate to search results page with query parameters
-    navigate(`/listings/buy/?${queryParams.toString()}`);
+    // navigate(`/listings/buy/?${queryParams.toString()}`);
+    window.open(`/listings/buy/?${queryParams.toString()}`, "_blank");
 
     // Call onSearch callback if provided
     if (onSearch) {
@@ -484,8 +485,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     queryParams.set("search", searchInput.trim());
 
     // Navigate to appropriate listings page
-    navigate(
-      `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`
+    // navigate(
+    //   `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`
+    // );
+    window.open(
+      `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`,
+      "_blank"
     );
 
     if (onSearch) {
