@@ -56,7 +56,7 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
     { icon: Hammer, label: "Built", value: property.yearBuilt },
     {
       icon: ClipboardList,
-      label: "Floors",
+      label: "Floor Number",
       value: property.floors || null,
     },
     {
