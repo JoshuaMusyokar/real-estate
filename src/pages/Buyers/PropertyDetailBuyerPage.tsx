@@ -5,6 +5,7 @@ import PageMeta from "../../components/common/PageMeta";
 import { useAuth } from "../../hooks/useAuth";
 import { PropertyDetailBuyer } from "../../features/Buyers/PropertyDetailBuyer";
 import { PublicHeader } from "../../layout/PublicHeader";
+import { Footer } from "../../layout/Footer";
 
 // Define the expected URL params
 interface RouteParams {
@@ -94,6 +95,7 @@ const PropertyDetailBuyerPage: FC = () => {
           //   userRole={user ? user.role : undefined}
           //   userId={user?.id ?? ""}
         />
+        <Footer />
       </div>
     </>
   );
