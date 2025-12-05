@@ -47,8 +47,8 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
   };
 
   const specs = [
-    { icon: Home, label: "Type", value: property.propertyType },
-    { icon: Layers, label: "Subtype", value: property.subType },
+    { icon: Home, label: "Type", value: property.propertyType.name },
+    { icon: Layers, label: "Subtype", value: property.subType?.name },
     { icon: Scan, label: "Purpose", value: property.purpose },
     { icon: Sofa, label: "Furnishing", value: property.furnishingStatus },
     { icon: Building2, label: "Complex", value: property.complexName },
