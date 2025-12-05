@@ -1,10 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Loader2, Plus, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import {
-  useGetPropertyTypesQuery,
-  useGetPropertySubTypesQuery,
-} from "../../../services/propertyApi";
+import { Loader2, Plus, X, ChevronDown, MapPin } from "lucide-react";
+import { useState } from "react";
+import { useGetPropertyTypesQuery } from "../../../services/propertyApi";
+import { useGetCitiesQuery } from "../../../services/locationApi";
 import { LEAD_SOURCES, PROPERTY_PURPOSES } from "../../../utils";
 import type {
   LeadCreateRequest,
@@ -37,16 +34,20 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
 
   // Fetch property types
   const { data: propertyTypesData, isLoading: loadingPropertyTypes } =
-    useGetPropertyTypesQuery({ isActive: true });
+    useGetPropertyTypesQuery({ isActive: true }, { skip: !isOpen });
+
+  // Fetch cities
+  const { data: citiesData, isLoading: loadingCities } = useGetCitiesQuery(
+    { limit: 100 },
+    { skip: !isOpen }
+  );
 
   const propertyTypes = propertyTypesData?.data || [];
+  const cities = citiesData?.data || [];
 
   const handleSubmit = async (): Promise<void> => {
     try {
-      // Convert property type name to ID if needed (for backward compatibility)
-      const dataToSend = { ...formData };
-
-      await createLead(dataToSend).unwrap();
+      await createLead(formData).unwrap();
       onSuccess();
       onClose();
       resetForm();
@@ -71,8 +72,28 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     setFormData((prev) => ({
       ...prev,
       propertyTypeId,
-      subTypeId: undefined, // Reset subtype when property type changes
+      subTypeId: undefined,
     }));
+  };
+
+  const handleCityChange = (cityId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      cityId,
+      localities: [], // Reset localities when city changes
+    }));
+  };
+
+  const getCityDisplayName = (cityId: string) => {
+    const city = cities.find((c) => c.id === cityId);
+    if (!city) return "Select City";
+
+    if (city.state && city.country) {
+      return `${city.name}, ${city.state}, ${city.country}`;
+    } else if (city.state) {
+      return `${city.name}, ${city.state}`;
+    }
+    return city.name;
   };
 
   if (!isOpen) return null;
@@ -177,20 +198,44 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                City
+                City *
               </label>
-              <input
-                type="text"
-                value={formData.cityId || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, cityId: e.target.value })
-                }
-                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-              />
+              <div className="relative">
+                <select
+                  value={formData.cityId || ""}
+                  onChange={(e) => handleCityChange(e.target.value)}
+                  disabled={loadingCities}
+                  className={`w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white appearance-none pr-10 ${
+                    loadingCities ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  <option value="">Select City</option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>
+                      {city.name}
+                      {city.state && `, ${city.state}`}
+                      {city.country && `, ${city.country}`}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  {loadingCities ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
+              </div>
+              {formData.cityId && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {getCityDisplayName(formData.cityId)}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Property Type and Subtype */}
+          {/* Property Type */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -201,7 +246,9 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                   value={formData.propertyTypeId || ""}
                   onChange={(e) => handlePropertyTypeChange(e.target.value)}
                   disabled={loadingPropertyTypes}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white appearance-none"
+                  className={`w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white appearance-none pr-10 ${
+                    loadingPropertyTypes ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
                   <option value="">Select Property Type</option>
                   {propertyTypes.map((type) => (
@@ -211,11 +258,13 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                     </option>
                   ))}
                 </select>
-                {loadingPropertyTypes && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  {loadingPropertyTypes ? (
                     <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                  </div>
-                )}
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -258,6 +307,18 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
             />
           </div>
+
+          {/* Loading states */}
+          {(loadingCities || loadingPropertyTypes) && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" />
+                <span className="text-sm text-blue-800 dark:text-blue-300">
+                  Loading data...
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
@@ -273,7 +334,8 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               isLoading ||
               !formData.firstName ||
               !formData.email ||
-              !formData.phone
+              !formData.phone ||
+              !formData.cityId // Added cityId validation
             }
             className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
