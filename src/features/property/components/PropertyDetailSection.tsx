@@ -9,8 +9,8 @@ export const PropertyDetailsSection: React.FC<{ property: Property }> = ({
       Property Details
     </h2>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <DetailItem label="Property Type" value={property.propertyType} />
-      <DetailItem label="Sub Type" value={property.subType || "N/A"} />
+      <DetailItem label="Property Type" value={property.propertyType.name} />
+      <DetailItem label="Sub Type" value={property.subType?.name || "N/A"} />
       <DetailItem label="Purpose" value={property.purpose} />
       <DetailItem label="Currency" value={property.currency} />
       {property.squareMeters && (

@@ -1,7 +1,6 @@
 import React from "react";
 import { Heart, MapPin, Bed, Bath, Square } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
-import { useNavigate } from "react-router";
 interface StandardPropertyCardProps {
   property: CategorizedProperty;
   index: number;
@@ -14,7 +13,6 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
   color = "from-blue-500 to-purple-500",
 }) => {
   const [isFavorited, setIsFavorited] = React.useState(false);
-  const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
     if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;

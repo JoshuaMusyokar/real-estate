@@ -25,6 +25,7 @@ import {
   Building2,
   Calendar,
   Contact2,
+  Factory,
   LayoutDashboard,
   ListCheck,
   Map,
@@ -72,6 +73,12 @@ const navItems: NavItem[] = [
     icon: <MapPin />,
     name: "Cities",
     path: "/cities",
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    icon: <Factory />,
+    name: "Property types",
+    path: "/property-types",
     roles: ["ADMIN", "SUPER_ADMIN"],
   },
   {

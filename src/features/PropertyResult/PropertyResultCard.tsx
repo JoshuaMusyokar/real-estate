@@ -1,6 +1,4 @@
-// components/PropertyCard.tsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Heart,
   MapPin,
@@ -26,7 +24,6 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
   isFavorite,
   onToggleFavorite,
 }) => {
-  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
 
   // const coverImage =

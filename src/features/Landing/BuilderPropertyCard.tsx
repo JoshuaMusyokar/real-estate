@@ -11,7 +11,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
-import { useNavigate } from "react-router";
 
 // Premium Property Card for Featured Builders
 interface BuilderPropertyCardProps {
@@ -24,7 +23,6 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
   index,
 }) => {
   const [isFavorited, setIsFavorited] = React.useState(false);
-  const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
     if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;

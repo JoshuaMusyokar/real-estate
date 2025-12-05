@@ -14,7 +14,7 @@ export const PropertyStats: React.FC<PropertyStatsProps> = ({ property }) => {
       label: property.squareFeet ? "Sq. Feet" : "Sq. Meters",
       value: property.squareFeet || property.squareMeters,
     },
-    { icon: Building2, label: "Type", value: property.propertyType },
+    { icon: Building2, label: "Type", value: property.propertyType.name },
   ].filter((stat) => stat.value);
 
   return (

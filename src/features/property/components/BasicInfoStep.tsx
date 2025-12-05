@@ -1,4 +1,10 @@
-import { AlertCircle, DollarSign } from "lucide-react";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { AlertCircle, DollarSign, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  useGetPropertyTypesQuery,
+  useGetSubTypesByPropertyTypeIdQuery,
+} from "../../../services/propertyApi";
 import type {
   PropertyCreateRequest,
   PropertyPurpose,
@@ -15,32 +21,6 @@ interface BasicInfoStepProps {
   onUpdate: (data: Partial<PropertyCreateRequest>) => void;
   onBlur: (field: string) => void;
 }
-
-const propertyTypes: PropertyType[] = [
-  "RESIDENTIAL",
-  "COMMERCIAL",
-  "LAND",
-  "INDUSTRIAL",
-  "MIXED_USE",
-];
-
-const subTypes: PropertySubType[] = [
-  "APARTMENT",
-  "VILLA",
-  "HOUSE",
-  "FLAT",
-  "STUDIO",
-  "PENTHOUSE",
-  "DUPLEX",
-  "TOWNHOUSE",
-  "OFFICE",
-  "SHOP",
-  "WAREHOUSE",
-  "SHOWROOM",
-  "PLOT",
-  "AGRICULTURAL",
-  "INDUSTRIAL_LAND",
-];
 
 const purposes: PropertyPurpose[] = ["SALE", "RENT", "LEASE"];
 
@@ -60,8 +40,50 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   onUpdate,
   onBlur,
 }) => {
+  const [localSubTypes, setLocalSubTypes] = useState<PropertySubType[]>([]);
+
+  // Fetch property types
+  const { data: propertyTypesData, isLoading: loadingPropertyTypes } =
+    useGetPropertyTypesQuery({ isActive: true });
+
+  // Fetch subtypes when property type is selected
+  const { data: subtypesData, isLoading: loadingSubTypes } =
+    useGetSubTypesByPropertyTypeIdQuery(formData.propertyTypeId, {
+      skip: !formData.propertyTypeId,
+    });
+
+  const propertyTypes = propertyTypesData?.data || [];
+  const allSubTypes = subtypesData?.data || [];
+
+  useEffect(() => {
+    // Filter subtypes based on selected property type
+    if (formData.propertyTypeId) {
+      const filteredSubTypes = allSubTypes.filter(
+        (st) => st.propertyTypeId === formData.propertyTypeId
+      );
+      setLocalSubTypes(filteredSubTypes);
+
+      // If current subtype doesn't belong to selected type, reset it
+      if (
+        formData.subTypeId &&
+        !filteredSubTypes.some((st) => st.id === formData.subTypeId)
+      ) {
+        onUpdate({ subTypeId: null });
+      }
+    } else {
+      setLocalSubTypes([]);
+    }
+  }, [formData.propertyTypeId, allSubTypes, formData.subTypeId, onUpdate]);
+
   const displayStatuses =
     mode === "edit" ? statuses : ["DRAFT", "UNDER_REVIEW"];
+
+  const handlePropertyTypeChange = (typeId: string) => {
+    onUpdate({
+      propertyTypeId: typeId,
+      subTypeId: null, // Reset subtype when property type changes
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -90,6 +112,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           {formData.title.length}/200 characters (min: 10)
         </p>
       </div>
+
       {/* Complex Name */}
       <div>
         <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -145,47 +168,93 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       {/* Property Type Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Property Type */}
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">
             Property Type *
           </label>
-          <select
-            value={formData.propertyType}
-            onChange={(e) =>
-              onUpdate({ propertyType: e.target.value as PropertyType })
-            }
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-          >
-            {propertyTypes.map((type) => (
-              <option key={type} value={type}>
-                {type.replace("_", " ")}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={formData.propertyTypeId || ""}
+              onChange={(e) => handlePropertyTypeChange(e.target.value)}
+              onBlur={() => onBlur("propertyTypeId")}
+              disabled={loadingPropertyTypes}
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all appearance-none ${
+                touched.propertyTypeId && errors.propertyTypeId
+                  ? "border-red-500"
+                  : "border-gray-200"
+              } ${loadingPropertyTypes ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <option value="">Select Property Type</option>
+              {propertyTypes.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.icon && <span className="mr-2">{type.icon}</span>}
+                  {type.name.replace("_", " ")}
+                </option>
+              ))}
+            </select>
+            {loadingPropertyTypes && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              </div>
+            )}
+          </div>
+          {touched.propertyTypeId && errors.propertyTypeId && (
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {errors.propertyTypeId}
+            </p>
+          )}
         </div>
 
+        {/* Sub Type */}
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">
             Sub Type
           </label>
-          <select
-            value={formData.subType || ""}
-            onChange={(e) =>
-              onUpdate({
-                subType: (e.target.value as PropertySubType) || null,
-              })
-            }
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-          >
-            <option value="">Select Sub Type</option>
-            {subTypes.map((type) => (
-              <option key={type} value={type}>
-                {type.replace("_", " ")}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={formData.subTypeId || ""}
+              onChange={(e) => onUpdate({ subTypeId: e.target.value || null })}
+              onBlur={() => onBlur("subTypeId")}
+              disabled={!formData.propertyTypeId || loadingSubTypes}
+              className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all appearance-none ${
+                touched.subTypeId && errors.subTypeId
+                  ? "border-red-500"
+                  : "border-gray-200"
+              } ${
+                !formData.propertyTypeId ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              <option value="">Select Sub Type</option>
+              {localSubTypes.map((subType) => (
+                <option key={subType.id} value={subType.id}>
+                  {subType.icon && <span className="mr-2">{subType.icon}</span>}
+                  {subType.name.replace("_", " ")}
+                  {!subType.isActive && " (Inactive)"}
+                </option>
+              ))}
+            </select>
+            {loadingSubTypes && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              </div>
+            )}
+          </div>
+          {touched.subTypeId && errors.subTypeId && (
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {errors.subTypeId}
+            </p>
+          )}
+          {!formData.propertyTypeId && (
+            <p className="mt-1 text-xs text-gray-500">
+              Select a property type first
+            </p>
+          )}
         </div>
 
+        {/* Purpose */}
         <div>
           <label className="block text-sm font-bold text-gray-900 mb-2">
             Purpose *
@@ -208,6 +277,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </div>
         </div>
 
+        {/* Status (Edit mode only) */}
         {mode === "edit" && (
           <div>
             <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -368,6 +438,16 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </span>
         </label>
       </div>
+
+      {/* Loading States */}
+      {loadingPropertyTypes && (
+        <div className="flex items-center justify-center p-4 bg-gray-50 rounded-xl">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <span className="ml-2 text-sm text-gray-600">
+            Loading property types...
+          </span>
+        </div>
+      )}
     </div>
   );
 };

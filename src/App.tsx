@@ -43,6 +43,7 @@ import RBACPage from "./pages/rbac/RBACPage";
 import LocalityPage from "./pages/Location/CitiesPage";
 import CitiesPage from "./pages/Location/LocalityPage";
 import { PropertySearchResults } from "./features/PropertyResult/PropertyResults";
+import PropertyTypesManagementPage from "./pages/PropertyType/PropertyTypeManagementPage";
 // import {Role } from "./types";
 
 export default function App() {
@@ -160,6 +161,11 @@ export default function App() {
             <Route path="/rbac" element={<RBACPage />} />
             {/* Cities -  */}
             <Route path="/cities" element={<CitiesPage />} />
+            {/* Property types and sub types -  */}
+            <Route
+              path="/property-types"
+              element={<PropertyTypesManagementPage />}
+            />
             {/* User Profile - All authenticated users */}
             <Route path="/localities" element={<LocalityPage />} />
             {/* User Profile - All authenticated users */}

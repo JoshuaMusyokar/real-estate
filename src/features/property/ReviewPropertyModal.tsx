@@ -128,7 +128,7 @@ export const ReviewPropertyModal: React.FC<ReviewPropertyModalProps> = ({
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                   <Home className="w-4 h-4" />
                   <span>
-                    {property.propertyType} • {property.purpose}
+                    {property.propertyType.name} • {property.purpose}
                   </span>
                 </div>
 

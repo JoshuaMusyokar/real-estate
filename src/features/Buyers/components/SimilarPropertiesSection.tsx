@@ -11,7 +11,11 @@ import {
 } from "lucide-react";
 import { useGetSimilarPropertiesQuery } from "../../../services/propertyApi";
 import { Link } from "react-router-dom";
-import type { ResCity, SimilarPropertiesResponse } from "../../../types";
+import type {
+  PropertyType,
+  ResCity,
+  SimilarPropertiesResponse,
+} from "../../../types";
 import {
   formatCurrency,
   getCurrencySymbol,
@@ -181,7 +185,7 @@ const SimilarPropertyCard = ({
     price: number;
     city: ResCity;
     locality: string;
-    propertyType: string;
+    propertyType: PropertyType;
     posterRole?: string;
     currency: string;
     purpose: string;

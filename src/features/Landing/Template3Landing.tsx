@@ -24,11 +24,7 @@ import {
   useSearchPropertiesQuery,
 } from "../../services/propertyApi";
 import { useAuth } from "../../hooks/useAuth";
-import type {
-  PropertySearchFilters,
-  PropertyType,
-  PropertySubType,
-} from "../../types";
+import type { PropertySearchFilters } from "../../types";
 import { PublicHeader } from "../../layout/PublicHeader";
 import { Footer } from "../../layout/Footer";
 import { FilterPanel } from "./FilterPanel";
@@ -201,8 +197,8 @@ export const Template3PropertyLanding = () => {
                     onClick={() =>
                       setFilters({
                         ...filters,
-                        propertyType: item.value.propertyType as PropertyType,
-                        subType: item.value.subType as PropertySubType,
+                        propertyType: item.value.propertyType,
+                        subType: item.value.subType,
                       })
                     }
                     className="px-5 py-2.5 bg-slate-800/80 backdrop-blur-sm border border-slate-700 hover:border-red-500 rounded-lg text-sm font-bold hover:bg-slate-700 transition-all text-white"

@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
 interface HorizontalScrollSectionProps {
   title: string;

@@ -78,7 +78,7 @@ export const PropertyHeader: React.FC<PropertyHeaderProps> = ({
     {
       icon: Building2,
       label: "Type",
-      value: property.subType || property.propertyType,
+      value: property.subType?.name || property.propertyType.name,
     },
   ].filter((stat) => stat.value);
 

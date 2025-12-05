@@ -143,7 +143,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   // Define Options
   const propertyTypes: Array<{
-    value: PropertyType;
+    value: string;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }> = [

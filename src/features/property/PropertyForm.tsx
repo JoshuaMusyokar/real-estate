@@ -69,8 +69,8 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const [formData, setFormData] = useState<PropertyCreateRequest>({
     title: "",
     description: "",
-    propertyType: "RESIDENTIAL",
-    subType: null,
+    propertyTypeId: "",
+    subTypeId: null,
     purpose: "SALE",
     status: "UNDER_REVIEW",
     price: 0,
@@ -157,8 +157,8 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       setFormData({
         title: property.title,
         description: property.description,
-        propertyType: property.propertyType,
-        subType: property.subType,
+        propertyTypeId: property.propertyTypeId,
+        subTypeId: property.subTypeId,
         purpose: property.purpose,
         status: property.status,
         price: Number(property.price),
@@ -298,8 +298,8 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       const propertyData = {
         title: formData.title,
         description: formData.description,
-        propertyType: formData.propertyType,
-        subType: formData.subType,
+        propertyTypeId: formData.propertyTypeId,
+        subTypeId: formData.subTypeId,
         purpose: formData.purpose,
         status: mode === "create" ? "UNDER_REVIEW" : formData.status,
         price: formData.price,

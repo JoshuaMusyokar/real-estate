@@ -148,7 +148,7 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
     {
       icon: Building2,
       label: "Type",
-      value: property.subType || property.propertyType,
+      value: property.subType?.name || property.propertyType.name,
       gradient: "from-amber-500 to-orange-600",
     },
   ].filter((stat) => stat.value);

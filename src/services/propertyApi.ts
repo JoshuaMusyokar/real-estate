@@ -16,6 +16,14 @@ import type {
   PropertyUpdateRequest,
   ApiResponse,
   CategorizedPropertiesFilters,
+  PropertyTypesResponse,
+  PropertyTypeResponse,
+  CreatePropertyTypeRequest,
+  UpdatePropertyTypeRequest,
+  PropertySubTypesResponse,
+  CreatePropertySubTypeRequest,
+  PropertySubTypeResponse,
+  UpdatePropertySubTypeRequest,
 } from "../types";
 
 export const propertyApi = baseApi.injectEndpoints({
@@ -416,10 +424,198 @@ export const propertyApi = baseApi.injectEndpoints({
         { type: "Property", id: propertyId },
       ],
     }),
+    // ============================================
+    // PROPERTY TYPE ENDPOINTS
+    // ============================================
+
+    // Get all property types
+    getPropertyTypes: builder.query<
+      PropertyTypesResponse,
+      { isActive?: boolean; includeSubTypes?: boolean }
+    >({
+      query: (params) => {
+        const urlParams = new URLSearchParams();
+        if (params?.isActive !== undefined) {
+          urlParams.append("isActive", params.isActive.toString());
+        }
+        if (params?.includeSubTypes !== undefined) {
+          urlParams.append(
+            "includeSubTypes",
+            params.includeSubTypes.toString()
+          );
+        }
+        return `/properties/pt/property-types?${urlParams.toString()}`;
+      },
+      providesTags: ["PropertyType"],
+    }),
+
+    // Get property type by ID
+    getPropertyTypeById: builder.query<PropertyTypeResponse, string>({
+      query: (id) => `/properties/pt/property-types/${id}`,
+      providesTags: (result, error, id) => [{ type: "PropertyType", id }],
+    }),
+
+    // Create property type
+    createPropertyType: builder.mutation<
+      PropertyTypeResponse,
+      CreatePropertyTypeRequest
+    >({
+      query: (data) => ({
+        url: "/properties/pt/property-types",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["PropertyType"],
+    }),
+
+    // Create property types in bulk
+    bulkCreatePropertyTypes: builder.mutation<
+      PropertyTypesResponse,
+      CreatePropertyTypeRequest[]
+    >({
+      query: (data) => ({
+        url: "/properties/pt/property-types/bulk",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["PropertyType"],
+    }),
+
+    // Update property type
+    updatePropertyType: builder.mutation<
+      PropertyTypeResponse,
+      { id: string; data: UpdatePropertyTypeRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/properties/pt/property-types/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "PropertyType", id },
+        "PropertyType",
+      ],
+    }),
+
+    // Delete property type
+    deletePropertyType: builder.mutation<BaseResponse, string>({
+      query: (id) => ({
+        url: `/properties/pt/property-types/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["PropertyType"],
+    }),
+
+    // ============================================
+    // PROPERTY SUBTYPE ENDPOINTS
+    // ============================================
+
+    // Get all property subtypes
+    getPropertySubTypes: builder.query<
+      PropertySubTypesResponse,
+      { propertyTypeId?: string; isActive?: boolean }
+    >({
+      query: (params) => {
+        const urlParams = new URLSearchParams();
+        if (params?.propertyTypeId) {
+          urlParams.append("propertyTypeId", params.propertyTypeId);
+        }
+        if (params?.isActive !== undefined) {
+          urlParams.append("isActive", params.isActive.toString());
+        }
+        return `/properties/pt/property-subtypes?${urlParams.toString()}`;
+      },
+      providesTags: ["PropertySubType"],
+    }),
+
+    // Get property subtype by ID
+    getPropertySubTypeById: builder.query<PropertySubTypeResponse, string>({
+      query: (id) => `/properties/pt/property-subtypes/${id}`,
+      providesTags: (result, error, id) => [{ type: "PropertySubType", id }],
+    }),
+
+    // Create property subtype
+    createPropertySubType: builder.mutation<
+      PropertySubTypeResponse,
+      CreatePropertySubTypeRequest
+    >({
+      query: (data) => ({
+        url: "/properties/pt/property-subtypes",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["PropertySubType"],
+    }),
+
+    // Create property subtypes in bulk
+    bulkCreatePropertySubTypes: builder.mutation<
+      PropertySubTypesResponse,
+      CreatePropertySubTypeRequest[]
+    >({
+      query: (data) => ({
+        url: "/properties/pt/property-subtypes/bulk",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["PropertySubType"],
+    }),
+
+    // Update property subtype
+    updatePropertySubType: builder.mutation<
+      PropertySubTypeResponse,
+      { id: string; data: UpdatePropertySubTypeRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/properties/pt/property-subtypes/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "PropertySubType", id },
+        "PropertySubType",
+      ],
+    }),
+
+    // Delete property subtype
+    deletePropertySubType: builder.mutation<BaseResponse, string>({
+      query: (id) => ({
+        url: `/properties/pt/property-subtypes/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["PropertySubType"],
+    }),
+
+    // Helper: Get property subtypes by property type ID
+    getSubTypesByPropertyTypeId: builder.query<
+      PropertySubTypesResponse,
+      string
+    >({
+      query: (propertyTypeId) =>
+        `/properties/pt/property-subtypes?propertyTypeId=${propertyTypeId}&isActive=true`,
+      providesTags: (result, error, propertyTypeId) => [
+        { type: "PropertySubType", id: `BY_TYPE_${propertyTypeId}` },
+      ],
+    }),
   }),
 });
 
 export const {
+  // Property Type hooks
+  useGetPropertyTypesQuery,
+  useGetPropertyTypeByIdQuery,
+  useCreatePropertyTypeMutation,
+  useBulkCreatePropertyTypesMutation,
+  useUpdatePropertyTypeMutation,
+  useDeletePropertyTypeMutation,
+
+  // Property SubType hooks
+  useGetPropertySubTypesQuery,
+  useGetPropertySubTypeByIdQuery,
+  useCreatePropertySubTypeMutation,
+  useBulkCreatePropertySubTypesMutation,
+  useUpdatePropertySubTypeMutation,
+  useDeletePropertySubTypeMutation,
+  useGetSubTypesByPropertyTypeIdQuery,
   useAddToFeaturedMutation,
   useGetFeaturedPropertiesQuery,
   useGetFeaturedStatsQuery,

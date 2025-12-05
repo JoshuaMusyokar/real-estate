@@ -141,7 +141,7 @@ export const KanbanLeadCard: React.FC<KanbanLeadCardProps> = ({ lead }) => {
       {lead.propertyType && (
         <div className="mt-2 pt-2 border-t border-gray-100">
           <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
-            {lead.propertyType}
+            {lead.propertyType.name}
             {lead.purpose && (
               <>
                 <span className="mx-1.5 text-blue-400">•</span>

@@ -211,7 +211,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
             <div>
               <div className="text-sm text-gray-600 mb-1">Property Type</div>
               <div className="font-semibold text-gray-900">
-                {lead.propertyType}
+                {lead.propertyType.name}
               </div>
             </div>
           )}

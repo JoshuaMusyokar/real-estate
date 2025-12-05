@@ -159,7 +159,8 @@ export const CompactFeaturedPropertyCard: React.FC<
           {/* Property Type Tag */}
           <div className="pt-1">
             <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-              {propertyType.charAt(0) + propertyType.slice(1).toLowerCase()}
+              {propertyType.name.charAt(0) +
+                propertyType.name.slice(1).toLowerCase()}
             </span>
           </div>
         </div>
@@ -291,7 +292,7 @@ export const CompactFeaturedList: React.FC<{
                 {formatPrice(property.price, property.currency).split(" ")[0]}
               </span>
               <span className="text-xs text-gray-500">
-                {property.propertyType.charAt(0)}
+                {property.propertyType.name.charAt(0)}
               </span>
             </div>
             <div className="text-xs text-gray-600 truncate">

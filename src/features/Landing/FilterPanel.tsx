@@ -1,9 +1,5 @@
 import { Building2, Home, Warehouse, X } from "lucide-react";
-import type {
-  PropertyPurpose,
-  PropertySearchFilters,
-  PropertyType,
-} from "../../types";
+import type { PropertyPurpose, PropertySearchFilters } from "../../types";
 interface FilterPanelProps {
   filters: PropertySearchFilters;
   setFilters: React.Dispatch<React.SetStateAction<PropertySearchFilters>>;
@@ -16,7 +12,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   onClose,
 }) => {
   const propertyTypes: Array<{
-    value: PropertyType;
+    value: string;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }> = [

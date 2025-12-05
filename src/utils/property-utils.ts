@@ -1,6 +1,6 @@
-import type { PropertyPurpose, PropertyType } from "../types";
+import type { PropertyPurpose } from "../types";
 
-export const PROPERTY_TYPES: PropertyType[] = [
+export const PROPERTY_TYPES: string[] = [
   "RESIDENTIAL",
   "COMMERCIAL",
   "LAND",

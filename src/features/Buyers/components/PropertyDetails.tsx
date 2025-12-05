@@ -13,14 +13,14 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
       <div>
         <div className="text-xs text-gray-600 mb-1">Property Type</div>
         <div className="font-semibold text-gray-900 text-sm">
-          {property.propertyType}
+          {property.propertyType.name}
         </div>
       </div>
       {property.subType && (
         <div>
           <div className="text-xs text-gray-600 mb-1">Sub Type</div>
           <div className="font-semibold text-gray-900 text-sm">
-            {property.subType}
+            {property.subType.name}
           </div>
         </div>
       )}

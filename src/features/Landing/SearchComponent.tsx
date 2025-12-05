@@ -21,7 +21,7 @@ interface SearchComponentProps {
   initialCity?: string;
   onPurposeChange?: (purpose: PropertyPurpose) => void;
   initialPurpose?: PropertyPurpose;
-  onPropertyTypeChange?: (propertyType: PropertyType) => void;
+  onPropertyTypeChange?: (propertyType: string) => void;
   onPropertyPurposeChange?: (propertyPurpose: PropertyPurpose) => void;
 }
 
@@ -341,16 +341,16 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     }
   };
 
-  const getPropertyTypeFromPurpose = (purpose: string): PropertyType => {
+  const getPropertyTypeFromPurpose = (purpose: string): string => {
     switch (purpose) {
       case "commercial":
-        return "COMMERCIAL" as PropertyType;
+        return "COMMERCIAL";
       case "plots":
-        return "LAND" as PropertyType;
+        return "LAND";
       case "pg":
-        return "RESIDENTIAL" as PropertyType; // PG is also residential
+        return "RESIDENTIAL"; // PG is also residential
       default:
-        return "RESIDENTIAL" as PropertyType;
+        return "RESIDENTIAL";
     }
   };
   const getPropertyPurposeFromPurpose = (

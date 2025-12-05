@@ -1,17 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Loader2, Plus, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
-  LEAD_SOURCES,
-  PROPERTY_PURPOSES,
-  PROPERTY_TYPES,
-} from "../../../utils";
+  useGetPropertyTypesQuery,
+  useGetPropertySubTypesQuery,
+} from "../../../services/propertyApi";
+import { LEAD_SOURCES, PROPERTY_PURPOSES } from "../../../utils";
 import type {
   LeadCreateRequest,
   LeadSource,
   PropertyPurpose,
-  PropertyType,
 } from "../../../types";
 import { useCreateLeadMutation } from "../../../services/leadApi";
-import { useState } from "react";
 
 interface CreateLeadModalProps {
   isOpen: boolean;
@@ -35,44 +35,67 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
     localities: [],
   });
 
+  // Fetch property types
+  const { data: propertyTypesData, isLoading: loadingPropertyTypes } =
+    useGetPropertyTypesQuery({ isActive: true });
+
+  const propertyTypes = propertyTypesData?.data || [];
+
   const handleSubmit = async (): Promise<void> => {
     try {
-      await createLead(formData).unwrap();
+      // Convert property type name to ID if needed (for backward compatibility)
+      const dataToSend = { ...formData };
+
+      await createLead(dataToSend).unwrap();
       onSuccess();
       onClose();
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        source: "MANUAL_ENTRY",
-        cityId: "",
-        localities: [],
-      });
+      resetForm();
     } catch (error) {
       console.error("Failed to create lead:", error);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      source: "MANUAL_ENTRY",
+      cityId: "",
+      localities: [],
+    });
+  };
+
+  const handlePropertyTypeChange = (propertyTypeId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      propertyTypeId,
+      subTypeId: undefined, // Reset subtype when property type changes
+    }));
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Create New Lead</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Create New Lead
+          </h2>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
 
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 First Name *
               </label>
               <input
@@ -81,12 +104,12 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Last Name
               </label>
               <input
@@ -95,13 +118,13 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Email *
             </label>
             <input
@@ -110,13 +133,13 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Phone *
             </label>
             <input
@@ -125,14 +148,14 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value })
               }
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Source
               </label>
               <select
@@ -143,7 +166,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                     source: e.target.value as LeadSource,
                   })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               >
                 {LEAD_SOURCES.map((source) => (
                   <option key={source} value={source}>
@@ -153,7 +176,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 City
               </label>
               <input
@@ -162,36 +185,44 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, cityId: e.target.value })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               />
+            </div>
+          </div>
+
+          {/* Property Type and Subtype */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Property Type
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.propertyTypeId || ""}
+                  onChange={(e) => handlePropertyTypeChange(e.target.value)}
+                  disabled={loadingPropertyTypes}
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white appearance-none"
+                >
+                  <option value="">Select Property Type</option>
+                  {propertyTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.icon && <span className="mr-2">{type.icon}</span>}
+                      {type.name.replace(/_/g, " ")}
+                    </option>
+                  ))}
+                </select>
+                {loadingPropertyTypes && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Property Type
-              </label>
-              <select
-                value={formData.propertyType || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    propertyType: e.target.value as PropertyType,
-                  })
-                }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Select Type</option>
-                {PROPERTY_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Purpose
               </label>
               <select
@@ -202,7 +233,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                     purpose: e.target.value as PropertyPurpose,
                   })
                 }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
               >
                 <option value="">Select Purpose</option>
                 {PROPERTY_PURPOSES.map((purpose) => (
@@ -215,7 +246,7 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Requirements
             </label>
             <textarea
@@ -224,15 +255,15 @@ export const CreateLeadModal: React.FC<CreateLeadModalProps> = ({
                 setFormData({ ...formData, requirements: e.target.value })
               }
               rows={4}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-white resize-none"
             />
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200">
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 px-6 py-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors"
+            className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             Cancel
           </button>

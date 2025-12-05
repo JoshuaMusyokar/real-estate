@@ -4,14 +4,14 @@
 
 import type { City, ResCity } from "./location";
 
-export type PropertyType =
+export type PropertyTypeold =
   | "RESIDENTIAL"
   | "COMMERCIAL"
   | "LAND"
   | "INDUSTRIAL"
   | "MIXED_USE";
 
-export type PropertySubType =
+export type PropertySubTypeold =
   | "APARTMENT"
   | "VILLA"
   | "HOUSE"
@@ -37,13 +37,39 @@ export type PropertyStatus =
   | "REJECTED"
   | "DRAFT";
 
+export interface PropertyType {
+  id: string;
+  name: string; // e.g., "RESIDENTIAL", "COMMERCIAL", "LAND", "INDUSTRIAL", "MIXED_USE"
+  description: string | null;
+  icon: string | null;
+  subTypes?: PropertySubType[];
+  order: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PropertySubType {
+  id: string;
+  propertyTypeId: string;
+  propertyType: PropertyType;
+  name: string; // e.g., "APARTMENT", "VILLA", "HOUSE", "OFFICE", "SHOP", "PLOT"
+  description: string | null;
+  icon: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export type PropertyPurpose = "SALE" | "RENT" | "LEASE";
 // TODO: edit the city type to match the location service
 export interface Property {
   id: string;
   title: string;
   description: string;
+  propertyTypeId: string;
   propertyType: PropertyType;
+  subTypeId: string | null;
   subType: PropertySubType | null;
   purpose: PropertyPurpose;
   status: PropertyStatus;
@@ -160,8 +186,8 @@ export interface PropertyAmenity {
 export interface PropertyCreateInput {
   title: string;
   description: string;
-  propertyType: PropertyType;
-  subType?: PropertySubType;
+  propertyTypeId: string;
+  subTypeId?: string;
   purpose: PropertyPurpose;
   status?: PropertyStatus;
   price: number;
@@ -211,8 +237,8 @@ export interface PropertyCreateInput {
 export interface PropertyCreateRequest {
   title: string;
   description: string;
-  propertyType: PropertyType;
-  subType: PropertySubType | null;
+  propertyTypeId: string;
+  subTypeId: string | null;
   purpose: PropertyPurpose;
   status: PropertyStatus;
   price: number;
@@ -260,8 +286,8 @@ export interface PropertyCreateRequest {
 export interface PropertyUpdateRequest {
   title?: string;
   description?: string;
-  propertyType?: PropertyType;
-  subType?: PropertySubType;
+  propertyTypeId?: string;
+  subTypeId?: string;
   purpose?: PropertyPurpose;
   status?: PropertyStatus;
   price?: number;
@@ -345,8 +371,10 @@ export interface PropertySearchFilters {
   page?: number;
   limit?: number;
   search?: string;
-  propertyType?: PropertyType;
-  subType?: PropertySubType;
+  propertyType?: string | string[]; // Can be enum string or PropertyTypeModel ID
+  propertyTypeId?: string | string[]; // Explicit ID filter
+  subType?: string | string[]; // Can be enum string or PropertySubTypeModel ID
+  subTypeId?: string | string[]; // Explicit ID filter
   purpose?: PropertyPurpose;
   possessionStatus?: string;
   status?: PropertyStatus;
@@ -392,7 +420,7 @@ export interface SimilarPropertiesResponse {
     city: ResCity;
     currency: string;
     locality: string;
-    propertyType: string;
+    propertyType: PropertyType;
     purpose: string;
     bedrooms?: number;
     bathrooms?: number;
@@ -411,7 +439,7 @@ export interface CategorizedProperty {
   city: City;
   locality: string;
   slug: string;
-  propertyType: "RESIDENTIAL" | "COMMERCIAL" | string;
+  propertyType: PropertyType;
   purpose: "SALE" | "RENT" | "LEASE" | string;
   bedrooms: number;
   bathrooms: number;
@@ -435,7 +463,8 @@ export interface CategorizedPropertiesFilters {
   cityId?: string;
   city?: string;
   purpose?: PropertyPurpose;
-  propertyType?: PropertyType;
+  propertyTypeId?: string; // NEW: Use ID instead of enum
+  propertyTypeName?: string;
 }
 export interface PropertyImageFile {
   file?: File;
@@ -495,4 +524,57 @@ export interface FavoriteStatusResponse {
 }
 export interface UserFavoritesResponse {
   data: string[];
+}
+// Property Type Types
+
+export interface CreatePropertyTypeRequest {
+  name: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface UpdatePropertyTypeRequest {
+  name?: string;
+  description?: string | null;
+  icon?: string | null;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface PropertyTypeResponse {
+  success: boolean;
+  data: PropertyType;
+}
+
+export interface PropertyTypesResponse {
+  success: boolean;
+  data: PropertyType[];
+}
+
+// Property SubType Types
+export interface CreatePropertySubTypeRequest {
+  propertyTypeId: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdatePropertySubTypeRequest {
+  name?: string;
+  description?: string | null;
+  icon?: string | null;
+  isActive?: boolean;
+}
+
+export interface PropertySubTypeResponse {
+  success: boolean;
+  data: PropertySubType;
+}
+
+export interface PropertySubTypesResponse {
+  success: boolean;
+  data: PropertySubType[];
 }

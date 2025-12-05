@@ -42,6 +42,8 @@ export interface Lead {
   alternatePhone?: string;
   city?: string;
   localities: string[];
+
+  propertyTypeId?: string;
   propertyType?: PropertyType;
   purpose?: PropertyPurpose;
   minPrice?: number;
@@ -82,7 +84,7 @@ export interface LeadCreateInput {
   alternatePhone?: string;
   city?: string;
   localities?: string[];
-  propertyType?: PropertyType;
+  propertyTypeId?: string;
   purpose?: PropertyPurpose;
   minPrice?: number;
   maxPrice?: number;
@@ -106,7 +108,7 @@ export interface CreateLeadInput {
   alternatePhone?: string;
   city?: string;
   localities?: string[];
-  propertyType?: PropertyType;
+  propertyTypeId?: string;
   purpose?: PropertyPurpose;
   minPrice?: number;
   maxPrice?: number;
@@ -129,7 +131,7 @@ export interface UpdateLeadInput {
   alternatePhone?: string;
   city?: string;
   localities?: string[];
-  propertyType?: PropertyType;
+  propertyTypeId?: string;
   purpose?: PropertyPurpose;
   minPrice?: number;
   maxPrice?: number;
@@ -160,6 +162,7 @@ export interface LeadResponse {
   alternatePhone?: string;
   city?: string;
   localities: string[];
+  propertyTypeId?: string;
   propertyType?: PropertyType;
   purpose?: PropertyPurpose;
   minPrice?: number;
@@ -200,6 +203,7 @@ export interface LeadResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+// TODO: UPDATE THIS PROPERTY TYPE
 export interface LeadFilter {
   search?: string;
   stage?: LeadStage;
@@ -232,7 +236,7 @@ export interface LeadCreateRequest {
   alternatePhone?: string;
   cityId?: string;
   localities?: string[];
-  propertyType?: string;
+  propertyTypeId?: string;
   purpose?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -254,7 +258,7 @@ export interface LeadUpdateRequest {
   alternatePhone?: string;
   cityId?: string;
   localities?: string[];
-  propertyType?: string;
+  propertyTypeId?: string;
   purpose?: string;
   minPrice?: number;
   maxPrice?: number;

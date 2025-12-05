@@ -187,7 +187,7 @@ export const CategorizedPropertyCard = ({
             <span
               className={`px-2 py-1 rounded-lg text-xs font-black ${badgeConfig.textColor}`}
             >
-              {property.propertyType}
+              {property.propertyType.name}
             </span>
             <span className="px-2 py-1 rounded-lg text-xs font-black bg-gray-100 text-gray-600">
               {property.purpose}

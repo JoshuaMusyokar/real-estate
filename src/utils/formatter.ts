@@ -28,9 +28,9 @@ export const getPropertyTypeLabel = (
   subType: PropertySubType | null = null
 ): string => {
   if (subType) {
-    return `${type} - ${subType}`;
+    return `${type.name} - ${subType.name}`;
   }
-  return type;
+  return type.name;
 };
 
 export const formatDate = (date: Date | string): string => {

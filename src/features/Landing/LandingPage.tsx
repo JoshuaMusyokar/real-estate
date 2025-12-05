@@ -61,7 +61,7 @@ export const PropertyLandingPage = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<PropertySearchFilters>({});
   const [selectedPurpose, setSelectedPurpose] = useState<PropertyPurpose>();
-  const [propertyType, setPropertyType] = useState<PropertyType>("RESIDENTIAL");
+  const [propertyType, setPropertyType] = useState<string>("RESIDENTIAL");
   const [propertyPurpose, setPropertyPurpose] =
     useState<PropertyPurpose>("SALE");
   const [searchInput, setSearchInput] = useState("");
@@ -86,8 +86,8 @@ export const PropertyLandingPage = () => {
   });
   const { data: categorizedData, isLoading: isCategorizedLoading } =
     useGetCategorizedPropertiesQuery({
-      purpose: propertyPurpose as any,
-      propertyType: propertyType,
+      purpose: propertyPurpose,
+      propertyTypeName: propertyType,
       cityId: selectedCityId || undefined,
       limit: 8,
     });
