@@ -20,6 +20,9 @@ interface RegisterRequest {
   email: string;
   phone: string | null;
   password: string;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   firstName: string;
   lastName: string;
   roleName: string;
@@ -28,6 +31,9 @@ type FormErrors = {
   [K in keyof RegisterRequest]?: string;
 } & {
   terms?: string;
+  companyName?: string;
+  reraNumber?: string;
+  gstNumber?: string;
 };
 
 export default function SignUpForm() {
@@ -40,7 +46,11 @@ export default function SignUpForm() {
     password: "",
     phone: null,
     roleName: "" as Role,
+    companyName: null,
+    reraNumber: null,
+    gstNumber: null,
   });
+  const [showCompanyInfo, setShowCompanyInfo] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const { register, isLoading, error } = useAuth();
   const { success, error: showError } = useToast();
@@ -55,6 +65,7 @@ export default function SignUpForm() {
       description: "Property Owner",
       details: "Post and manage your properties for sale or rent",
       color: "blue",
+      needsCompanyInfo: false,
     },
     {
       value: "AGENT" as Role,
@@ -63,6 +74,7 @@ export default function SignUpForm() {
       description: "Real Estate Broker",
       details: "List properties on behalf of clients",
       color: "purple",
+      needsCompanyInfo: true,
     },
     {
       value: "BUILDER" as Role,
@@ -71,14 +83,16 @@ export default function SignUpForm() {
       description: "Property Builder/Developer",
       details: "Showcase new construction and development projects",
       color: "orange",
+      needsCompanyInfo: true,
     },
     {
       value: "BUYER" as Role,
-      label: "Buyer",
+      label: "User",
       icon: ShoppingCart,
       description: "Property Buyer",
       details: "Browse and purchase properties",
       color: "green",
+      needsCompanyInfo: false,
     },
   ];
 
@@ -99,12 +113,25 @@ export default function SignUpForm() {
   };
 
   const handleRoleSelect = (role: Role) => {
-    setFormData((prev) => ({ ...prev, roleName: role }));
+    setFormData((prev) => ({
+      ...prev,
+      roleName: role,
+      // Clear company info when switching roles
+      ...(prev.roleName !== role && {
+        companyName: null,
+        reraNumber: null,
+        gstNumber: null,
+      }),
+    }));
+
+    // Show/hide company info based on role
+    const selectedType = userTypes.find((t) => t.value === role);
+    setShowCompanyInfo(selectedType?.needsCompanyInfo || false);
+
     if (errors.roleName) {
       setErrors((prev) => ({ ...prev, roleName: undefined }));
     }
   };
-
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -130,6 +157,31 @@ export default function SignUpForm() {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
+    }
+
+    // Validate company info for roles that need it
+    if (showCompanyInfo) {
+      if (!formData.companyName?.trim()) {
+        newErrors.companyName = "Company/Organization name is required";
+      }
+
+      // RERA number validation (if provided)
+      if (formData.reraNumber && formData.reraNumber.trim()) {
+        const reraRegex = /^[A-Z]{2}\/[A-Z]{2}\/\d+\/\d+$/;
+        if (!reraRegex.test(formData.reraNumber.trim())) {
+          newErrors.reraNumber =
+            "Invalid RERA format (e.g., AP/TS/12345/67890)";
+        }
+      }
+
+      // GST number validation (if provided)
+      if (formData.gstNumber && formData.gstNumber.trim()) {
+        const gstRegex =
+          /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/;
+        if (!gstRegex.test(formData.gstNumber.trim())) {
+          newErrors.gstNumber = "Invalid GST format";
+        }
+      }
     }
 
     if (!isChecked) {
@@ -274,6 +326,17 @@ export default function SignUpForm() {
                       <div className="text-base font-semibold text-gray-900 dark:text-white">
                         {type.label}
                       </div>
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {type.description}
+                      </div>
+                      {type.needsCompanyInfo && (
+                        <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                          <span className="inline-flex items-center">
+                            <Building2 className="w-3 h-3 mr-1" />
+                            Company info required
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
@@ -442,6 +505,99 @@ export default function SignUpForm() {
                   className="w-full px-4 py-2.5 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
+
+              {showCompanyInfo && (
+                <>
+                  {/* Company Name */}
+                  <div>
+                    <label
+                      htmlFor="companyName"
+                      className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Company/Organization Name
+                      <span className="ml-1 text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="companyName"
+                      name="companyName"
+                      placeholder="Your company name"
+                      value={formData.companyName || ""}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 text-gray-900 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                        errors.companyName
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      }`}
+                    />
+                    {errors.companyName && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {errors.companyName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* RERA Number */}
+                  <div>
+                    <label
+                      htmlFor="reraNumber"
+                      className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      RERA Registration Number{" "}
+                      <span className="text-sm text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="reraNumber"
+                      name="reraNumber"
+                      placeholder="AP/TS/12345/67890"
+                      value={formData.reraNumber || ""}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 text-gray-900 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                        errors.reraNumber ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.reraNumber && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {errors.reraNumber}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Format: State Code/State Code/Registration No./Year
+                    </p>
+                  </div>
+
+                  {/* GST Number */}
+                  <div>
+                    <label
+                      htmlFor="gstNumber"
+                      className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      GST Number{" "}
+                      <span className="text-sm text-gray-500">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="gstNumber"
+                      name="gstNumber"
+                      placeholder="22AAAAA0000A1Z5"
+                      value={formData.gstNumber || ""}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2.5 text-gray-900 bg-white border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                        errors.gstNumber ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {errors.gstNumber && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        {errors.gstNumber}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      15-digit alphanumeric GSTIN
+                    </p>
+                  </div>
+                </>
+              )}
 
               {/* Password */}
               <div>

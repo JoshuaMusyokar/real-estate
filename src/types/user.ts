@@ -38,6 +38,9 @@ export interface User {
   roleId: string;
   role: ResRole;
   status: UserStatus;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   avatar: string | null;
   permissions: Permission | null;
   allowedCities: string[];
@@ -51,6 +54,9 @@ export interface User {
 export interface CreateUserRequest {
   email: string;
   phone?: string;
+  companyName?: string;
+  reraNumber?: string;
+  gstNumber?: string;
   password: string;
   firstName: string;
   lastName: string;
@@ -67,6 +73,9 @@ export interface UpdateUserRequest {
   phone?: string;
   firstName?: string;
   lastName?: string;
+  companyName?: string;
+  reraNumber?: string;
+  gstNumber?: string;
   roleId?: string;
   status?: UserStatus;
   avatar?: string;
@@ -106,6 +115,9 @@ export interface UserCreateInput {
   password: string;
   firstName: string;
   lastName: string;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   managerId: string | null;
   role: Role | null;
   status: UserStatus | null;
@@ -121,6 +133,9 @@ export interface UserUpdateInput {
   firstName?: string;
   lastName?: string;
   managerId: string | null;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   role?: Role;
   status?: UserStatus;
   avatar?: string;
@@ -139,6 +154,9 @@ export interface UserResponse {
   lastName: string;
   roleId: string;
   role: ResRole;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   status: UserStatus;
   managerId: string | null;
   manager?: Manager;
@@ -180,6 +198,9 @@ export interface UserCreateInput {
   firstName: string;
   lastName: string;
   role: Role | null;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   managerId: string | null;
   status: UserStatus | null;
   avatar: string | null;
@@ -194,6 +215,9 @@ export interface UserUpdateInput {
   firstName?: string;
   lastName?: string;
   managerId: string | null;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   role?: Role;
   status?: UserStatus;
   avatar?: string;

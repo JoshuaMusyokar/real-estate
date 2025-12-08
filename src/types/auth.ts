@@ -10,6 +10,9 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   phone: string | null;
+  companyName: string | null;
+  reraNumber: string | null;
+  gstNumber: string | null;
   password: string;
   firstName: string;
   lastName: string;
