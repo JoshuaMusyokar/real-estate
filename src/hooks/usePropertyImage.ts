@@ -1,15 +1,6 @@
 // hooks/usePropertyImages.ts
 import { useState } from "react";
-
-export interface PropertyImageFile {
-  file?: File;
-  url?: string;
-  caption?: string;
-  order: number;
-  key?: string;
-  isCover: boolean;
-  preview?: string;
-}
+import type { PropertyImageFile } from "../types";
 
 export const usePropertyImages = () => {
   const [imageFiles, setImageFiles] = useState<PropertyImageFile[]>([]);
@@ -21,6 +12,9 @@ export const usePropertyImages = () => {
     const newImages: PropertyImageFile[] = Array.from(files).map(
       (file, idx) => ({
         file,
+        url: null,
+        caption: null,
+        key: null,
         order: imageFiles.length + idx,
         isCover: imageFiles.length === 0 && idx === 0,
         preview: URL.createObjectURL(file),

@@ -5,11 +5,13 @@ import { baseApi } from "../services/baseApi";
 import authReducer from "./slices/authSlice";
 import toastReducer from "./slices/toastSlice";
 import { rtkQueryErrorLogger } from "../services/errorHandler";
+import propertyFormReducer from "./slices/propertyFormSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     toast: toastReducer,
+    propertyForm: propertyFormReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>

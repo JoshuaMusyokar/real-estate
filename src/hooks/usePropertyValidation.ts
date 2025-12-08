@@ -36,7 +36,7 @@ export const usePropertyValidation = () => {
           return "Address must be at least 5 characters";
         break;
 
-      case "city":
+      case "cityId":
         if (!value || !value.trim()) return "City is required";
         break;
 
@@ -117,7 +117,7 @@ export const usePropertyValidation = () => {
         break;
 
       case 1: // Location
-        ["address", "city", "locality", "country"].forEach((field) => {
+        ["address", "cityId", "locality", "country"].forEach((field) => {
           const error = validateField(
             field,
             formData[field as keyof typeof formData]
@@ -156,6 +156,10 @@ export const usePropertyValidation = () => {
         break;
 
       case 4: {
+        return true;
+        break;
+      }
+      case 5: {
         // Images
         if (imageFiles.length === 0) {
           newErrors.images = "Please upload at least one image";
@@ -169,7 +173,7 @@ export const usePropertyValidation = () => {
         }
         break;
       }
-      case 5: // Documents (optional)
+      case 6: // Documents (optional)
         break;
     }
 

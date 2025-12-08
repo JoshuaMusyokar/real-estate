@@ -352,11 +352,11 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
                 <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 shadow-lg">
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-[10px]">
-                      {getBuilderInitials(property.builderName)}
+                      {getBuilderInitials(property.postedBy)}
                     </span>
                   </div>
                   <span className="text-xs font-semibold text-white">
-                    {property.builderName}
+                    {property.postedBy}
                   </span>
                 </div>
               )}

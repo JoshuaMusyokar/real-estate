@@ -9,9 +9,14 @@ import {
   Phone,
   Shield,
   CheckCircle,
+  ParkingCircle,
+  MoveVertical,
+  Calendar,
 } from "lucide-react";
 import type { Property } from "../../types";
 import { PropertyImageCarousel } from "./PropertyImageCarousel";
+import { InquiryFormModal } from "../../components/form/InquiryForm";
+import { ScheduleViewingModal } from "../../components/form/ScheduleViewingForm";
 
 interface PropertyCardProps {
   property: Property;
@@ -25,6 +30,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
   onToggleFavorite,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [showInquiry, setShowInquiry] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [showContactOptions, setShowContactOptions] = useState(false);
 
   // const coverImage =
   //   property.images.find((img) => img.isCover)?.viewableUrl ||
@@ -59,6 +67,43 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             : "Upcoming"
         }`
       : "";
+  const formatPostedDate = () => {
+    if (!property.postedDate) return "";
+    return new Date(property.postedDate).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+  const getReraInfo = () => {
+    if (property.reraNumber) {
+      return {
+        label: "RERA Registered Property",
+        number: property.reraNumber,
+        type: "property",
+      };
+    }
+
+    if (property.advertiserReraNumber) {
+      return {
+        label:
+          property.postedBy === "DEVELOPER"
+            ? "RERA Registered Developer"
+            : "RERA Registered Agent",
+        number: property.advertiserReraNumber,
+        type: "advertiser",
+      };
+    }
+
+    return null;
+  };
+
+  const getGstInfo = () => {
+    if (property.advertiserGstNumber) {
+      return property.advertiserGstNumber;
+    }
+    return null;
+  };
 
   return (
     <div className="bg-white border border-gray-300 rounded-lg overflow-hidden hover:shadow-xl transition-shadow group flex mb-4">
@@ -171,22 +216,39 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             )}
           </div>
 
-          {/* RERA Number Display - Prominent placement */}
-          {property.reraNumber && (
-            <div className="mb-3 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-xs text-green-700 font-semibold">
-                    RERA Registered
-                  </p>
-                  <p className="text-xs text-green-600 font-mono font-medium">
-                    {property.reraNumber}
-                  </p>
+          {/* RERA / GST Display */}
+          {(() => {
+            const rera = getReraInfo();
+            const gst = getGstInfo();
+
+            if (!rera && !gst) return null;
+
+            return (
+              <div className="mb-3 bg-green-50 border border-green-200 rounded-md px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    {rera && (
+                      <>
+                        <p className="text-xs text-green-700 font-semibold">
+                          {rera.label}
+                        </p>
+                        <p className="text-xs text-green-600 font-mono">
+                          {rera.number}
+                        </p>
+                      </>
+                    )}
+
+                    {gst && (
+                      <p className="text-xs text-gray-700 font-medium mt-1">
+                        GST: <span className="font-mono">{gst}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Avg Price and Possession Status */}
           <div className="flex items-center justify-between text-xs text-gray-500 mb-3 border-t border-dashed pt-3">
@@ -208,19 +270,62 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
               <User className="w-4 h-4 text-gray-500" />
             </div>
+
             <div>
               <p className="text-sm font-medium text-gray-800 line-clamp-1">
-                {property.builderName || property.ownerName || "Property Agent"}
+                {property.postedBy}
               </p>
-              <p className="text-xs text-gray-500">Build by</p>
+              <p className="text-xs text-gray-500">Posted by</p>
             </div>
           </div>
+          {/* Parking + Lifts */}
+          <div className="flex items-center flex-wrap gap-4 text-xs text-gray-700">
+            {property.coveredParking ? (
+              <div className="flex items-center gap-1">
+                <ParkingCircle className="w-3 h-3" />
+                <span>{property.coveredParking} Covered</span>
+              </div>
+            ) : null}
 
+            {property.openParking ? (
+              <div className="flex items-center gap-1">
+                <ParkingCircle className="w-3 h-3" />
+                <span>{property.openParking} Open</span>
+              </div>
+            ) : null}
+
+            {property.publicParking ? (
+              <div className="flex items-center gap-1">
+                <ParkingCircle className="w-3 h-3" />
+                <span>{property.publicParking} Public</span>
+              </div>
+            ) : null}
+
+            {property.passengerLifts ? (
+              <div className="flex items-center gap-1">
+                <MoveVertical className="w-3 h-3" />
+                <span>{property.passengerLifts} Passenger</span>
+              </div>
+            ) : null}
+
+            {property.serviceLifts ? (
+              <div className="flex items-center gap-1">
+                <MoveVertical className="w-3 h-3 text-gray-500" />
+                <span>{property.serviceLifts} Service</span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Posted Date */}
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <Calendar className="w-3 h-3" />
+            <span>Posted on {formatPostedDate()}</span>
+          </div>
           {/* Contact Button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              // Implement modal or direct contact action here
+              setShowContactOptions(true);
             }}
             className="px-6 py-2 bg-purple-600 text-white rounded-md font-semibold hover:bg-purple-700 transition-colors text-sm flex items-center gap-1 shadow-md"
           >
@@ -229,6 +334,61 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
           </button>
         </div>
       </div>
+      {/* Contact Options Popup */}
+      {showContactOptions && (
+        <div
+          onClick={() => setShowContactOptions(false)}
+          className="fixed inset-0 bg-black/50 flex items-end justify-center z-50"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-full max-w-sm p-4 rounded-t-2xl shadow-xl animate-slide-up"
+          >
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">
+              Contact Options
+            </h3>
+
+            <button
+              onClick={() => {
+                setShowContactOptions(false);
+                setShowInquiry(true);
+              }}
+              className="w-full py-3 mb-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+            >
+              Quick Contact
+            </button>
+
+            <button
+              onClick={() => {
+                setShowContactOptions(false);
+                setShowSchedule(true);
+              }}
+              className="w-full py-3 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition"
+            >
+              Schedule Site Visit
+            </button>
+
+            <button
+              onClick={() => setShowContactOptions(false)}
+              className="w-full py-2 text-sm text-gray-500 mt-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modals */}
+      <InquiryFormModal
+        property={property}
+        isOpen={showInquiry}
+        onClose={() => setShowInquiry(false)}
+      />
+      <ScheduleViewingModal
+        property={property}
+        isOpen={showSchedule}
+        onClose={() => setShowSchedule(false)}
+      />
     </div>
   );
 };

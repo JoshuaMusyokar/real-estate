@@ -9,6 +9,10 @@ import {
   Building2,
   Shield,
   ArrowRight,
+  ParkingCircle,
+  User,
+  MoveVertical,
+  CalendarDays,
 } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
 
@@ -135,6 +139,68 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
             <Square className="w-5 h-5 text-green-600" />
             <span className="text-xs font-black text-gray-900">
               {property.squareFeet} sqft
+            </span>
+          </div>
+          {property.passengerLifts ? (
+            <div className="flex items-center gap-1">
+              <MoveVertical className="w-3 h-3" />
+              <span>{property.passengerLifts} Passenger</span>
+            </div>
+          ) : null}
+
+          {/* Service Lift */}
+          {property.serviceLifts ? (
+            <div className="flex items-center gap-1">
+              <MoveVertical className="w-3 h-3 text-gray-500" />
+              <span>{property.serviceLifts} Service</span>
+            </div>
+          ) : null}
+        </div>
+        <div className="mt-2 space-y-2 text-xs text-gray-700">
+          {/* Parking */}
+          <div className="flex items-center gap-3">
+            {property.coveredParking ? (
+              <div className="flex items-center gap-1">
+                <ParkingCircle className="w-3 h-3" />
+                <span>{property.coveredParking} Covered</span>
+              </div>
+            ) : null}
+
+            {property.openParking ? (
+              <div className="flex items-center gap-1">
+                <ParkingCircle className="w-3 h-3" />
+                <span>{property.openParking} Open</span>
+              </div>
+            ) : null}
+
+            {property.publicParking ? (
+              <div className="flex items-center gap-1">
+                <ParkingCircle className="w-3 h-3" />
+                <span>{property.publicParking} Public</span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Posted By */}
+          <div className="flex items-center gap-1 text-gray-600">
+            <User className="w-3 h-3" />
+            <span>{property.postedBy}</span>
+            {property.advertiserName && (
+              <span className="font-semibold ml-1">
+                • {property.advertiserName}
+              </span>
+            )}
+          </div>
+
+          {/* Posted Date */}
+          <div className="flex items-center gap-1 text-gray-600">
+            <CalendarDays className="w-3 h-3" />
+            <span>
+              {new Date(property.postedDate).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
             </span>
           </div>
         </div>

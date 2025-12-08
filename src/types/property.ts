@@ -63,7 +63,15 @@ export interface PropertySubType {
 
 export type PropertyPurpose = "SALE" | "RENT" | "LEASE";
 // TODO: edit the city type to match the location service
+
+export interface NearbyPlace {
+  name: string;
+  distance: string; // e.g., "500m", "1.2km"
+  category: string; // e.g., "School", "Hospital", "Mall", "Metro"
+  icon: string | null;
+}
 export interface Property {
+  // Basic Information
   id: string;
   title: string;
   description: string;
@@ -73,66 +81,155 @@ export interface Property {
   subType: PropertySubType | null;
   purpose: PropertyPurpose;
   status: PropertyStatus;
+  builderName: string | null;
+  hasBalcony: boolean;
+  reraNumber: string | null;
+
+  // Pricing
   price: number;
   priceNegotiable: boolean;
-  builderName: string | null;
-  reraNumber: string | null;
-  hasBalcony: boolean;
   currency: string;
+  stampDutyExcluded: boolean;
+  pricePerUnit: number | null; // Auto-calculated
+  maintenanceCharges: number | null;
+  securityDeposit: number | null;
+  monthlyRent: number | null;
+  leasePeriod: string | null;
+
+  // Location
   address: string;
+  complexName: string | null;
   cityId: string;
-  city: City;
+  city: ResCity;
   locality: string;
   state: string | null;
-  country: string | null;
+  country: string;
   zipCode: string | null;
   latitude: number | null;
   longitude: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  balconies: number | null; // Total number of balconies
-  totalFlats: number | null; // Total number of flats in the complex
-  totalBuildings: number | null; // Total number of buildings in the project
-  totalFloors: number | null; // Total floors in the building
-  complexName: string | null; // Name of the residential complex
-  // Area Measurements
-  superBuiltArea: number | null; // In sq ft
-  builtUpArea: number | null; // In sq ft
-  carpetArea: number | null; // In sq ft
 
-  // Possession
-  possessionStatus: string | null; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
-  possessionDate: Date | null; // ISO Date for completion
+  // Area Measurements (with units)
+  carpetArea: number | null;
+  carpetAreaUnit: string | null;
+  builtUpArea: number | null;
+  builtUpAreaUnit: string | null;
+  superBuiltArea: number | null;
+  superBuiltAreaUnit: string | null;
+  plotArea: number | null;
+  plotAreaUnit: string | null;
+
+  // Legacy area fields
   squareFeet: number | null;
   squareMeters: number | null;
-  floors: number | null;
-  yearBuilt: number | null;
+
+  // Residential Details
+  bedrooms: number | null;
+  bathrooms: number | null;
+  balconies: number | null;
   furnishingStatus: string | null;
+  floorNumber: number | null; // Which floor
+  totalFloors: number | null; // Total floors in building
+  floors: number | null; // Floors in this property (villa/house)
+  totalFlats: number | null;
+  totalBuildings: number | null;
+  yearBuilt: number | null;
+
+  // Possession
+  possessionStatus: string | null;
+  possessionDate: Date | null;
+
+  // Parking & Lifts
+  coveredParking: number | null;
+  openParking: number | null;
+  publicParking: number | null;
+  passengerLifts: number | null;
+  serviceLifts: number | null;
+
+  // Commercial Office Specific
+  projectName: string | null;
+  locatedWithin: string | null;
+  officeType: string | null;
+  officesPerFloor: number | null;
+  officesInProject: number | null;
+  buildingsInProject: number | null;
+  cabins: number | null;
+  seats: number | null;
+  privateWashrooms: number | null;
+  publicWashrooms: number | null;
+  conferenceRooms: boolean;
+  receptionArea: boolean;
+  meetingRooms: number | null;
+  pantryType: string | null;
+  preRented: boolean;
+  nocCertified: boolean;
+  occupancyCertified: boolean;
+
+  // Land/Plot Specific
+  plotDimensions: string | null;
+  boundaryWall: boolean;
+  cornerPlot: boolean;
+  facingDirection: string | null;
+  zoningType: string | null;
+  clearTitle: boolean;
+  developmentStatus: string | null;
+  roadWidth: string | null;
+  electricityAvailable: boolean;
+  waterConnection: boolean;
+  sewageConnection: boolean;
+
+  // Warehouse/Industrial Specific
+  ceilingHeight: string | null;
+  loadingDocks: number | null;
+  powerLoad: string | null;
+  flooringType: string | null;
+  coveredArea: number | null;
+  openArea: number | null;
+
+  // Features & Media
   featured: boolean;
   verified: boolean;
   youtubeVideoUrl: string | null;
   virtualTourUrl: string | null;
+  nearbyPlaces: NearbyPlace[] | null; // Array of nearby places
+
+  // Owner Information
   ownerId: string;
   ownerEmail: string;
   ownerPhone: string;
   ownerName: string;
+
+  // Advertiser Information
+  postedBy: string; // "OWNER", "AGENT", "DEVELOPER"
+  advertiserName: string | null;
+  advertiserReraNumber: string | null;
+  advertiserGstNumber: string | null;
+  postedDate: Date;
+
+  // Review Information
   submittedAt: Date;
   reviewedAt: Date | null;
   reviewedBy: string | null;
   rejectionReason: string | null;
+
+  // SEO
   slug: string;
   metaTitle: string | null;
   metaDescription: string | null;
+
+  // Statistics
   viewCount: number;
   inquiryCount: number;
   shareCount: number;
+
+  // Timestamps
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;
-  //IMPORTANT! KEEP THIS FOR UI
+
+  // Optional Relations (when included)
   images: PropertyImage[];
-  documents: PropertyDocument[];
-  amenities: PropertyAmenity[];
+  documents?: PropertyDocument[];
+  amenities?: PropertyAmenity[];
 }
 
 export interface PropertyImage {
@@ -235,108 +332,249 @@ export interface PropertyCreateInput {
   metaDescription?: string;
 }
 export interface PropertyCreateRequest {
+  // Basic Information
   title: string;
   description: string;
   propertyTypeId: string;
   subTypeId: string | null;
   purpose: PropertyPurpose;
-  status: PropertyStatus;
+  status?: PropertyStatus; // Optional, defaults to UNDER_REVIEW
+  builderName: string | null;
+  hasBalcony: boolean;
+  reraNumber: string | null;
+
+  // Pricing
   price: number;
   priceNegotiable: boolean;
-  currency: string;
+  currency?: string; // Optional, defaults to USD
+  stampDutyExcluded?: boolean;
+  maintenanceCharges: number | null;
+  securityDeposit: number | null;
+  monthlyRent: number | null;
+  pricePerUnit: number | null;
+  leasePeriod: string | null;
+
+  // Location
   address: string;
   cityId: string;
-  city: string;
   locality: string;
-  builderName: string | null;
-  reraNumber: string | null;
-  hasBalcony: boolean;
+  complexName: string | null;
   state: string | null;
   country: string;
   zipCode: string | null;
   latitude: number | null;
   longitude: number | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  balconies: number | null; // Total number of balconies
-  totalFlats: number | null; // Total number of flats in the complex
-  totalBuildings: number | null; // Total number of buildings in the project
-  totalFloors: number | null; // Total floors in the building
-  complexName: string | null; // Name of the residential complex
 
   // Area Measurements
-  superBuiltArea: number | null; // In sq ft
-  builtUpArea: number | null; // In sq ft
-  carpetArea: number | null; // In sq ft
+  carpetArea: number | null;
+  carpetAreaUnit: string | null;
+  builtUpArea: number | null;
+  builtUpAreaUnit: string | null;
+  superBuiltArea: number | null;
+  superBuiltAreaUnit: string | null;
+  plotArea: number | null;
+  plotAreaUnit: string | null;
+  squareFeet: number | null;
+  squareMeters: number | null;
+
+  // Residential Details
+  bedrooms: number | null;
+  bathrooms: number | null;
+  balconies: number | null;
+  furnishingStatus: string | null;
+  floorNumber: number | null;
+  totalFloors: number | null;
+  floors: number | null;
+  totalFlats: number | null;
+  totalBuildings: number | null;
+  yearBuilt: number | null;
 
   // Possession
-  possessionStatus: string | null; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
-  possessionDate: Date | null; // ISO Date for completion
-  squareFeet: number | null;
-  squareMeters?: number;
-  floors: number | null;
-  yearBuilt: number | null;
-  furnishingStatus: string | null;
+  possessionStatus: string | null;
+  possessionDate: Date | null;
+
+  // Parking & Lifts
+  coveredParking: number | null;
+  openParking: number | null;
+  publicParking: number | null;
+  passengerLifts: number | null;
+  serviceLifts: number | null;
+
+  // Commercial Office Specific
+  projectName: string | null;
+  locatedWithin: string | null;
+  officeType: string | null;
+  officesPerFloor: number | null;
+  officesInProject: number | null;
+  buildingsInProject: number | null;
+  cabins: number | null;
+  seats: number | null;
+  privateWashrooms: number | null;
+  publicWashrooms: number | null;
+  conferenceRooms?: boolean;
+  receptionArea?: boolean;
+  meetingRooms: number | null;
+  pantryType: string | null;
+  preRented?: boolean;
+  nocCertified?: boolean;
+  occupancyCertified?: boolean;
+
+  // Land/Plot Specific
+  plotDimensions: string | null;
+  boundaryWall?: boolean;
+  cornerPlot?: boolean;
+  facingDirection: string | null;
+  zoningType: string | null;
+  clearTitle?: boolean;
+  developmentStatus: string | null;
+  roadWidth: string | null;
+  electricityAvailable?: boolean;
+  waterConnection?: boolean;
+  sewageConnection?: boolean;
+
+  // Warehouse/Industrial Specific
+  ceilingHeight: string | null;
+  loadingDocks: number | null;
+  powerLoad: string | null;
+  flooringType: string | null;
+  coveredArea: number | null;
+  openArea: number | null;
+
+  // Features & Media
   youtubeVideoUrl: string | null;
   virtualTourUrl: string | null;
+  nearbyPlaces: NearbyPlace[] | null;
+
+  // Related Data
   amenities: string[] | null; // Array of amenity IDs
   images: PropertyImageInput[] | null;
 }
 
 export interface PropertyUpdateRequest {
+  // All fields optional for updates
   title?: string;
   description?: string;
   propertyTypeId?: string;
-  subTypeId?: string;
+  subTypeId?: string | null;
   purpose?: PropertyPurpose;
   status?: PropertyStatus;
-  price?: number;
-  builderName?: string;
-  reraNumber?: string;
+  builderName?: string | null;
   hasBalcony?: boolean;
+  reraNumber?: string | null;
+  pricePerUnit?: number | null;
+
+  // Pricing
+  price?: number;
   priceNegotiable?: boolean;
   currency?: string;
+  stampDutyExcluded?: boolean;
+  maintenanceCharges?: number | null;
+  securityDeposit?: number | null;
+  monthlyRent?: number | null;
+  leasePeriod?: string | null;
+
+  // Location
   address?: string;
   cityId?: string;
-  city?: string;
   locality?: string;
-  state?: string;
+  complexName?: string | null;
+  state?: string | null;
   country?: string;
-  zipCode?: string;
-  latitude?: number;
-  longitude?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  balconies?: number; // Total number of balconies
-  totalFlats?: number; // Total number of flats in the complex
-  totalBuildings?: number; // Total number of buildings in the project
-  totalFloors?: number; // Total floors in the building
-  complexName?: string; // Name of the residential complex
+  zipCode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 
   // Area Measurements
-  superBuiltArea?: number; // In sq ft
-  builtUpArea?: number; // In sq ft
-  carpetArea?: number; // In sq ft
+  carpetArea?: number | null;
+  carpetAreaUnit?: string | null;
+  builtUpArea?: number | null;
+  builtUpAreaUnit?: string | null;
+  superBuiltArea?: number | null;
+  superBuiltAreaUnit?: string | null;
+  plotArea?: number | null;
+  plotAreaUnit?: string | null;
+  squareFeet?: number | null;
+  squareMeters?: number | null;
+
+  // Residential Details
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  balconies?: number | null;
+  furnishingStatus?: string | null;
+  floorNumber?: number | null;
+  totalFloors?: number | null;
+  floors?: number | null;
+  totalFlats?: number | null;
+  totalBuildings?: number | null;
+  yearBuilt?: number | null;
 
   // Possession
-  possessionStatus?: string; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
-  possessionDate?: Date; // ISO Date for completion
-  squareFeet?: number;
-  squareMeters?: number;
-  floors?: number;
-  yearBuilt?: number;
-  furnishingStatus?: string;
-  youtubeVideoUrl?: string;
-  virtualTourUrl?: string;
-  amenities?: string[];
+  possessionStatus?: string | null;
+  possessionDate?: Date | null;
+
+  // Parking & Lifts
+  coveredParking?: number | null;
+  openParking?: number | null;
+  publicParking?: number | null;
+  passengerLifts?: number | null;
+  serviceLifts?: number | null;
+
+  // Commercial Office Specific
+  projectName?: string | null;
+  locatedWithin?: string | null;
+  officeType?: string | null;
+  officesPerFloor?: number | null;
+  officesInProject?: number | null;
+  buildingsInProject?: number | null;
+  cabins?: number | null;
+  seats?: number | null;
+  privateWashrooms?: number | null;
+  publicWashrooms?: number | null;
+  conferenceRooms?: boolean;
+  receptionArea?: boolean;
+  meetingRooms?: number | null;
+  pantryType?: string | null;
+  preRented?: boolean;
+  nocCertified?: boolean;
+  occupancyCertified?: boolean;
+
+  // Land/Plot Specific
+  plotDimensions?: string | null;
+  boundaryWall?: boolean;
+  cornerPlot?: boolean;
+  facingDirection?: string | null;
+  zoningType?: string | null;
+  clearTitle?: boolean;
+  developmentStatus?: string | null;
+  roadWidth?: string | null;
+  electricityAvailable?: boolean;
+  waterConnection?: boolean;
+  sewageConnection?: boolean;
+
+  // Warehouse/Industrial Specific
+  ceilingHeight?: string | null;
+  loadingDocks?: number | null;
+  powerLoad?: string | null;
+  flooringType?: string | null;
+  coveredArea?: number | null;
+  openArea?: number | null;
+
+  // Features & Media
+  youtubeVideoUrl?: string | null;
+  virtualTourUrl?: string | null;
+  nearbyPlaces?: NearbyPlace[] | null;
+
+  // Related Data
+  amenities: string[] | null;
+  images: PropertyImageInput[] | null;
 }
 
 export interface PropertyImageInput {
   url: string;
-  order?: number;
-  caption?: string;
-  key?: string;
-  isCover?: boolean;
+  order: number | null;
+  caption: string | null;
+  key: string | null;
+  isCover: boolean | null;
 }
 
 export interface PropertyResponse {
@@ -449,6 +687,17 @@ export interface CategorizedProperty {
   viewableCoverImage: string;
   amenities: string[];
   createdAt: string;
+  coveredParking: number | null;
+  openParking: number | null;
+  publicParking: number | null;
+  passengerLifts: number | null;
+  serviceLifts: number | null;
+  postedBy: string; // "OWNER", "AGENT", "DEVELOPER"
+  advertiserName: string | null;
+  advertiserReraNumber: string | null;
+  advertiserGstNumber: string | null;
+
+  postedDate: Date;
 }
 export interface CategorizedPropertiesResponse {
   top: CategorizedProperty[];
@@ -467,13 +716,13 @@ export interface CategorizedPropertiesFilters {
   propertyTypeName?: string;
 }
 export interface PropertyImageFile {
-  file?: File;
-  url?: string;
-  caption?: string;
-  key?: string;
+  file: File | null;
+  url: string | null;
+  caption: string | null;
+  key: string | null;
   order: number;
   isCover: boolean;
-  preview?: string;
+  preview: string | null;
 }
 
 // export interface FavoriteProperty {

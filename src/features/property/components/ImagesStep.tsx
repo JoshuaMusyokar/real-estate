@@ -1,15 +1,6 @@
 import { AlertCircle, ImageIcon, Upload, X } from "lucide-react";
 import { useState, useEffect } from "react";
-
-interface PropertyImageFile {
-  file?: File;
-  url?: string;
-  caption?: string;
-  key?: string;
-  order: number;
-  isCover: boolean;
-  preview?: string;
-}
+import type { PropertyImageFile } from "../../../types";
 
 interface ImagesStepProps {
   imageFiles: PropertyImageFile[];

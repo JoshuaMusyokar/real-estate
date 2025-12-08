@@ -1,4 +1,4 @@
-import { AlertCircle, Check, MapPin, Search } from "lucide-react";
+import { AlertCircle, Check, MapPin } from "lucide-react";
 import type { PropertyCreateRequest } from "../../../types";
 
 interface City {
@@ -6,25 +6,13 @@ interface City {
   name: string;
   state?: string;
   country?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Locality {
   id: string;
   name: string;
-}
-
-interface LocationSuggestion {
-  display_name: string;
-  lat: string;
-  lon: string;
-  address: {
-    city?: string;
-    town?: string;
-    village?: string;
-    state?: string;
-    country?: string;
-    postcode?: string;
-  };
 }
 
 interface LocationStepProps {
@@ -35,15 +23,8 @@ interface LocationStepProps {
   localities: Locality[];
   isLoadingCities: boolean;
   isLoadingLocalities: boolean;
-  locationSearch: string;
-  locationSuggestions: LocationSuggestion[];
-  showSuggestions: boolean;
-  isSearchingLocation: boolean;
   onUpdate: (data: Partial<PropertyCreateRequest>) => void;
   onBlur: (field: string) => void;
-  onLocationSearchChange: (value: string) => void;
-  onLocationSelect: (location: LocationSuggestion) => void;
-  onSearchFocus: () => void;
 }
 
 export const LocationStep: React.FC<LocationStepProps> = ({
@@ -54,68 +35,26 @@ export const LocationStep: React.FC<LocationStepProps> = ({
   localities,
   isLoadingCities,
   isLoadingLocalities,
-  locationSearch,
-  locationSuggestions,
-  showSuggestions,
-  isSearchingLocation,
   onUpdate,
   onBlur,
-  onLocationSearchChange,
-  onLocationSelect,
-  onSearchFocus,
 }) => {
+  const handleCityChange = (cityId: string) => {
+    const selectedCity = cities.find((c) => c.id === cityId);
+
+    onUpdate({
+      cityId,
+      // city: selectedCity?.name || "",
+      state: selectedCity?.state || null,
+      country: selectedCity?.country || "",
+      locality: "",
+      // Update coordinates from city data
+      latitude: selectedCity?.latitude || null,
+      longitude: selectedCity?.longitude || null,
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Location Search */}
-      <div>
-        <label className="block text-sm font-bold text-gray-900 mb-2">
-          Search Location *
-        </label>
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={locationSearch}
-            onChange={(e) => onLocationSearchChange(e.target.value)}
-            onFocus={onSearchFocus}
-            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-            placeholder="Search for address, city, or area..."
-          />
-          {isSearchingLocation && (
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-        </div>
-
-        {showSuggestions && locationSuggestions.length > 0 && (
-          <div className="mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-            {locationSuggestions.map((suggestion, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => onLocationSelect(suggestion)}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 flex items-start gap-3"
-              >
-                <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <div className="font-medium text-gray-900">
-                    {suggestion.display_name}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {errors.location && (
-          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
-            {errors.location}
-          </p>
-        )}
-      </div>
-
       {/* Address */}
       <div>
         <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -149,18 +88,8 @@ export const LocationStep: React.FC<LocationStepProps> = ({
           </label>
           <div className="relative">
             <select
-              value={formData.cityId || ""}
-              onChange={(e) => {
-                const cityId = e.target.value;
-                const selectedCity = cities.find((c) => c.id === cityId);
-                onUpdate({
-                  cityId,
-                  city: selectedCity?.name || "",
-                  state: selectedCity?.state || null,
-                  country: selectedCity?.country || "",
-                  locality: "",
-                });
-              }}
+              value={formData.cityId}
+              onChange={(e) => handleCityChange(e.target.value)}
               onBlur={() => onBlur("city")}
               className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all appearance-none ${
                 touched.city && errors.city
@@ -241,7 +170,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             onChange={(e) => onUpdate({ state: e.target.value || null })}
             className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50"
             placeholder="Auto-filled from city selection"
-            // readOnly
+            readOnly
           />
         </div>
 
@@ -254,12 +183,13 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             value={formData.country}
             onChange={(e) => onUpdate({ country: e.target.value })}
             onBlur={() => onBlur("country")}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
+            className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50 ${
               touched.country && errors.country
                 ? "border-red-500"
                 : "border-gray-200"
             }`}
-            placeholder="Country"
+            placeholder="Auto-filled from city selection"
+            readOnly
           />
           {touched.country && errors.country && (
             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -278,7 +208,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             value={formData.zipCode || ""}
             onChange={(e) => onUpdate({ zipCode: e.target.value || null })}
             className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all"
-            placeholder="Zip code"
+            placeholder="Enter zip code"
           />
         </div>
       </div>
@@ -295,7 +225,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             value={formData.latitude || ""}
             readOnly
             className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50"
-            placeholder="Auto-filled from location search"
+            placeholder="Auto-filled from city selection"
           />
         </div>
 
@@ -309,7 +239,7 @@ export const LocationStep: React.FC<LocationStepProps> = ({
             value={formData.longitude || ""}
             readOnly
             className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-gray-50"
-            placeholder="Auto-filled from location search"
+            placeholder="Auto-filled from city selection"
           />
         </div>
       </div>
@@ -321,6 +251,18 @@ export const LocationStep: React.FC<LocationStepProps> = ({
           <div className="text-sm text-green-800">
             <strong>Location coordinates set!</strong> Your property will appear
             correctly on the map.
+          </div>
+        </div>
+      )}
+
+      {/* Info Message */}
+      {formData.cityId && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800">
+            <strong>Location coordinates automatically set</strong> based on the
+            selected city. The property will be shown at the city's center on
+            the map.
           </div>
         </div>
       )}

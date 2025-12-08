@@ -24,7 +24,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { LocationSection } from "../property/components/LocationSection";
 import { MediaSection } from "../property/components/MediaSection";
 import { useGetLocalityByNameQuery } from "../../services/locationApi";
-import { LocalityHighlightsSection } from "./components/LocalitiesHighlightSection";
+import { NearbyPlacesSection } from "./components/LocalitiesHighlightSection";
 import { RatingsAndReviewsSection } from "./components/ReviewAndLocality";
 import { AmenitiesSection } from "./components/AmenitySection";
 import { AboutProperty } from "./components/AboutProperty";
@@ -198,13 +198,19 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
             {/* Amenities */}
             {amenities.length > 0 && <AmenitiesSection amenities={amenities} />}
             {/* Locality Highlights */}
-            {localityHighlights.length > 0 && (
-              <LocalityHighlightsSection
+            {/* {localityHighlights.length > 0 && (
+              <NearbyPlacesSection
                 localityName={property.locality}
                 highlights={localityHighlights}
                 cityName={property.city.name}
               />
-            )}
+            )} */}
+            <NearbyPlacesSection
+              localityName={property.locality}
+              cityName={property.city.name}
+              localityHighlights={localityHighlights || []}
+              nearbyPlaces={property.nearbyPlaces || []}
+            />
             {/* Location */}
             <LocationSection property={property} />
             {/* About Property */}

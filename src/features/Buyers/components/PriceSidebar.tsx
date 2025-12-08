@@ -44,14 +44,14 @@ export const PriceSidebar: React.FC<PriceSidebarProps> = ({
           className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
         >
           <Calendar className="w-5 h-5" />
-          Schedule Viewing
+          Schedule Site Viewing
         </button>
         <button
           onClick={onInquire}
           className="w-full py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
         >
           <Mail className="w-5 h-5" />
-          Request Info
+          Quick Contact
         </button>
       </div>
 

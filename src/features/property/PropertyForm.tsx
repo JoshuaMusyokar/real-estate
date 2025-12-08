@@ -7,7 +7,7 @@ import { DetailsStep } from "./components/DetailsStep";
 import { AmenitiesStep } from "./components/AmenitiesStep";
 import { ImagesStep } from "./components/ImagesStep";
 import { DocumentsStep } from "./components/DocumentsStep";
-import type { PropertyCreateRequest } from "../../types";
+import type { PropertyCreateRequest, PropertyUpdateRequest } from "../../types";
 import { useEffect, useState } from "react";
 import {
   useGetAmenityCategoriesQuery,
@@ -28,6 +28,12 @@ import { usePropertyValidation } from "../../hooks/usePropertyValidation";
 import { useLocationSearch } from "../../hooks/useLocationSearch";
 import { usePropertyImages } from "../../hooks/usePropertyImage";
 import { usePropertyDocuments } from "../../hooks/usePropertyDocument";
+import { NearbyPlacesStep } from "./components/NearbyPlacesStep";
+import { useAppDispatch } from "../../hooks";
+import {
+  setPropertyType,
+  setSubType,
+} from "../../store/slices/propertyFormSlice";
 
 interface PropertyFormPageProps {
   mode: "create" | "edit";
@@ -39,6 +45,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   propertyId,
 }) => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
@@ -46,6 +53,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     "Location",
     "Details",
     "Amenities",
+    "Nearby Places",
     "Media",
     "Documents",
   ];
@@ -65,48 +73,122 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const amenities = amenitiesData?.data || [];
   const categories = categoriesData?.data || [];
 
-  // Form State
+  // Form State - Updated to match PropertyCreateRequest
   const [formData, setFormData] = useState<PropertyCreateRequest>({
+    // Basic Information
     title: "",
     description: "",
     propertyTypeId: "",
     subTypeId: null,
     purpose: "SALE",
     status: "UNDER_REVIEW",
+    builderName: null,
+    hasBalcony: false,
+    reraNumber: null,
+    pricePerUnit: null,
+
+    // Pricing
     price: 0,
     priceNegotiable: false,
     currency: "USD",
+    stampDutyExcluded: false,
+    maintenanceCharges: null,
+    securityDeposit: null,
+    monthlyRent: null,
+    leasePeriod: null,
+
+    // Location
     address: "",
     cityId: "",
-    city: "",
     locality: "",
-    hasBalcony: false,
-    builderName: null,
-    reraNumber: null,
+    complexName: null,
     state: null,
     country: "",
     zipCode: null,
     latitude: null,
     longitude: null,
+
+    // Area Measurements
+    carpetArea: null,
+    carpetAreaUnit: null,
+    builtUpArea: null,
+    builtUpAreaUnit: null,
+    superBuiltArea: null,
+    superBuiltAreaUnit: null,
+    plotArea: null,
+    plotAreaUnit: null,
+    squareFeet: null,
+    squareMeters: null,
+
+    // Residential Details
     bedrooms: null,
     bathrooms: null,
     balconies: null,
+    furnishingStatus: null,
+    floorNumber: null,
+    totalFloors: null,
+    floors: null,
     totalFlats: null,
     totalBuildings: null,
-    totalFloors: null,
-    complexName: null,
-    superBuiltArea: null,
-    builtUpArea: null,
-    carpetArea: null,
+    yearBuilt: null,
+
+    // Possession
     possessionStatus: null,
     possessionDate: null,
-    squareFeet: null,
-    squareMeters: undefined,
-    floors: null,
-    yearBuilt: null,
-    furnishingStatus: null,
+
+    // Parking & Lifts
+    coveredParking: null,
+    openParking: null,
+    publicParking: null,
+    passengerLifts: null,
+    serviceLifts: null,
+
+    // Commercial Office Specific
+    projectName: null,
+    locatedWithin: null,
+    officeType: null,
+    officesPerFloor: null,
+    officesInProject: null,
+    buildingsInProject: null,
+    cabins: null,
+    seats: null,
+    privateWashrooms: null,
+    publicWashrooms: null,
+    conferenceRooms: false,
+    receptionArea: false,
+    meetingRooms: null,
+    pantryType: null,
+    preRented: false,
+    nocCertified: false,
+    occupancyCertified: false,
+
+    // Land/Plot Specific
+    plotDimensions: null,
+    boundaryWall: false,
+    cornerPlot: false,
+    facingDirection: null,
+    zoningType: null,
+    clearTitle: false,
+    developmentStatus: null,
+    roadWidth: null,
+    electricityAvailable: false,
+    waterConnection: false,
+    sewageConnection: false,
+
+    // Warehouse/Industrial Specific
+    ceilingHeight: null,
+    loadingDocks: null,
+    powerLoad: null,
+    flooringType: null,
+    coveredArea: null,
+    openArea: null,
+
+    // Features & Media
     youtubeVideoUrl: null,
     virtualTourUrl: null,
+    nearbyPlaces: null,
+
+    // Related Data
     amenities: [],
     images: [],
   });
@@ -154,58 +236,162 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   useEffect(() => {
     if (mode === "edit" && propertyData?.data) {
       const property = propertyData.data;
-      setFormData({
+
+      // Create a proper update object matching PropertyUpdateRequest
+      const updateData: PropertyUpdateRequest = {
+        // Basic Information
         title: property.title,
         description: property.description,
         propertyTypeId: property.propertyTypeId,
         subTypeId: property.subTypeId,
         purpose: property.purpose,
         status: property.status,
+        builderName: property.builderName,
+        hasBalcony: property.hasBalcony,
+        reraNumber: property.reraNumber,
+
+        // Pricing
         price: Number(property.price),
         priceNegotiable: property.priceNegotiable,
         currency: property.currency,
+        stampDutyExcluded: property.stampDutyExcluded || false,
+        maintenanceCharges: property.maintenanceCharges,
+        securityDeposit: property.securityDeposit,
+        monthlyRent: property.monthlyRent,
+        leasePeriod: property.leasePeriod,
+        pricePerUnit: property.pricePerUnit,
+
+        // Location
         address: property.address,
-        city: property.city.name,
-        hasBalcony: property.hasBalcony,
-        builderName: property.builderName,
-        reraNumber: property.reraNumber,
         cityId: property.cityId,
         locality: property.locality,
+        complexName: property.complexName,
         state: property.state,
-        country: property.country!,
+        country: property.country,
         zipCode: property.zipCode,
         latitude: property.latitude,
         longitude: property.longitude,
+
+        // Area Measurements
+        carpetArea: property.carpetArea,
+        carpetAreaUnit: property.carpetAreaUnit,
+        builtUpArea: property.builtUpArea,
+        builtUpAreaUnit: property.builtUpAreaUnit,
+        superBuiltArea: property.superBuiltArea,
+        superBuiltAreaUnit: property.superBuiltAreaUnit,
+        plotArea: property.plotArea,
+        plotAreaUnit: property.plotAreaUnit,
+        squareFeet: property.squareFeet,
+        squareMeters: property.squareMeters,
+
+        // Residential Details
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
         balconies: property.balconies,
+        furnishingStatus: property.furnishingStatus,
+        floorNumber: property.floorNumber,
+        totalFloors: property.totalFloors,
+        floors: property.floors,
         totalFlats: property.totalFlats,
         totalBuildings: property.totalBuildings,
-        totalFloors: property.totalFloors,
-        complexName: property.complexName,
-        superBuiltArea: property.superBuiltArea,
-        builtUpArea: property.builtUpArea,
-        carpetArea: property.carpetArea,
-        possessionStatus: property.possessionStatus,
-        possessionDate: property.possessionDate,
-        squareFeet: property.squareFeet,
-        squareMeters: property.squareMeters || undefined,
-        floors: property.floors,
         yearBuilt: property.yearBuilt,
-        furnishingStatus: property.furnishingStatus,
+
+        // Possession
+        possessionStatus: property.possessionStatus,
+        possessionDate: property.possessionDate
+          ? new Date(property.possessionDate)
+          : null,
+
+        // Parking & Lifts
+        coveredParking: property.coveredParking,
+        openParking: property.openParking,
+        publicParking: property.publicParking,
+        passengerLifts: property.passengerLifts,
+        serviceLifts: property.serviceLifts,
+
+        // Commercial Office Specific
+        projectName: property.projectName,
+        locatedWithin: property.locatedWithin,
+        officeType: property.officeType,
+        officesPerFloor: property.officesPerFloor,
+        officesInProject: property.officesInProject,
+        buildingsInProject: property.buildingsInProject,
+        cabins: property.cabins,
+        seats: property.seats,
+        privateWashrooms: property.privateWashrooms,
+        publicWashrooms: property.publicWashrooms,
+        conferenceRooms: property.conferenceRooms,
+        receptionArea: property.receptionArea,
+        meetingRooms: property.meetingRooms,
+        pantryType: property.pantryType,
+        preRented: property.preRented,
+        nocCertified: property.nocCertified,
+        occupancyCertified: property.occupancyCertified,
+
+        // Land/Plot Specific
+        plotDimensions: property.plotDimensions,
+        boundaryWall: property.boundaryWall,
+        cornerPlot: property.cornerPlot,
+        facingDirection: property.facingDirection,
+        zoningType: property.zoningType,
+        clearTitle: property.clearTitle,
+        developmentStatus: property.developmentStatus,
+        roadWidth: property.roadWidth,
+        electricityAvailable: property.electricityAvailable,
+        waterConnection: property.waterConnection,
+        sewageConnection: property.sewageConnection,
+
+        // Warehouse/Industrial Specific
+        ceilingHeight: property.ceilingHeight,
+        loadingDocks: property.loadingDocks,
+        powerLoad: property.powerLoad,
+        flooringType: property.flooringType,
+        coveredArea: property.coveredArea,
+        openArea: property.openArea,
+
+        // Features & Media
         youtubeVideoUrl: property.youtubeVideoUrl,
         virtualTourUrl: property.virtualTourUrl,
+        nearbyPlaces: property.nearbyPlaces,
+
+        // Related Data
         amenities: property.amenities?.map((a) => a.amenityId) || [],
         images: [],
-      });
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        ...updateData,
+      }));
+
+      if (property.propertyTypeId) {
+        dispatch(
+          setPropertyType({
+            id: property.propertyType.id,
+            name: property.propertyType.name,
+          })
+        );
+      }
+
+      if (property.subTypeId && property.subType) {
+        dispatch(
+          setSubType({
+            id: property.subType.id,
+            name: property.subType.name,
+          })
+        );
+      } else {
+        dispatch(setSubType(null));
+      }
 
       // Load existing images
       if (property.images) {
         setImageFiles(
           property.images.map((img, idx) => ({
+            file: null,
             url: img.url,
-            caption: img.caption || undefined,
-            key: img.key || undefined,
+            caption: img.caption || null,
+            key: img.key || null,
             order: img.order || idx,
             isCover: img.isCover,
             preview: img.viewableUrl || img.url,
@@ -242,12 +428,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       ...formData,
       address: location.display_name.split(",")[0] || location.display_name,
       cityId: selectedCity?.id || "",
-      city:
-        selectedCity?.name ||
-        location.address.city ||
-        location.address.town ||
-        location.address.village ||
-        "",
+      locality: selectedCity?.name || "",
       state: selectedCity?.state || location.address.state || null,
       country: selectedCity?.country || location.address.country || "",
       zipCode: location.address.postcode || null,
@@ -264,12 +445,31 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   };
 
   const handleNext = () => {
+    console.log("next called", currentStep);
+
     if (validateStep(currentStep, formData, imageFiles)) {
+      console.log("next called 4", currentStep);
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
       window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      // Get all error messages from the errors object
+      const errorMessages = Object.values(errors);
+
+      if (errorMessages.length > 0) {
+        // Join all error messages with line breaks
+        const errorText = errorMessages.join("\n");
+
+        // Show all errors in a toast
+        showError("Please fix the following issues:", errorText);
+      } else {
+        // Fallback if errors object is empty but validation failed
+        showError(
+          "Validation Failed",
+          "Please complete all required fields in this step."
+        );
+      }
     }
   };
-
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -294,48 +494,122 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     try {
       const formDataToSend = new FormData();
 
-      // Prepare property data as JSON
-      const propertyData = {
+      // Prepare property data - updated to match PropertyCreateRequest
+      const propertyDataToSend: PropertyCreateRequest = {
+        // Basic Information
         title: formData.title,
         description: formData.description,
         propertyTypeId: formData.propertyTypeId,
         subTypeId: formData.subTypeId,
         purpose: formData.purpose,
-        status: mode === "create" ? "UNDER_REVIEW" : formData.status,
+        status: mode === "create" ? "UNDER_REVIEW" : formData.status!,
+        builderName: formData.builderName,
+        hasBalcony: formData.hasBalcony,
+        reraNumber: formData.reraNumber,
+        pricePerUnit: formData.pricePerUnit,
+
+        // Pricing
         price: formData.price,
         priceNegotiable: formData.priceNegotiable,
         currency: formData.currency,
+        stampDutyExcluded: formData.stampDutyExcluded,
+        maintenanceCharges: formData.maintenanceCharges,
+        securityDeposit: formData.securityDeposit,
+        monthlyRent: formData.monthlyRent,
+        leasePeriod: formData.leasePeriod,
+
+        // Location
         address: formData.address,
         cityId: formData.cityId,
-        city: formData.city,
-        hasBalcony: formData.hasBalcony,
-        builderName: formData.builderName,
-        reraNumber: formData.reraNumber,
         locality: formData.locality,
+        complexName: formData.complexName,
         state: formData.state,
         country: formData.country,
         zipCode: formData.zipCode,
         latitude: formData.latitude,
         longitude: formData.longitude,
-        bedrooms: formData.bedrooms,
-        bathrooms: formData.bathrooms,
-        complexName: formData.complexName || "",
-        balconies: formData.balconies || 0,
-        totalFlats: formData.totalFlats || 0,
-        totalBuildings: formData.totalBuildings || 0,
-        totalFloors: formData.totalFloors || 0,
-        superBuiltArea: formData.superBuiltArea || 0,
-        builtUpArea: formData.builtUpArea || 0,
-        carpetArea: formData.carpetArea || 0,
-        possessionStatus: formData.possessionStatus || "READY_TO_MOVE", // or "UNDER_CONSTRUCTION"
-        possessionDate: formData.possessionDate,
+
+        // Area Measurements
+        carpetArea: formData.carpetArea,
+        carpetAreaUnit: formData.carpetAreaUnit,
+        builtUpArea: formData.builtUpArea,
+        builtUpAreaUnit: formData.builtUpAreaUnit,
+        superBuiltArea: formData.superBuiltArea,
+        superBuiltAreaUnit: formData.superBuiltAreaUnit,
+        plotArea: formData.plotArea,
+        plotAreaUnit: formData.plotAreaUnit,
         squareFeet: formData.squareFeet,
         squareMeters: formData.squareMeters,
-        floors: formData.floors,
-        yearBuilt: formData.yearBuilt,
+
+        // Residential Details
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        balconies: formData.balconies,
         furnishingStatus: formData.furnishingStatus,
+        floorNumber: formData.floorNumber,
+        totalFloors: formData.totalFloors,
+        floors: formData.floors,
+        totalFlats: formData.totalFlats,
+        totalBuildings: formData.totalBuildings,
+        yearBuilt: formData.yearBuilt,
+
+        // Possession
+        possessionStatus: formData.possessionStatus,
+        possessionDate: formData.possessionDate,
+
+        // Parking & Lifts
+        coveredParking: formData.coveredParking,
+        openParking: formData.openParking,
+        publicParking: formData.publicParking,
+        passengerLifts: formData.passengerLifts,
+        serviceLifts: formData.serviceLifts,
+
+        // Commercial Office Specific
+        projectName: formData.projectName,
+        locatedWithin: formData.locatedWithin,
+        officeType: formData.officeType,
+        officesPerFloor: formData.officesPerFloor,
+        officesInProject: formData.officesInProject,
+        buildingsInProject: formData.buildingsInProject,
+        cabins: formData.cabins,
+        seats: formData.seats,
+        privateWashrooms: formData.privateWashrooms,
+        publicWashrooms: formData.publicWashrooms,
+        conferenceRooms: formData.conferenceRooms,
+        receptionArea: formData.receptionArea,
+        meetingRooms: formData.meetingRooms,
+        pantryType: formData.pantryType,
+        preRented: formData.preRented,
+        nocCertified: formData.nocCertified,
+        occupancyCertified: formData.occupancyCertified,
+
+        // Land/Plot Specific
+        plotDimensions: formData.plotDimensions,
+        boundaryWall: formData.boundaryWall,
+        cornerPlot: formData.cornerPlot,
+        facingDirection: formData.facingDirection,
+        zoningType: formData.zoningType,
+        clearTitle: formData.clearTitle,
+        developmentStatus: formData.developmentStatus,
+        roadWidth: formData.roadWidth,
+        electricityAvailable: formData.electricityAvailable,
+        waterConnection: formData.waterConnection,
+        sewageConnection: formData.sewageConnection,
+
+        // Warehouse/Industrial Specific
+        ceilingHeight: formData.ceilingHeight,
+        loadingDocks: formData.loadingDocks,
+        powerLoad: formData.powerLoad,
+        flooringType: formData.flooringType,
+        coveredArea: formData.coveredArea,
+        openArea: formData.openArea,
+
+        // Features & Media
         youtubeVideoUrl: formData.youtubeVideoUrl,
         virtualTourUrl: formData.virtualTourUrl,
+        nearbyPlaces: formData.nearbyPlaces,
+
+        // Related Data
         amenities: formData.amenities,
         images: imageFiles
           .filter((img) => !img.file)
@@ -348,17 +622,18 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           })),
       };
 
-      // console.log("Property Data:", propertyData);
-
-      const propertyDataToSend = {
-        ...propertyData,
-        possessionDate: formData.possessionDate
-          ? formData.possessionDate.toISOString()
-          : null,
-      };
-
-      // Append as JSON string
-      formDataToSend.append("data", JSON.stringify(propertyDataToSend));
+      // For update, we need to send a PropertyUpdateRequest
+      if (mode === "edit") {
+        // Remove non-updatable fields or keep only changed fields
+        const updateData: PropertyUpdateRequest = {
+          ...propertyDataToSend,
+          // Ensure status is not changed on update unless explicitly intended
+          status: formData.status,
+        };
+        formDataToSend.append("data", JSON.stringify(updateData));
+      } else {
+        formDataToSend.append("data", JSON.stringify(propertyDataToSend));
+      }
 
       // Add image files
       imageFiles.forEach((img) => {
@@ -373,6 +648,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           formDataToSend.append("documents", doc.file);
         }
       });
+
       if (mode === "create") {
         const result = await createProperty(formDataToSend).unwrap();
         success("Property created successfully!", "It's now under review.");
@@ -417,17 +693,8 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
             localities={localities}
             isLoadingCities={isLoadingCities}
             isLoadingLocalities={isLoadingLocalities}
-            locationSearch={locationSearch}
-            locationSuggestions={locationSuggestions}
-            showSuggestions={showSuggestions}
-            isSearchingLocation={isSearchingLocation}
             onUpdate={handleFormUpdate}
             onBlur={handleBlur}
-            onLocationSearchChange={setLocationSearch}
-            onLocationSelect={handleLocationSelect}
-            onSearchFocus={() =>
-              locationSuggestions.length > 0 && setShowSuggestions(true)
-            }
           />
         );
       case 2:
@@ -451,6 +718,14 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         );
       case 4:
         return (
+          <NearbyPlacesStep
+            formData={formData}
+            errors={errors}
+            onUpdate={handleFormUpdate}
+          />
+        );
+      case 5:
+        return (
           <ImagesStep
             imageFiles={imageFiles}
             errors={errors}
@@ -459,7 +734,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
             onSetCoverImage={setCoverImage}
           />
         );
-      case 5:
+      case 6:
         return (
           <DocumentsStep
             documents={documents}
@@ -478,7 +753,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
@@ -501,7 +776,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       </div>
 
       {/* Form Container */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
           <StepIndicator steps={steps} currentStep={currentStep} />
 
