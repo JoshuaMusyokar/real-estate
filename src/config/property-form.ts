@@ -26,6 +26,30 @@ export const AUTO_POPULATED_FIELDS = [
 
 // Property Type Field Mapping Configuration
 // Use this to dynamically show/hide fields based on property type and subtype
+const RESIDENTIAL_LIKE_FIELDS = [
+  "bedrooms",
+  "bathrooms",
+  "carpetArea",
+  "carpetAreaUnit",
+  "builtUpArea",
+  "builtUpAreaUnit",
+  "superBuiltArea",
+  "superBuiltAreaUnit",
+  "floorNumber",
+  "totalFloors",
+  "furnishingStatus",
+  "possessionStatus",
+  "possessionDate",
+  "coveredParking",
+  "openParking",
+  "amenities",
+  "nearbyPlaces",
+  "yearBuilt",
+  "images",
+  "documents",
+  "youtubeVideoUrl",
+  "virtualTourUrl",
+];
 
 export const PROPERTY_FIELD_CONFIG = {
   RESIDENTIAL: {
@@ -267,6 +291,17 @@ export const PROPERTY_FIELD_CONFIG = {
       "state",
       "country",
       "zipCode",
+    ],
+    HOTEL: [
+      ...RESIDENTIAL_LIKE_FIELDS,
+      "receptionArea",
+      "maintenanceCharges",
+      "securityDeposit",
+    ],
+    GUEST_HOUSE: [
+      ...RESIDENTIAL_LIKE_FIELDS,
+      "maintenanceCharges",
+      "securityDeposit",
     ],
     OFFICE: [
       "projectName",
