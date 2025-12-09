@@ -78,7 +78,7 @@ export const NearbyPlacesStep: React.FC<NearbyPlacesStepProps> = ({
     name: "",
     distance: "",
     category: "School",
-    icon: null,
+    icon: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -101,7 +101,7 @@ export const NearbyPlacesStep: React.FC<NearbyPlacesStepProps> = ({
       name: newPlace.name,
       distance: newPlace.distance,
       category: newPlace.category || "Other",
-      icon: null,
+      icon: "",
       // icon: NEARBY_CATEGORIES.find(
       //   (cat) => cat.value === newPlace.category
       // )?.icon?.toString(),
