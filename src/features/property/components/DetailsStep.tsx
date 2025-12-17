@@ -31,6 +31,8 @@ import {
 } from "../../../config/property-form";
 import { useAppSelector } from "../../../hooks";
 import type { RootState } from "../../../store/store";
+import { MultiSelectTags } from "../../../components/form/MultiSelectTags";
+import { PlotDimensionsInput } from "../../../components/form/PlotDimensionsInput";
 
 interface DetailsStepProps {
   formData: PropertyCreateRequest;
@@ -59,6 +61,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   const { propertyTypeName, subTypeName } = useAppSelector(
     (state: RootState) => state.propertyForm
   );
+
   const [availableFields, setAvailableFields] = useState<string[]>([]);
 
   // Section visibility states
@@ -74,11 +77,13 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
 
   // Auto-calculate price per unit
   useEffect(() => {
-    if (formData.price && formData.carpetArea) {
-      const pricePerUnit = formData.price / formData.carpetArea;
+    const area = formData.carpetArea ?? formData.plotArea;
+
+    if (formData.price && area && area > 0) {
+      const pricePerUnit = formData.price / area;
       onUpdate({ pricePerUnit });
     }
-  }, [formData.price, formData.carpetArea]);
+  }, [formData.price, formData.carpetArea, formData.plotArea]);
 
   // Initialize section states based on existing data
   useEffect(() => {
@@ -147,13 +152,19 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
 
   // Check if field should be displayed based on conditional logic
   const shouldShowField = (fieldName: string): boolean => {
+    const comprehensiveFormdata = {
+      ...formData,
+      subTypeName,
+    };
     const conditionalRule =
       CONDITIONAL_FIELDS[fieldName as keyof typeof CONDITIONAL_FIELDS];
 
     if (!conditionalRule) return true;
 
     const dependentValue =
-      formData[conditionalRule.dependsOn as keyof PropertyCreateRequest];
+      comprehensiveFormdata[
+        conditionalRule.dependsOn as keyof PropertyCreateRequest
+      ];
     return conditionalRule.showWhen(dependentValue as string);
   };
 
@@ -163,7 +174,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       string,
       { icon: ReactNode; fields: string[]; collapsible?: boolean }
     > = {
-      "Room Details": {
+      "Property Details": {
         icon: <Home className="w-5 h-5" />,
         fields: [
           "bedrooms",
@@ -178,25 +189,20 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         ],
         collapsible: true,
       },
-      "Area Measurements": {
-        icon: <Square className="w-5 h-5" />,
-        fields: [
-          "carpetArea",
-          "builtUpArea",
-          "superBuiltArea",
-          "plotArea",
-          "squareFeet",
-          "squareMeters",
-          "plotDimensions",
-          "coveredArea",
-          "openArea",
-        ],
-        collapsible: true,
-      },
-      "Commercial Details": {
+      "Retail & Commercial Features": {
         icon: <Building className="w-5 h-5" />,
         fields: [
+          "storageType",
+          "industryType",
+          "cornerLocation",
+          "locatedIn",
+          "frontageWidth",
+          "mainRoadFacing",
+          "displayWindows",
+          "idealFor",
+          "fireSafetyApproved",
           "projectName",
+          "openSides",
           "locatedWithin",
           "officeType",
           "officesPerFloor",
@@ -216,6 +222,59 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         ],
         collapsible: true,
       },
+      "Financial Details": {
+        icon: <DollarSign className="w-5 h-5" />,
+        fields: [
+          "monthlyRent",
+          "leasePeriod",
+          "maintenanceCharges",
+          "securityDeposit",
+          "pricePerUnit",
+        ],
+        collapsible: true,
+      },
+      "Legal & Ownership": {
+        icon: <Landmark className="w-5 h-5" />,
+        fields: [
+          "ownershipType",
+          "approvedBy",
+          "legalDispute",
+          "encumbranceFree",
+        ],
+        collapsible: true,
+      },
+      "Area Measurements": {
+        icon: <Square className="w-5 h-5" />,
+        fields: [
+          "carpetArea",
+          "builtUpArea",
+          "superBuiltArea",
+          "plotArea",
+          "squareFeet",
+          "squareMeters",
+          "plotDimensions",
+          "coveredArea",
+          "openArea",
+          "openSides",
+        ],
+        collapsible: true,
+      },
+      "Tenancy Details": {
+        icon: <DollarSign className="w-5 h-5" />,
+        fields: ["preferredTenants", "rentEscalation"],
+        collapsible: true,
+      },
+      "Media & Documentation": {
+        icon: <MapPin className="w-5 h-5" />,
+        fields: [
+          "brochureAvailable",
+          "floorPlanAvailable",
+          "youtubeVideoUrl",
+          "virtualTourUrl",
+        ],
+        collapsible: true,
+      },
+
       "Land Details": {
         icon: <Landmark className="w-5 h-5" />,
         fields: [
@@ -237,27 +296,9 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         fields: ["ceilingHeight", "loadingDocks", "powerLoad", "flooringType"],
         collapsible: true,
       },
-      "Financial Details": {
-        icon: <DollarSign className="w-5 h-5" />,
-        fields: [
-          "monthlyRent",
-          "leasePeriod",
-          "availabilityStatus",
-          "availabilityType",
-          "maintenanceCharges",
-          "securityDeposit",
-          "pricePerUnit",
-        ],
-        collapsible: true,
-      },
       "General Details": {
         icon: <Wrench className="w-5 h-5" />,
         fields: ["yearBuilt", "possessionStatus", "possessionDate"],
-        collapsible: true,
-      },
-      "Features & Media": {
-        icon: <MapPin className="w-5 h-5" />,
-        fields: ["youtubeVideoUrl", "virtualTourUrl", "nearbyPlaces"],
         collapsible: true,
       },
     };
@@ -376,6 +417,26 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         error
       );
     }
+    if (fieldName === "plotDimensions") {
+      return (
+        <PlotDimensionsInput
+          value={value as string | null | undefined}
+          onChange={(newValue) => onUpdate({ [fieldName]: newValue })}
+          onBlur={() => onBlur(fieldName)}
+          error={error}
+          label={fieldMeta.label}
+          required={fieldMeta.required}
+        />
+      );
+    }
+    if (fieldName === "preferredTenants" || fieldName === "idealFor") {
+      return renderMultiSelectTags(
+        fieldName,
+        fieldMeta,
+        value as string[] | undefined,
+        error
+      );
+    }
 
     switch (fieldMeta.type) {
       case "text":
@@ -411,10 +472,27 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
 
       case "multi-tag":
       case "multi-select":
-        if (fieldName === "nearbyPlaces" || fieldName === "amenities") {
-          return <></>;
+        // Handle array-based multi-selects
+        if (fieldName === "preferredTenants" || fieldName === "idealFor") {
+          return renderMultiSelectTags(
+            fieldName,
+            fieldMeta,
+            value as string[] | undefined,
+            error
+          );
         }
         return renderGenericField(fieldName, value, error);
+      case "plot-dimensions":
+        return (
+          <PlotDimensionsInput
+            value={value as string | null | undefined}
+            onChange={(newValue) => onUpdate({ [fieldName]: newValue })}
+            onBlur={() => onBlur(fieldName)}
+            error={error}
+            label={fieldMeta.label}
+            required={fieldMeta.required}
+          />
+        );
 
       case "file-upload":
         return <></>;
@@ -422,6 +500,25 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       default:
         return renderGenericField(fieldName, value, error);
     }
+  };
+
+  const renderMultiSelectTags = (
+    fieldName: string,
+    fieldMeta: FieldMetadata,
+    value: string[] | undefined,
+    error: string | undefined
+  ) => {
+    return (
+      <MultiSelectTags
+        fieldName={fieldName}
+        label={fieldMeta.label}
+        options={fieldMeta.options || []}
+        value={value}
+        error={error}
+        required={fieldMeta.required}
+        onChange={(field, newValue) => onUpdate({ [field]: newValue })}
+      />
+    );
   };
 
   const renderMultiSelectField = (
@@ -578,11 +675,11 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-              per {formData.carpetAreaUnit || "sqft"}
+              per {formData.carpetAreaUnit || formData.plotAreaUnit || "sqft"}
             </span>
           </div>
           <p className="text-xs text-gray-500">
-            Automatically calculated from price and carpet area
+            Automatically calculated from price and carpet area or Plot area
           </p>
         </div>
       );

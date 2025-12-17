@@ -195,3 +195,29 @@ export const usePropertyValidation = () => {
     setTouched,
   };
 };
+// export const validatePlotDimensions = (value: string | null | undefined): string | null => {
+//   if (!value) return null;
+
+//   const match = value.match(/^(\d+\.?\d*)\s*[xX×]\s*(\d+\.?\d*)\s*([a-zA-Z]+)?$/);
+
+//   if (!match) {
+//     return "Invalid format. Expected format: 50x100 ft";
+//   }
+
+//   const [, length, width, unit] = match;
+
+//   if (parseFloat(length) <= 0) {
+//     return "Length must be greater than 0";
+//   }
+
+//   if (parseFloat(width) <= 0) {
+//     return "Width must be greater than 0";
+//   }
+
+//   const validUnits = ["ft", "m", "yd"];
+//   if (unit && !validUnits.includes(unit.toLowerCase())) {
+//     return "Invalid unit. Use ft, m, or yd";
+//   }
+
+//   return null;
+// };

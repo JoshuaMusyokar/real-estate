@@ -187,7 +187,25 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     youtubeVideoUrl: null,
     virtualTourUrl: null,
     nearbyPlaces: null,
-
+    ownershipType: null,
+    approvedBy: null,
+    legalDispute: false,
+    encumbranceFree: true,
+    preferredTenants: null,
+    rentEscalation: null,
+    brochureAvailable: false,
+    floorPlanAvailable: false,
+    cornerLocation: false,
+    locatedIn: null,
+    frontageWidth: null,
+    mainRoadFacing: false,
+    displayWindows: false,
+    idealFor: null,
+    fireSafetyApproved: false,
+    dockHeight: null,
+    openSides: null,
+    storageType: null,
+    industryType: null,
     // Related Data
     amenities: [],
     images: [],
@@ -227,6 +245,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     handleImageUpload,
     removeImage,
     setCoverImage,
+    updateCaption,
   } = usePropertyImages();
 
   const { documents, setDocuments, handleDocumentUpload, removeDocument } =
@@ -353,6 +372,26 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         youtubeVideoUrl: property.youtubeVideoUrl,
         virtualTourUrl: property.virtualTourUrl,
         nearbyPlaces: property.nearbyPlaces,
+        ownershipType: property.ownershipType,
+        approvedBy: property.approvedBy,
+        legalDispute: property.legalDispute || false,
+        encumbranceFree: property.encumbranceFree ?? true,
+        preferredTenants: property.preferredTenants,
+        rentEscalation: property.rentEscalation,
+        brochureAvailable: property.brochureAvailable ?? false,
+        floorPlanAvailable: property.floorPlanAvailable ?? false,
+        cornerLocation: property.cornerLocation ?? false,
+        locatedIn: property.locatedIn,
+        frontageWidth: property.frontageWidth,
+        mainRoadFacing: property.mainRoadFacing ?? false,
+        displayWindows: property.displayWindows ?? false,
+        idealFor: property.idealFor,
+        fireSafetyApproved: property.fireSafetyApproved ?? false,
+
+        dockHeight: property.dockHeight,
+        openSides: property.openSides,
+        storageType: property.storageType,
+        industryType: property.industryType,
 
         // Related Data
         amenities: property.amenities?.map((a) => a.amenityId) || [],
@@ -391,6 +430,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
             file: null,
             url: img.url,
             caption: img.caption || null,
+            isFloorPlan: img.isFloorPlan || null,
             key: img.key || null,
             order: img.order || idx,
             isCover: img.isCover,
@@ -493,6 +533,17 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
 
     try {
       const formDataToSend = new FormData();
+
+      console.log("Image files", imageFiles);
+
+      const imageMetadata = imageFiles.map((img, index) => ({
+        caption: img.caption || null,
+        isFloorPlan: img.isFloorPlan || false, // ⭐ Include this
+        order: index,
+        isCover: img.isCover || false,
+        url: img.url!,
+        key: img.key || null,
+      }));
 
       // Prepare property data - updated to match PropertyCreateRequest
       const propertyDataToSend: PropertyCreateRequest = {
@@ -608,18 +659,31 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         youtubeVideoUrl: formData.youtubeVideoUrl,
         virtualTourUrl: formData.virtualTourUrl,
         nearbyPlaces: formData.nearbyPlaces,
+        ownershipType: formData.ownershipType,
+        approvedBy: formData.approvedBy,
+        legalDispute: formData.legalDispute || false,
+        encumbranceFree: formData.encumbranceFree ?? true,
+        preferredTenants: formData.preferredTenants,
+        rentEscalation: formData.rentEscalation,
+
+        brochureAvailable: formData.brochureAvailable ?? false,
+        floorPlanAvailable: formData.floorPlanAvailable ?? false,
+
+        cornerLocation: formData.cornerLocation ?? false,
+        locatedIn: formData.locatedIn,
+        frontageWidth: formData.frontageWidth,
+        mainRoadFacing: formData.mainRoadFacing ?? false,
+        displayWindows: formData.displayWindows ?? false,
+        idealFor: formData.idealFor,
+        fireSafetyApproved: formData.fireSafetyApproved ?? false,
+        dockHeight: formData.dockHeight,
+        openSides: formData.openSides,
+        storageType: formData.storageType,
+        industryType: formData.industryType,
 
         // Related Data
         amenities: formData.amenities,
-        images: imageFiles
-          .filter((img) => !img.file)
-          .map((img) => ({
-            url: img.url!,
-            caption: img.caption || null,
-            key: img.key || null,
-            order: img.order,
-            isCover: img.isCover,
-          })),
+        images: imageMetadata,
       };
 
       // For update, we need to send a PropertyUpdateRequest
@@ -627,12 +691,21 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         // Remove non-updatable fields or keep only changed fields
         const updateData: PropertyUpdateRequest = {
           ...propertyDataToSend,
+          roadWidth: propertyDataToSend.roadWidth
+            ? propertyDataToSend.roadWidth?.toString()
+            : null,
           // Ensure status is not changed on update unless explicitly intended
           status: formData.status,
         };
         formDataToSend.append("data", JSON.stringify(updateData));
       } else {
-        formDataToSend.append("data", JSON.stringify(propertyDataToSend));
+        const createData: PropertyUpdateRequest = {
+          ...propertyDataToSend,
+          roadWidth: propertyDataToSend.roadWidth
+            ? propertyDataToSend.roadWidth?.toString()
+            : null,
+        };
+        formDataToSend.append("data", JSON.stringify(createData));
       }
 
       // Add image files
@@ -729,8 +802,10 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           <ImagesStep
             imageFiles={imageFiles}
             errors={errors}
+            floorPlanAvailable={formData.floorPlanAvailable}
             onImageUpload={handleImageUpload}
             onRemoveImage={removeImage}
+            onCaptionChange={updateCaption}
             onSetCoverImage={setCoverImage}
           />
         );

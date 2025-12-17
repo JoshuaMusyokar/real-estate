@@ -51,6 +51,104 @@ const RESIDENTIAL_LIKE_FIELDS = [
   "virtualTourUrl",
 ];
 
+// 1. ADD to COMMERCIAL -> SHOP (after nearbyPlaces):
+export const COMMERCIAL_SHOP_ADDITIONS = [
+  "cornerLocation",
+  "mainRoadFacing",
+  "displayWindows",
+  "idealFor",
+  "fireSafetyApproved",
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "brochureAvailable",
+  "floorPlanAvailable",
+];
+
+// 2. ADD to COMMERCIAL -> SHOWROOM (after nearbyPlaces):
+export const COMMERCIAL_SHOWROOM_ADDITIONS = [
+  "frontageWidth",
+  "cornerLocation",
+  "mainRoadFacing",
+  "displayWindows",
+  "locatedIn",
+  "idealFor",
+  "fireSafetyApproved",
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "brochureAvailable",
+  "floorPlanAvailable",
+];
+
+// 3. ADD to COMMERCIAL -> WAREHOUSE (after amenities):
+export const COMMERCIAL_WAREHOUSE_ADDITIONS = [
+  "dockHeight",
+  "openSides",
+  "storageType",
+  "industryType",
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "fireSafetyApproved",
+  "brochureAvailable",
+  "floorPlanAvailable",
+];
+
+// 4. ADD to COMMERCIAL -> INDUSTRIAL (after possessionDate):
+export const COMMERCIAL_INDUSTRIAL_ADDITIONS = [
+  "dockHeight",
+  "openSides",
+  "storageType",
+  "industryType",
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "fireSafetyApproved",
+  "brochureAvailable",
+  "floorPlanAvailable",
+];
+
+// 5. ADD to COMMERCIAL -> OFFICE (after virtualTourUrl):
+export const COMMERCIAL_OFFICE_ADDITIONS = [
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "brochureAvailable",
+  "floorPlanAvailable",
+  "fireSafetyApproved",
+];
+
+// 6. ADD to COMMERCIAL common fields (for RENT purposes):
+export const COMMERCIAL_RENT_FIELDS = ["preferredTenants", "rentEscalation"];
+
+// 7. ADD to RESIDENTIAL (all subtypes that support rent):
+export const RESIDENTIAL_RENT_ADDITIONS = [
+  "preferredTenants",
+  "rentEscalation",
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "brochureAvailable",
+  "floorPlanAvailable",
+];
+
+// 8. ADD to LAND (all subtypes):
+export const LAND_ADDITIONS = [
+  "ownershipType",
+  "approvedBy",
+  "legalDispute",
+  "encumbranceFree",
+  "brochureAvailable",
+  "floorPlanAvailable",
+];
+
 export const PROPERTY_FIELD_CONFIG = {
   RESIDENTIAL: {
     common: [
@@ -291,6 +389,8 @@ export const PROPERTY_FIELD_CONFIG = {
       "state",
       "country",
       "zipCode",
+      "possessionStatus",
+      "possessionDate",
     ],
     HOTEL: [
       ...RESIDENTIAL_LIKE_FIELDS,
@@ -339,8 +439,6 @@ export const PROPERTY_FIELD_CONFIG = {
       "projectReraNumber",
       "maintenanceCharges",
       "securityDeposit",
-      "possessionStatus",
-      "possessionDate",
       "amenities",
       "nearbyPlaces",
       "images",
@@ -359,11 +457,24 @@ export const PROPERTY_FIELD_CONFIG = {
       "openParking",
       "maintenanceCharges",
       "securityDeposit",
-      "possessionStatus",
-      "possessionDate",
       "facingDirection", // Shop facing
       "amenities",
       "nearbyPlaces",
+      "cornerLocation",
+      "mainRoadFacing",
+      "displayWindows",
+      "idealFor",
+      "fireSafetyApproved",
+      "ownershipType",
+      "approvedBy",
+      "legalDispute",
+      "encumbranceFree",
+      "brochureAvailable",
+      "floorPlanAvailable",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+      "preferredTenants", // conditional
+      "rentEscalation", // conditional
     ],
     SHOWROOM: [
       "carpetArea",
@@ -379,16 +490,33 @@ export const PROPERTY_FIELD_CONFIG = {
       "furnishingStatus",
       "maintenanceCharges",
       "securityDeposit",
-      "possessionStatus",
-      "possessionDate",
       "amenities",
       "nearbyPlaces",
+      "frontageWidth",
+      "cornerLocation",
+      "mainRoadFacing",
+      "displayWindows",
+      "locatedIn",
+      "idealFor",
+      "fireSafetyApproved",
+      "ownershipType",
+      "approvedBy",
+      "legalDispute",
+      "encumbranceFree",
+      "brochureAvailable",
+      "floorPlanAvailable",
+      "preferredTenants", // conditional
+      "rentEscalation",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
     WAREHOUSE: [
       "carpetArea",
       "carpetAreaUnit",
       "superBuiltArea",
       "superBuiltAreaUnit",
+      "builtUpArea",
+      "builtUpAreaUnit",
       "coveredArea",
       "openArea",
       "ceilingHeight",
@@ -400,15 +528,82 @@ export const PROPERTY_FIELD_CONFIG = {
       "roadWidth",
       "facingDirection",
       "securityDeposit",
-      "possessionStatus",
-      "possessionDate",
-      "amenities",
+      "dockHeight",
+      "openSides",
+      "storageType",
+      "ownershipType",
+      "approvedBy",
+      "legalDispute",
+      "encumbranceFree",
+      "fireSafetyApproved",
+      "brochureAvailable",
+      "floorPlanAvailable",
+      "preferredTenants", // conditional
+      "rentEscalation", // conditional
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
-    INDUSTRIAL: [
+    STORAGE: [
       "carpetArea",
       "carpetAreaUnit",
       "superBuiltArea",
       "superBuiltAreaUnit",
+      "builtUpArea",
+      "builtUpAreaUnit",
+      "coveredArea",
+      "openArea",
+      "ceilingHeight",
+      "loadingDocks",
+      "powerLoad",
+      "flooringType",
+      "coveredParking",
+      "openParking",
+      "roadWidth",
+      "facingDirection",
+      "securityDeposit",
+      "dockHeight",
+      "openSides",
+      "storageType",
+      "ownershipType",
+      "approvedBy",
+      "legalDispute",
+      "encumbranceFree",
+      "fireSafetyApproved",
+      "brochureAvailable",
+      "floorPlanAvailable",
+      "preferredTenants", // conditional
+      "rentEscalation", // conditional
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+    ],
+    "LAND/PLOT": [
+      "plotArea",
+      "plotAreaUnit",
+      "plotDimensions",
+      "boundaryWall",
+      "cornerPlot",
+      "facingDirection",
+      "zoningType",
+      "clearTitle",
+      "developmentStatus",
+      "roadWidth",
+      "electricityAvailable",
+      "waterConnection",
+      "sewageConnection",
+      "possessionStatus",
+      "possessionDate",
+      "nearbyPlaces",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+      "openSides",
+    ],
+    INDUSTRIAL: [
+      "carpetArea",
+      "carpetAreaUnit",
+      "builtUpArea",
+      "builtUpAreaUnit",
+      "plotArea",
+      "plotAreaUnit",
       "coveredArea",
       "openArea",
       "ceilingHeight",
@@ -423,8 +618,136 @@ export const PROPERTY_FIELD_CONFIG = {
       "waterConnection",
       "sewageConnection",
       "securityDeposit",
+      "dockHeight",
+      "openSides",
+      "industryType",
+      "storageType",
+      "ownershipType",
+      "approvedBy",
+      "legalDispute",
+      "encumbranceFree",
+      "fireSafetyApproved",
+      "brochureAvailable",
+      "floorPlanAvailable",
+      "preferredTenants", // conditional
+      "rentEscalation", // conditional
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+    ],
+    INDUSTRY: [
+      "carpetArea",
+      "carpetAreaUnit",
+      "builtUpArea",
+      "builtUpAreaUnit",
+      "plotArea",
+      "plotAreaUnit",
+      "coveredArea",
+      "openArea",
+      "ceilingHeight",
+      "loadingDocks",
+      "powerLoad",
+      "flooringType",
+      "zoningType",
+      "coveredParking",
+      "openParking",
+      "roadWidth",
+      "electricityAvailable",
+      "waterConnection",
+      "sewageConnection",
+      "securityDeposit",
+      "dockHeight",
+      "openSides",
+      "industryType",
+      "storageType",
+      "ownershipType",
+      "approvedBy",
+      "legalDispute",
+      "encumbranceFree",
+      "fireSafetyApproved",
+      "brochureAvailable",
+      "floorPlanAvailable",
+      "preferredTenants", // conditional
+      "rentEscalation", // conditional
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+    ],
+    RESIDENTIAL_PLOT: [
+      "plotArea",
+      "plotAreaUnit",
+      "plotDimensions",
+      "boundaryWall",
+      "cornerPlot",
+      "facingDirection",
+      "zoningType",
+      "clearTitle",
+      "developmentStatus",
+      "roadWidth",
+      "electricityAvailable",
+      "waterConnection",
+      "sewageConnection",
       "possessionStatus",
       "possessionDate",
+      "nearbyPlaces",
+      "images",
+      "documents",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+    ],
+    COMMERCIAL_PLOT: [
+      "plotArea",
+      "plotAreaUnit",
+      "plotDimensions",
+      "boundaryWall",
+      "cornerPlot",
+      "facingDirection",
+      "zoningType",
+      "clearTitle",
+      "developmentStatus",
+      "roadWidth",
+      "electricityAvailable",
+      "waterConnection",
+      "sewageConnection",
+      "possessionStatus",
+      "possessionDate",
+      "nearbyPlaces",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+    ],
+    AGRICULTURAL: [
+      "plotArea",
+      "plotAreaUnit",
+      "plotDimensions",
+      "boundaryWall",
+      "zoningType",
+      "clearTitle",
+      "roadWidth",
+      "electricityAvailable",
+      "waterConnection",
+      "possessionStatus",
+      "possessionDate",
+      "nearbyPlaces",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
+    ],
+    INDUSTRIAL_LAND: [
+      "plotArea",
+      "plotAreaUnit",
+      "plotDimensions",
+      "boundaryWall",
+      "cornerPlot",
+      "facingDirection",
+      "zoningType",
+      "clearTitle",
+      "developmentStatus",
+      "roadWidth",
+      "electricityAvailable",
+      "waterConnection",
+      "sewageConnection",
+      "powerLoad",
+      "possessionStatus",
+      "possessionDate",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
   },
 
@@ -464,6 +787,8 @@ export const PROPERTY_FIELD_CONFIG = {
       "nearbyPlaces",
       "images",
       "documents",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
     COMMERCIAL_PLOT: [
       "plotArea",
@@ -482,6 +807,8 @@ export const PROPERTY_FIELD_CONFIG = {
       "possessionStatus",
       "possessionDate",
       "nearbyPlaces",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
     AGRICULTURAL: [
       "plotArea",
@@ -496,6 +823,8 @@ export const PROPERTY_FIELD_CONFIG = {
       "possessionStatus",
       "possessionDate",
       "nearbyPlaces",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
     INDUSTRIAL_LAND: [
       "plotArea",
@@ -514,6 +843,8 @@ export const PROPERTY_FIELD_CONFIG = {
       "powerLoad",
       "possessionStatus",
       "possessionDate",
+      "youtubeVideoUrl",
+      "virtualTourUrl",
     ],
   },
 };
@@ -542,6 +873,7 @@ export interface FieldMetadata {
   required?: boolean;
   placeholder?: string;
   min?: number;
+  max?: number;
   options?: string[];
   units?: string[];
   accept?: string;
@@ -560,8 +892,12 @@ export const FIELD_METADATA: Record<string, FieldMetadata> = {
   projectReraNumber: { label: "Project RERA Number", type: "text" },
   builderName: { label: "Builder/Developer Name", type: "text" },
   reraNumber: { label: "RERA Registration Number", type: "text" },
-  plotDimensions: { label: "Plot Dimensions", type: "text" },
-  roadWidth: { label: "Road Width", type: "text" },
+  plotDimensions: {
+    label: "Plot Dimensions",
+    type: "plot-dimensions", // NEW TYPE
+    placeholder: "e.g., 50x100 ft",
+  },
+
   powerLoad: { label: "Power Load", type: "text" },
   ceilingHeight: { label: "Ceiling Height", type: "text" },
   leasePeriod: { label: "Lease Period", type: "text" },
@@ -623,6 +959,18 @@ export const FIELD_METADATA: Record<string, FieldMetadata> = {
     type: "number-with-unit",
     units: ["sqft", "sqm", "acres", "hectares"],
   },
+  roadWidth: {
+    label: "Width of facing road",
+    type: "number-with-unit",
+    units: ["ft", "m", "yd", "cm", "inch"],
+  },
+  frontageWidth: {
+    label: "Frontage Width (ft)",
+    type: "number-with-unit",
+    units: ["ft", "m", "yd", "cm", "inch"],
+    placeholder: "Width facing the road",
+  },
+
   coveredArea: {
     label: "Covered Area",
     type: "number-with-unit",
@@ -644,12 +992,12 @@ export const FIELD_METADATA: Record<string, FieldMetadata> = {
   furnishingStatus: {
     label: "Furnishing",
     type: "select",
-    options: ["Furnished", "Semi-Furnished", "Unfurnished"],
+    options: ["FURNISHED", "SEMI_FURNISHED", "UNFURNISHED"],
   },
   possessionStatus: {
     label: "Possession Status",
     type: "select",
-    options: ["Ready to Move", "Under Construction", "Future"],
+    options: ["READY_TO_MOVE", "UNDER_CONSTRUCTION", "FUTURE"],
   },
   availabilityStatus: {
     label: "Availability",
@@ -688,39 +1036,45 @@ export const FIELD_METADATA: Record<string, FieldMetadata> = {
     options: ["Wet Pantry", "Dry Pantry", "None"],
   },
   facingDirection: {
-    label: "Facing",
+    label: "Property Facing",
     type: "select",
     options: [
-      "North",
-      "South",
-      "East",
-      "West",
-      "North-East",
-      "North-West",
-      "South-East",
-      "South-West",
+      "NORTH",
+      "SOUTH",
+      "EAST",
+      "WEST",
+      "NORTH_EAST",
+      "NORTH_WEST",
+      "SOUTH_EAST",
+      "SOUTH_WEST",
     ],
   },
   zoningType: {
     label: "Zoning",
     type: "select",
     options: [
-      "Residential",
-      "Commercial",
-      "Industrial",
-      "Agricultural",
-      "Mixed Use",
+      "RESIDENTIAL",
+      "COMMERCIAL",
+      "INDUSTRIAL",
+      "AGRICULTURAL",
+      "MIXED_USE",
     ],
   },
   developmentStatus: {
     label: "Development Status",
     type: "select",
-    options: ["Approved", "Non-Approved", "Under Development", "Completed"],
+    options: [
+      "APPROVED",
+      "NONAPPROVED",
+      "UNDEVELOPED",
+      "PARTIALLY_DEVELOPED",
+      "DEVELOPED",
+    ],
   },
   flooringType: {
     label: "Flooring Type",
     type: "select",
-    options: ["Concrete", "Epoxy", "Wood", "Tile", "Other"],
+    options: ["CONCRETE", "EPOXY", "WOOD", "TILE", "VDF", "OTHER"],
   },
   currency: {
     label: "Currency",
@@ -755,6 +1109,122 @@ export const FIELD_METADATA: Record<string, FieldMetadata> = {
   preRented: { label: "Pre-Rented", type: "checkbox" },
   nocCertified: { label: "NOC Certified", type: "checkbox" },
   occupancyCertified: { label: "Occupancy Certificate", type: "checkbox" },
+  // Legal & Ownership
+
+  ownershipType: {
+    label: "Ownership Type",
+    type: "select",
+    options: ["FREEHOLD", "LEASEHOLD", "CO_OPERATIVE", "POWER_OF_ATTORNEY"],
+    required: true,
+  },
+  approvedBy: {
+    label: "Approved By",
+    type: "text",
+    placeholder: "e.g., City Authority, BDA, DTCP",
+  },
+  legalDispute: {
+    label: "Legal Dispute",
+    type: "checkbox",
+  },
+  encumbranceFree: {
+    label: "Encumbrance Free",
+    type: "checkbox",
+  },
+
+  // Rent / Tenancy
+  preferredTenants: {
+    label: "Preferred Tenants",
+    type: "multi-select",
+    options: ["Family", "Bachelor", "Company", "Anyone"],
+  },
+  rentEscalation: {
+    label: "Rent Escalation (%)",
+    type: "number",
+    min: 0,
+    placeholder: "Annual rent increase percentage",
+  },
+
+  // Media
+  brochureAvailable: {
+    label: "Brochure Available",
+    type: "checkbox",
+  },
+  floorPlanAvailable: {
+    label: "Floor Plan Available",
+    type: "checkbox",
+  },
+
+  // Retail / Commercial
+  cornerLocation: {
+    label: "Corner Location",
+    type: "checkbox",
+  },
+  locatedIn: {
+    label: "Located In",
+    type: "select",
+    options: [
+      "Mall",
+      "High Street",
+      "Market",
+      "Shopping Complex",
+      "Standalone",
+    ],
+  },
+
+  mainRoadFacing: {
+    label: "Main Road Facing",
+    type: "checkbox",
+  },
+  displayWindows: {
+    label: "Display Windows",
+    type: "checkbox",
+  },
+  idealFor: {
+    label: "Ideal For",
+    type: "multi-select",
+    options: [
+      "Retail",
+      "Restaurant",
+      "Cafe",
+      "Showroom",
+      "Office",
+      "Salon",
+      "Gym",
+      "Pharmacy",
+      "Bank",
+      "ATM",
+      "Others",
+    ],
+  },
+  fireSafetyApproved: {
+    label: "Fire Safety Approved",
+    type: "checkbox",
+  },
+
+  // Structural / Industrial
+  dockHeight: {
+    label: "Dock Height (ft)",
+    type: "number",
+    min: 0,
+    placeholder: "Loading dock height",
+  },
+  openSides: {
+    label: "Open Sides",
+    type: "number",
+    min: 0,
+    max: 4,
+    placeholder: "Number of open sides",
+  },
+  storageType: {
+    label: "Storage Type",
+    type: "select",
+    options: ["COLD_STORAGE", "WAREHOUSE"],
+  },
+  industryType: {
+    label: "Industry For",
+    type: "select",
+    options: ["FACTORY", "MANUFACTURING"],
+  },
 
   // Date
 
@@ -785,23 +1255,68 @@ export const CONDITIONAL_FIELDS = {
   // Show possession date only if possession status is "Under Construction"
   possessionDate: {
     dependsOn: "possessionStatus",
-    showWhen: (value: string) => value === "Under Construction",
+    showWhen: (value: string) => value === "UNDER_CONSTRUCTION",
   },
 
   // Show rental fields only if availability type is "For Rent"
   monthlyRent: {
-    dependsOn: "availabilityType",
-    showWhen: (value: string) => value === "For Rent",
+    dependsOn: "purpose",
+    showWhen: (value: string) => value === "RENT",
   },
   leasePeriod: {
-    dependsOn: "availabilityType",
-    showWhen: (value: string) => value === "For Rent",
+    dependsOn: "purpose",
+    showWhen: (value: string) => value === "RENT",
   },
 
   // Show availability type only if availability status is "Available"
   availabilityType: {
     dependsOn: "availabilityStatus",
     showWhen: (value: string) => value === "Available",
+  },
+  // Show preferred tenants and rent escalation only for RENT
+  preferredTenants: {
+    dependsOn: "purpose",
+    showWhen: (value: string) => value === "RENT" || value === "LEASE",
+  },
+  rentEscalation: {
+    dependsOn: "purpose",
+    showWhen: (value: string) => value === "RENT" || value === "LEASE",
+  },
+
+  // Show storage type for warehouse/industrial
+  storageType: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) => ["WAREHOUSE", "INDUSTRIAL"].includes(value),
+  },
+  industryType: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) => ["INDUSTRIAL", "INDUSTRY"].includes(value),
+  },
+  // Show retail fields for shops/showrooms
+  displayWindows: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) => ["SHOP", "SHOWROOM"].includes(value),
+  },
+  idealFor: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) => ["SHOP", "SHOWROOM", "OFFICE"].includes(value),
+  },
+
+  // Show frontage width for showrooms
+  frontageWidth: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) => value === "SHOWROOM",
+  },
+
+  // Show dock-related fields for warehouse/industrial
+  dockHeight: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) => ["WAREHOUSE", "INDUSTRIAL"].includes(value),
+  },
+  openSides: {
+    dependsOn: "subTypeName",
+    showWhen: (value: string) =>
+      ["WAREHOUSE", "INDUSTRIAL", "LAND/PLOT"].includes(value),
   },
 };
 

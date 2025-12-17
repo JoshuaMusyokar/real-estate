@@ -87,7 +87,12 @@ export function CityForm({ city, onClose, onSuccess }: CityFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    if (formData.latitude === undefined || formData.longitude === undefined) {
+      showError(
+        "Please search for and select a city location to populate coordinates."
+      );
+      return;
+    }
     if (!formData.name?.trim()) {
       showError("City name is required");
       return;

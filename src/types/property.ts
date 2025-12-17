@@ -36,7 +36,14 @@ export type PropertyStatus =
   | "UNDER_REVIEW"
   | "REJECTED"
   | "DRAFT";
+export type OwnershipType =
+  | "FREEHOLD"
+  | "LEASEHOLD"
+  | "CO_OPERATIVE"
+  | "POWER_OF_ATTORNEY";
+export type StorageType = "COLD_STORAGE" | "WAREHOUSE";
 
+export type IndustryType = "FACTORY" | "MANUFACTURING";
 export interface PropertyType {
   id: string;
   name: string; // e.g., "RESIDENTIAL", "COMMERCIAL", "LAND", "INDUSTRIAL", "MIXED_USE"
@@ -61,7 +68,7 @@ export interface PropertySubType {
   updatedAt: Date;
 }
 
-export type PropertyPurpose = "SALE" | "RENT" | "LEASE";
+export type PropertyPurpose = "SALE" | "RENT" | "LEASE" | "PG";
 // TODO: edit the city type to match the location service
 
 export interface NearbyPlace {
@@ -220,6 +227,34 @@ export interface Property {
   viewCount: number;
   inquiryCount: number;
   shareCount: number;
+  // Legal & Ownership
+  ownershipType: OwnershipType | null;
+  approvedBy: string | null;
+  legalDispute: boolean;
+  encumbranceFree: boolean;
+
+  // Rent / Tenancy
+  preferredTenants: string[] | null;
+  rentEscalation: number | null;
+
+  // Media
+  brochureAvailable: boolean;
+  floorPlanAvailable: boolean;
+
+  // Retail / Commercial
+  cornerLocation: boolean;
+  locatedIn: string | null;
+  frontageWidth: number | null;
+  mainRoadFacing: boolean;
+  displayWindows: boolean;
+  idealFor: string[] | null;
+  fireSafetyApproved: boolean;
+  industryType: IndustryType | null;
+
+  // Structural / Industrial
+  dockHeight: number | null;
+  openSides: number | null;
+  storageType: StorageType | null;
 
   // Timestamps
   createdAt: Date;
@@ -238,6 +273,7 @@ export interface PropertyImage {
   url: string;
   caption: string | null;
   key: string | null;
+  isFloorPlan: boolean | null;
   order: number;
   isCover: boolean;
   viewableUrl: string;
@@ -280,57 +316,6 @@ export interface PropertyAmenity {
   amenity: Amenity;
 }
 
-export interface PropertyCreateInput {
-  title: string;
-  description: string;
-  propertyTypeId: string;
-  subTypeId?: string;
-  purpose: PropertyPurpose;
-  status?: PropertyStatus;
-  price: number;
-  priceNegotiable?: boolean;
-  currency?: string;
-  address: string;
-  city: string;
-  locality: string;
-  builderName?: string;
-  reraNumber?: string;
-  hasBalcony: boolean;
-  state?: string;
-  country: string;
-  zipCode?: string;
-  latitude?: number;
-  longitude?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  balconies?: number; // Total number of balconies
-  totalFlats?: number; // Total number of flats in the complex
-  totalBuildings?: number; // Total number of buildings in the project
-  totalFloors?: number; // Total floors in the building
-  complexName?: string; // Name of the residential complex
-  // Area Measurements
-  superBuiltArea?: number; // In sq ft
-  builtUpArea?: number; // In sq ft
-  carpetArea?: number; // In sq ft
-
-  // Possession
-  possessionStatus?: string; // Enum: READY_TO_MOVE | UNDER_CONSTRUCTION
-  possessionDate?: Date; // ISO Date for completion
-  squareFeet?: number;
-  squareMeters?: number;
-  floors?: number;
-  yearBuilt?: number;
-  furnishingStatus?: string;
-  youtubeVideoUrl?: string;
-  virtualTourUrl?: string;
-  ownerId: string;
-  ownerEmail: string;
-  ownerPhone: string;
-  ownerName: string;
-  slug: string;
-  metaTitle?: string;
-  metaDescription?: string;
-}
 export interface PropertyCreateRequest {
   // Basic Information
   title: string;
@@ -439,6 +424,35 @@ export interface PropertyCreateRequest {
   flooringType: string | null;
   coveredArea: number | null;
   openArea: number | null;
+
+  // Legal & Ownership
+  ownershipType: OwnershipType | null;
+  approvedBy: string | null;
+  legalDispute: boolean;
+  encumbranceFree: boolean;
+
+  // Rent / Tenancy
+  preferredTenants: string[] | null;
+  rentEscalation: number | null;
+
+  // Media
+  brochureAvailable: boolean;
+  floorPlanAvailable: boolean;
+
+  // Retail / Commercial
+  cornerLocation: boolean;
+  locatedIn: string | null;
+  frontageWidth: number | null;
+  mainRoadFacing: boolean;
+  displayWindows: boolean;
+  idealFor: string[] | null;
+  fireSafetyApproved: boolean;
+  industryType: IndustryType | null;
+
+  // Structural / Industrial
+  dockHeight: number | null;
+  openSides: number | null;
+  storageType: StorageType | null;
 
   // Features & Media
   youtubeVideoUrl: string | null;
@@ -558,6 +572,34 @@ export interface PropertyUpdateRequest {
   flooringType?: string | null;
   coveredArea?: number | null;
   openArea?: number | null;
+  industryType: IndustryType | null;
+  // Legal & Ownership
+  ownershipType?: OwnershipType | null;
+  approvedBy?: string | null;
+  legalDispute?: boolean;
+  encumbranceFree?: boolean;
+
+  // Rent / Tenancy
+  preferredTenants?: string[] | null;
+  rentEscalation?: number | null;
+
+  // Media
+  brochureAvailable?: boolean;
+  floorPlanAvailable?: boolean;
+
+  // Retail / Commercial
+  cornerLocation?: boolean;
+  locatedIn?: string | null;
+  frontageWidth?: number | null;
+  mainRoadFacing?: boolean;
+  displayWindows?: boolean;
+  idealFor?: string[] | null;
+  fireSafetyApproved?: boolean;
+
+  // Structural / Industrial
+  dockHeight?: number | null;
+  openSides?: number | null;
+  storageType?: StorageType | null;
 
   // Features & Media
   youtubeVideoUrl?: string | null;
@@ -573,6 +615,7 @@ export interface PropertyImageInput {
   url: string;
   order: number | null;
   caption: string | null;
+  isFloorPlan: boolean | null;
   key: string | null;
   isCover: boolean | null;
 }
@@ -604,7 +647,6 @@ export interface PropertiesResponse {
     totalPages: number;
   };
 }
-
 export interface PropertySearchFilters {
   page?: number;
   limit?: number;
@@ -633,7 +675,40 @@ export interface PropertySearchFilters {
   verified?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+
+  // New fields for commercial properties
+  furnishingStatus?: string; // "FURNISHED", "SEMI_FURNISHED", "UNFURNISHED"
+  facingDirection?: string; // "NORTH", "SOUTH", "EAST", "WEST", etc.
 }
+// export interface PropertySearchFilters {
+//   page?: number;
+//   limit?: number;
+//   search?: string;
+//   propertyType?: string | string[]; // Can be enum string or PropertyTypeModel ID
+//   propertyTypeId?: string | string[]; // Explicit ID filter
+//   subType?: string | string[]; // Can be enum string or PropertySubTypeModel ID
+//   subTypeId?: string | string[]; // Explicit ID filter
+//   purpose?: PropertyPurpose;
+//   possessionStatus?: string;
+//   status?: PropertyStatus;
+//   cityId?: string;
+//   city?: string[];
+//   locality?: string[];
+//   minPrice?: number;
+//   maxPrice?: number;
+//   bedrooms?: number[];
+//   bathrooms?: number[];
+//   minSquareFeet?: number;
+//   maxSquareFeet?: number;
+//   listingSource?: string[];
+//   amenities?: string[];
+//   featured?: boolean;
+//   localityId?: string;
+//   hasBalcony?: boolean;
+//   verified?: boolean;
+//   sortBy?: string;
+//   sortOrder?: "asc" | "desc";
+// }
 
 export interface PropertyStats {
   totalProperties: number;
@@ -719,6 +794,7 @@ export interface PropertyImageFile {
   file: File | null;
   url: string | null;
   caption: string | null;
+  isFloorPlan: boolean | null;
   key: string | null;
   order: number;
   isCover: boolean;

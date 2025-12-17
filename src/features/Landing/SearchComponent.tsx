@@ -508,17 +508,23 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     const oldPurpose = purpose;
     setPurpose(newPurpose);
 
+    // Determine the commercial sub-purpose to use
+    let effectiveCommercialSubPurpose = commercialSubPurpose;
+
     if (newPurpose === "commercial") {
+      effectiveCommercialSubPurpose = "buy"; // Default to "buy" for commercial
       setCommercialSubPurpose("buy");
     }
 
     const newPropertyType = getPropertyTypeFromPurpose(newPurpose);
     const oldPropertyType = getPropertyTypeFromPurpose(oldPurpose);
 
+    // Use the effective commercial sub-purpose (not the state value)
     const newPropertyPurpose = getPropertyPurposeFromPurpose(
       newPurpose,
-      newPurpose === "commercial" ? commercialSubPurpose : undefined
+      newPurpose === "commercial" ? effectiveCommercialSubPurpose : undefined
     );
+
     const oldPropertyPurpose = getPropertyPurposeFromPurpose(
       oldPurpose,
       oldPurpose === "commercial" ? commercialSubPurpose : undefined
@@ -532,11 +538,6 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     if (onPropertyPurposeChange && newPropertyPurpose !== oldPropertyPurpose) {
       onPropertyPurposeChange(newPropertyPurpose);
     }
-
-    // Propagate to parent
-    // if (onPurposeChange) {
-    //   onPurposeChange(newPurpose);
-    // }
   };
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

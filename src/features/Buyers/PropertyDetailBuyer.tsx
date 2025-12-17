@@ -30,6 +30,7 @@ import { AmenitiesSection } from "./components/AmenitySection";
 import { AboutProperty } from "./components/AboutProperty";
 import { PropertyDetails } from "./components/PropertyDetail";
 import { PropertyShowcase } from "./components/PropertyShowcase";
+import { FloorPlanSection } from "./components/FloorPlanSection";
 
 interface PropertyDetailBuyerProps {
   id: string;
@@ -226,6 +227,7 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
                 images={property.images || []}
               />
             )}
+            <FloorPlanSection images={property.images} />
             {/* ⭐ NEW: Combined Ratings & Reviews Section */}
             <RatingsAndReviewsSection
               propertyId={property.id}

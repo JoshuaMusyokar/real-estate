@@ -1,6 +1,6 @@
 // BasicInfoStep.tsx - Updated with financial details
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { AlertCircle, DollarSign, Loader2, Info } from "lucide-react";
+import { AlertCircle, DollarSign, Loader2, Info, Landmark } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import {
@@ -28,7 +28,7 @@ interface BasicInfoStepProps {
   onBlur: (field: string) => void;
 }
 
-const purposes: PropertyPurpose[] = ["SALE", "RENT", "LEASE"];
+const purposes: PropertyPurpose[] = ["SALE", "RENT", "PG"];
 
 const statuses: PropertyStatus[] = [
   "DRAFT",

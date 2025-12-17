@@ -1,6 +1,7 @@
-import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import { FIELD_METADATA } from "../config/property-form";
+import { AlertCircle, CheckCircle, ChevronDown, XCircle } from "lucide-react";
+import { FIELD_METADATA, type FieldMetadata } from "../config/property-form";
 import type { PropertyCreateRequest } from "../types";
+import { useState } from "react";
 
 interface RenderFieldProps {
   fieldName: string;
