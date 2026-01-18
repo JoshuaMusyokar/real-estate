@@ -24,3 +24,4 @@ export * from "./toast";
 export * from "./landing";
 export * from "./location";
 export * from "./rbac";
+export * from "./cms";

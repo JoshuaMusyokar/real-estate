@@ -18,6 +18,9 @@ export const PropertySearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const [selectedLocalities, setSelectedLocalities] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
 
   // Function to update URL parameters
   const updateUrlParams = (newFilters: PropertySearchFilters) => {
@@ -28,9 +31,14 @@ export const PropertySearchResults = () => {
       if (value !== undefined && value !== null && value !== "") {
         if (Array.isArray(value)) {
           if (value.length > 0) {
-            if (key === "listingSource" && Array.isArray(value)) {
-              params.set(key, value.join(","));
+            // Special handling for locality and localityId to preserve multiple values
+            if (key === "locality" || key === "localityId") {
+              // Don't join with comma - add each value separately using append
+              value.forEach((v) => {
+                params.append(key, String(v));
+              });
             } else {
+              // For other arrays, join with comma
               params.set(key, value.join(","));
             }
           }
@@ -38,7 +46,6 @@ export const PropertySearchResults = () => {
           params.set(key, value.toString());
         } else if (key === "page" && value === 1) {
           // Don't include page=1 to keep URLs clean
-          // params.set(key, String(value));
         } else {
           params.set(key, String(value));
         }
@@ -47,7 +54,8 @@ export const PropertySearchResults = () => {
 
     // Remove empty params
     Array.from(params.keys()).forEach((key) => {
-      if (!params.get(key)) {
+      const values = params.getAll(key);
+      if (values.length === 0 || (values.length === 1 && !values[0])) {
         params.delete(key);
       }
     });
@@ -70,15 +78,18 @@ export const PropertySearchResults = () => {
     if (params.get("search")) filters.search = params.get("search")!;
     if (params.get("city")) filters.city = [params.get("city")!];
     if (params.get("cityId")) filters.cityId = params.get("cityId")!;
-    if (params.get("localityId"))
-      filters.localityId = params.get("localityId")!;
 
-    // Parse locality from search query or specific locality parameter
-    if (params.get("locality")) {
-      filters.locality = params.get("locality")!.split(",");
-    } else if (params.get("search")?.toLowerCase().includes("locality")) {
-      const searchText = params.get("search")!;
-      filters.locality = [searchText.replace(/\blocality\b/gi, "").trim()];
+    // Parse multiple localityIds using getAll()
+    const localityIds = params.getAll("localityId");
+    if (localityIds.length > 0) {
+      filters.localityId =
+        localityIds.length === 1 ? localityIds[0] : localityIds.join(",");
+    }
+
+    // Parse multiple localities using getAll()
+    const localities = params.getAll("locality");
+    if (localities.length > 0) {
+      filters.locality = localities;
     }
 
     // Parse other filter parameters
@@ -124,17 +135,16 @@ export const PropertySearchResults = () => {
     if (params.get("listingSource")) {
       const listingSourceParam = params.get("listingSource")!;
       if (listingSourceParam.includes(",")) {
-        // Multiple values (comma-separated)
         filters.listingSource = listingSourceParam.split(",") as Array<
           "AGENT" | "BUILDER" | "OWNER"
         >;
       } else {
-        // Single value
         filters.listingSource = [
           listingSourceParam as "AGENT" | "BUILDER" | "OWNER",
         ];
       }
     }
+
     return filters;
   };
 
@@ -178,6 +188,31 @@ export const PropertySearchResults = () => {
       refetchFavorites();
     }
   }, [isAuthenticated, refetchFavorites]);
+  useEffect(() => {
+    console.log("recieved search params", searchParams.toString());
+  }, []);
+
+  useEffect(() => {
+    const localityIds = searchParams.get("localityId")?.split(",") || [];
+    const localityNames = searchParams.get("locality")?.split(",") || [];
+    // const localityNames = searchParams.get("locality")?.split(",") || [];
+
+    console.log("locs ids", localityIds);
+    console.log("locs name", localityNames);
+    if (localityIds.length > 0 && localityNames.length > 0) {
+      const localities = localityIds
+        .map((id, index) => ({
+          id,
+          name: localityNames[index] || "",
+        }))
+        .filter((loc) => loc.name); // Filter out empty names
+      console.log("locss", localities);
+
+      setSelectedLocalities(localities);
+    } else {
+      setSelectedLocalities([]);
+    }
+  }, [searchParams]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -214,36 +249,38 @@ export const PropertySearchResults = () => {
   };
 
   const handleLocalityChange = (localityId: string, localityName?: string) => {
-    if (localityId) {
+    if (localityId && localityName) {
+      // Add locality to selection
+      const newLocality = { id: localityId, name: localityName };
+      const updatedLocalities = [...selectedLocalities, newLocality];
+
       const newParams = new URLSearchParams(searchParams);
 
-      // Set locality parameters
-      newParams.set("localityId", localityId);
+      // Set multiple localities
+      const localityIds = updatedLocalities.map((loc) => loc.id).join(",");
+      const localityNames = updatedLocalities.map((loc) => loc.name).join(",");
 
-      if (localityName) {
-        newParams.set("search", localityName);
-        newParams.set("locality", localityName);
-      }
+      newParams.set("localityId", localityIds);
+      newParams.set("locality", localityNames);
       newParams.delete("page");
 
-      // Update filters
+      // Update filters with array
       setFilters((prev) => ({
         ...prev,
-        localityId,
-        search: localityName,
+        localityId: localityIds,
+        locality: updatedLocalities.map((loc) => loc.name),
         page: 1,
       }));
 
-      // Update URL immediately
+      setSelectedLocalities(updatedLocalities);
       navigate(`?${newParams.toString()}`, { replace: true });
     } else {
-      // Clear locality
+      // Clear all localities
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("localityId");
       newParams.delete("locality");
       newParams.delete("page");
 
-      // Update filters
       setFilters((prev) => {
         const newFilters = { ...prev };
         delete newFilters.localityId;
@@ -251,9 +288,46 @@ export const PropertySearchResults = () => {
         return { ...newFilters, page: 1 };
       });
 
-      // Update URL immediately
+      setSelectedLocalities([]);
       navigate(`?${newParams.toString()}`, { replace: true });
     }
+  };
+
+  const handleRemoveLocality = (localityId: string) => {
+    const updatedLocalities = selectedLocalities.filter(
+      (loc) => loc.id !== localityId
+    );
+
+    const newParams = new URLSearchParams(searchParams);
+
+    if (updatedLocalities.length > 0) {
+      const localityIds = updatedLocalities.map((loc) => loc.id).join(",");
+      const localityNames = updatedLocalities.map((loc) => loc.name).join(",");
+
+      newParams.set("localityId", localityIds);
+      newParams.set("locality", localityNames);
+
+      setFilters((prev) => ({
+        ...prev,
+        localityId: localityIds,
+        locality: updatedLocalities.map((loc) => loc.name),
+        page: 1,
+      }));
+    } else {
+      newParams.delete("localityId");
+      newParams.delete("locality");
+
+      setFilters((prev) => {
+        const newFilters = { ...prev };
+        delete newFilters.localityId;
+        delete newFilters.locality;
+        return { ...newFilters, page: 1 };
+      });
+    }
+
+    newParams.delete("page");
+    setSelectedLocalities(updatedLocalities);
+    navigate(`?${newParams.toString()}`, { replace: true });
   };
 
   const handleToggleFavorite = async (propertyId: string) => {
@@ -293,9 +367,10 @@ export const PropertySearchResults = () => {
     <div className="min-h-screen bg-gray-50">
       <PublicHeader
         selectedCityId={filters.cityId}
-        selectedLocalityId={filters.localityId}
+        selectedLocalities={selectedLocalities}
         onCityChange={handleCityChange}
         onLocalityChange={handleLocalityChange}
+        onRemoveLocality={handleRemoveLocality}
         displaySearchBar={true}
       />
 

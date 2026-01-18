@@ -28,8 +28,8 @@ interface SearchComponentProps {
 interface SearchParams {
   cityId?: string;
   cityName?: string;
-  localityId?: string;
-  localityName?: string;
+  localityId?: string | string[]; // Update to support array
+  localityName?: string | string[]; // Update to support array
   searchText?: string;
   propertyType?: string;
   propertyPurpose?: string;
@@ -96,6 +96,9 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   const cityModalRef = useRef<HTMLDivElement>(null);
   const [selectedCityName, setSelectedCityName] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
+  const [selectedLocalities, setSelectedLocalities] = useState<
+    SuggestionItem[]
+  >([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [showCityDropdown, setShowCityDropdown] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -369,34 +372,36 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     return "SALE" as PropertyPurpose; // default
   };
   const handleSuggestionSelect = (suggestion: SuggestionItem) => {
-    // Build query parameters based on suggestion type
-    const queryParams = new URLSearchParams();
+    // If it's a locality, add to selected localities instead of navigating immediately
+    if (suggestion.type === "locality") {
+      setSelectedLocalities((prev) => {
+        const isAlreadySelected = prev.some((loc) => loc.id === suggestion.id);
 
-    // Get final purpose and property type
+        console.log("isAlreadySelected", isAlreadySelected);
+
+        if (isAlreadySelected) return prev;
+
+        const updated = [...prev, suggestion];
+        console.log("updated locs", updated);
+        return updated;
+      });
+
+      setSearchInput("");
+      setShowSuggestions(false);
+      return;
+    }
+
+    // For non-locality suggestions, proceed with existing logic
+    const queryParams = new URLSearchParams();
     const finalPropertyPurpose = getPropertyPurposeFromPurpose(
       purpose,
       commercialSubPurpose
     );
     const finalPropertyType = getPropertyTypeFromPurpose(purpose);
 
-    // Add purpose parameter
     queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
-
-    // Add property type parameter
     queryParams.set("propertyType", finalPropertyType);
 
-    // Add property type parameter
-    if (purpose === "commercial") {
-      queryParams.set("propertyType", "COMMERCIAL");
-    } else if (purpose === "plots") {
-      queryParams.set("propertyType", "LAND");
-    } else if (purpose === "pg") {
-      queryParams.set("propertyType", "RESIDENTIAL");
-    } else {
-      queryParams.set("propertyType", "RESIDENTIAL");
-    }
-
-    // Add city information
     if (suggestion.cityId) {
       queryParams.set("cityId", suggestion.cityId);
     }
@@ -404,49 +409,29 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       queryParams.set("city", suggestion.cityName);
     }
 
-    // Add search text //TODO .SEARCHTEXT AND .NAME
-    if (suggestion.name || suggestion.name) {
-      queryParams.set("search", suggestion.name || suggestion.name);
+    if (suggestion.name) {
+      queryParams.set("search", suggestion.name);
     }
 
-    // Add specific filters based on suggestion type
     switch (suggestion.type) {
-      case "locality":
-        queryParams.set("locality", suggestion.name);
-        queryParams.set("localityId", suggestion.id);
-        break;
       case "project":
-        queryParams.set("search", suggestion.name);
-        break;
       case "builder":
-        queryParams.set("search", suggestion.name);
-        break;
       case "landmark":
-        queryParams.set("search", suggestion.name);
-        break;
       case "popular":
-        // For popular searches, add them as general search
         queryParams.set("search", suggestion.name);
         break;
       default:
         break;
     }
 
-    // Navigate to search results page with query parameters
-    // navigate(`/listings/buy/?${queryParams.toString()}`);
     window.open(`/listings/buy/?${queryParams.toString()}`, "_blank");
 
-    // Call onSearch callback if provided
     if (onSearch) {
       const params: SearchParams = {
         cityId: suggestion.cityId,
         cityName: suggestion.cityName,
         searchText: suggestion.name,
       };
-      if (suggestion.type === "locality") {
-        params.localityId = suggestion.id;
-        params.localityName = suggestion.name;
-      }
       onSearch(params);
     }
 
@@ -454,26 +439,110 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     setSearchInput(suggestion.displayName);
   };
 
+  useEffect(() => {
+    console.log("SSss", selectedLocalities);
+  }, [selectedLocalities]);
+  // const handleSuggestionSelect = (suggestion: SuggestionItem) => {
+  //   // Build query parameters based on suggestion type
+  //   const queryParams = new URLSearchParams();
+
+  //   // Get final purpose and property type
+  //   const finalPropertyPurpose = getPropertyPurposeFromPurpose(
+  //     purpose,
+  //     commercialSubPurpose
+  //   );
+  //   const finalPropertyType = getPropertyTypeFromPurpose(purpose);
+
+  //   // Add purpose parameter
+  //   queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
+
+  //   // Add property type parameter
+  //   queryParams.set("propertyType", finalPropertyType);
+
+  //   // Add property type parameter
+  //   if (purpose === "commercial") {
+  //     queryParams.set("propertyType", "COMMERCIAL");
+  //   } else if (purpose === "plots") {
+  //     queryParams.set("propertyType", "LAND");
+  //   } else if (purpose === "pg") {
+  //     queryParams.set("propertyType", "RESIDENTIAL");
+  //   } else {
+  //     queryParams.set("propertyType", "RESIDENTIAL");
+  //   }
+
+  //   // Add city information
+  //   if (suggestion.cityId) {
+  //     queryParams.set("cityId", suggestion.cityId);
+  //   }
+  //   if (suggestion.cityName) {
+  //     queryParams.set("city", suggestion.cityName);
+  //   }
+
+  //   // Add search text //TODO .SEARCHTEXT AND .NAME
+  //   if (suggestion.name || suggestion.name) {
+  //     queryParams.set("search", suggestion.name || suggestion.name);
+  //   }
+
+  //   // Add specific filters based on suggestion type
+  //   switch (suggestion.type) {
+  //     case "locality":
+  //       queryParams.set("locality", suggestion.name);
+  //       queryParams.set("localityId", suggestion.id);
+  //       break;
+  //     case "project":
+  //       queryParams.set("search", suggestion.name);
+  //       break;
+  //     case "builder":
+  //       queryParams.set("search", suggestion.name);
+  //       break;
+  //     case "landmark":
+  //       queryParams.set("search", suggestion.name);
+  //       break;
+  //     case "popular":
+  //       // For popular searches, add them as general search
+  //       queryParams.set("search", suggestion.name);
+  //       break;
+  //     default:
+  //       break;
+  //   }
+
+  //   // Navigate to search results page with query parameters
+  //   // navigate(`/listings/buy/?${queryParams.toString()}`);
+  //   window.open(`/listings/buy/?${queryParams.toString()}`, "_blank");
+
+  //   // Call onSearch callback if provided
+  //   if (onSearch) {
+  //     const params: SearchParams = {
+  //       cityId: suggestion.cityId,
+  //       cityName: suggestion.cityName,
+  //       searchText: suggestion.name,
+  //     };
+  //     if (suggestion.type === "locality") {
+  //       params.localityId = suggestion.id;
+  //       params.localityName = suggestion.name;
+  //     }
+  //     onSearch(params);
+  //   }
+
+  //   setShowSuggestions(false);
+  //   setSearchInput(suggestion.displayName);
+  // };
+  const removeLocality = (localityId: string) => {
+    setSelectedLocalities(
+      selectedLocalities.filter((loc) => loc.id !== localityId)
+    );
+  };
   const handleSearch = () => {
-    if (!searchInput.trim()) return;
-
-    // Build query parameters
     const queryParams = new URLSearchParams();
-
-    // Get final purpose and property type
     const finalPropertyPurpose = getPropertyPurposeFromPurpose(
       purpose,
       commercialSubPurpose
     );
     const finalPropertyType = getPropertyTypeFromPurpose(purpose);
 
-    // Add purpose parameter
     queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
-
-    // Add property type parameter
     queryParams.set("propertyType", finalPropertyType);
 
-    // Add city information
     if (selectedCityId) {
       queryParams.set("cityId", selectedCityId);
     }
@@ -481,17 +550,27 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       queryParams.set("city", selectedCityName);
     }
 
-    // Add search text
-    queryParams.set("search", searchInput.trim());
+    // Add multiple localities
+    if (selectedLocalities.length > 0) {
+      const localityNames = selectedLocalities.map((l) => l.name).join(",");
+      const localityIds = selectedLocalities.map((l) => l.id).join(",");
 
-    // Navigate to appropriate listings page
-    // navigate(
-    //   `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`
+      queryParams.set("locality", localityNames);
+      queryParams.set("localityId", localityIds);
+    }
+
+    console.log("src params", queryParams.toString());
+
+    // Add search text if present
+    if (searchInput.trim()) {
+      queryParams.set("search", searchInput.trim());
+    }
+
+    // window.open(
+    //   `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`,
+    //   "_blank"
     // );
-    window.open(
-      `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`,
-      "_blank"
-    );
+    window.open(`/listings/buy?${queryParams.toString()}`, "_blank");
 
     if (onSearch) {
       const params: SearchParams = {
@@ -504,6 +583,56 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       onSearch(params);
     }
   };
+  // const handleSearch = () => {
+  //   if (!searchInput.trim()) return;
+
+  //   // Build query parameters
+  //   const queryParams = new URLSearchParams();
+
+  //   // Get final purpose and property type
+  //   const finalPropertyPurpose = getPropertyPurposeFromPurpose(
+  //     purpose,
+  //     commercialSubPurpose
+  //   );
+  //   const finalPropertyType = getPropertyTypeFromPurpose(purpose);
+
+  //   // Add purpose parameter
+  //   queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
+
+  //   // Add property type parameter
+  //   queryParams.set("propertyType", finalPropertyType);
+
+  //   // Add city information
+  //   if (selectedCityId) {
+  //     queryParams.set("cityId", selectedCityId);
+  //   }
+  //   if (selectedCityName) {
+  //     queryParams.set("city", selectedCityName);
+  //   }
+
+  //   // Add search text
+  //   queryParams.set("search", searchInput.trim());
+
+  //   // Navigate to appropriate listings page
+  //   // navigate(
+  //   //   `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`
+  //   // );
+  //   window.open(
+  //     `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`,
+  //     "_blank"
+  //   );
+
+  //   if (onSearch) {
+  //     const params: SearchParams = {
+  //       cityId: selectedCityId,
+  //       cityName: selectedCityName,
+  //       searchText: searchInput.trim(),
+  //       propertyType: finalPropertyType,
+  //       propertyPurpose: finalPropertyPurpose,
+  //     };
+  //     onSearch(params);
+  //   }
+  // };
   const handlePurposeChange = (newPurpose: string) => {
     const oldPurpose = purpose;
     setPurpose(newPurpose);
@@ -708,6 +837,25 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 </div>
               </Dropdown>
             </div>
+
+            {selectedLocalities.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-3 py-2 border-r border-gray-300">
+                {selectedLocalities.map((locality) => (
+                  <div
+                    key={locality.id}
+                    className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                  >
+                    <span className="font-medium">{locality.name}</span>
+                    <button
+                      onClick={() => removeLocality(locality.id)}
+                      className="hover:bg-blue-200 rounded-full p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Search Input */}
             <div className="flex-1 relative">
@@ -984,6 +1132,24 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
               </div>
             </Dropdown>
           </div>
+          {selectedLocalities.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-3 py-2 border-r border-gray-300">
+              {selectedLocalities.map((locality) => (
+                <div
+                  key={locality.id}
+                  className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                >
+                  <span className="font-medium">{locality.name}</span>
+                  <button
+                    onClick={() => removeLocality(locality.id)}
+                    className="hover:bg-blue-200 rounded-full p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

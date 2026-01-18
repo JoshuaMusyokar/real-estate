@@ -29,10 +29,11 @@ interface PublicHeaderProps {
   onShowAppointments?: () => void;
   theme?: "vibrant" | "clean" | "dark";
   selectedCityId?: string;
-  selectedLocalityId?: string;
+  selectedLocalities?: Array<{ id: string; name: string }>;
   onCityChange?: (cityId: string, cityName?: string) => void; // Add cityName
   onLocalityChange?: (localityId: string, localityName?: string) => void; // Add localityName
   onSearch?: (searchTerm: string) => void;
+  onRemoveLocality?: (localityId: string) => void;
   initialSearchTerm?: string;
   displaySearchBar?: boolean;
 }
@@ -42,9 +43,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   onShowAppointments,
   theme = "vibrant",
   selectedCityId,
-  selectedLocalityId,
+  selectedLocalities = [],
   onCityChange,
   onLocalityChange,
+  onRemoveLocality,
   onSearch,
   initialSearchTerm = "",
   displaySearchBar = false,
@@ -71,6 +73,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
     { skip: !user }
   );
 
+  useEffect(() => {
+    console.log("sllloc", selectedLocalities);
+  }, []);
+
   // Fetch cities
   const { data: citiesData, isLoading: isLoadingCities } = useGetCitiesQuery({
     page: 1,
@@ -91,9 +97,6 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   const localities = localitiesData?.data || [];
 
   const selectedCity = cities.find((city) => city.id === selectedCityId);
-  const selectedLocality = localities.find(
-    (loc) => loc.id === selectedLocalityId
-  );
 
   const filteredCities = cities.filter((city) =>
     city.name.toLowerCase().includes(citySearchTerm.toLowerCase())
@@ -164,15 +167,24 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
 
   // Update handleLocalitySelect function
   const handleLocalitySelect = (locality: any) => {
+    // Check if locality is already selected
+    const isAlreadySelected = selectedLocalities?.some(
+      (loc) => loc.id === locality.id
+    );
+
+    if (isAlreadySelected) {
+      setLocalitySearchOpen(false);
+      setLocalitySearchTerm("");
+      return;
+    }
+
     // Check if locality belongs to current city
     if (locality.cityId !== selectedCityId) {
-      // Show confirmation modal
       setPendingLocality(locality);
       setShowCityChangeModal(true);
     } else {
-      // Same city, proceed directly
       if (onLocalityChange) {
-        onLocalityChange(locality.id, locality.name); // Pass locality name
+        onLocalityChange(locality.id, locality.name);
       }
       setLocalitySearchOpen(false);
       setLocalitySearchTerm("");
@@ -201,9 +213,10 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
     setShowCityChangeModal(false);
     setPendingLocality(null);
   };
-
-  const handleClearLocality = () => {
-    if (onLocalityChange) {
+  const handleClearLocality = (localityId?: string) => {
+    if (localityId && onRemoveLocality) {
+      onRemoveLocality(localityId);
+    } else if (onLocalityChange) {
       onLocalityChange("");
     }
   };
@@ -356,19 +369,26 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                   <Search className="w-5 h-5 text-gray-500 ml-4" />
 
                   {/* Selected Locality Badge */}
-                  {selectedLocality && (
-                    <div className="flex items-center gap-2 ml-3 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                      <MapPin className="w-3.5 h-3.5" />
-                      {selectedLocality.name}
-                      <button
-                        onClick={handleClearLocality}
-                        className="hover:bg-purple-200 rounded-full p-0.5"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                  {/* Selected Localities Badges */}
+                  {selectedLocalities && selectedLocalities.length > 0 && (
+                    <div className="flex items-center gap-2 ml-3 flex-wrap max-w-md">
+                      {selectedLocalities.map((locality) => (
+                        <div
+                          key={locality.id}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          {locality.name}
+                          <button
+                            onClick={() => handleClearLocality(locality.id)}
+                            className="hover:bg-purple-200 rounded-full p-0.5"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
-
                   {/* "New" Button for Locality Search */}
                   <div
                     className="relative ml-auto mr-2"

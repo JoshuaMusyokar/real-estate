@@ -26,6 +26,7 @@ import {
   Calendar,
   Contact2,
   Factory,
+  FileText,
   LayoutDashboard,
   ListCheck,
   Map,
@@ -66,27 +67,33 @@ const navItems: NavItem[] = [
   {
     icon: <Building2 />,
     name: "Properties",
-    path: "/property",
+    subItems: [
+      { name: "Properties", path: "/property" },
+      { name: "Property types", path: "/property-types" },
+    ],
     roles: ["*"],
   },
   {
     icon: <MapPin />,
     name: "Cities",
-    path: "/cities",
     roles: ["ADMIN", "SUPER_ADMIN"],
+    subItems: [
+      { name: "Cities", path: "/cities" },
+      { name: "Localities", path: "/localities" },
+    ],
   },
-  {
-    icon: <Factory />,
-    name: "Property types",
-    path: "/property-types",
-    roles: ["ADMIN", "SUPER_ADMIN"],
-  },
-  {
-    icon: <Map />,
-    name: "Localities",
-    path: "/localities",
-    roles: ["ADMIN", "SUPER_ADMIN"],
-  },
+  // {
+  //   icon: <Factory />,
+  //   name: "Property types",
+  //   path: "/property-types",
+  //   roles: ["ADMIN", "SUPER_ADMIN"],
+  // },
+  // {
+  //   icon: <Map />,
+  //   name: "Localities",
+  //   path: "/localities",
+  //   roles: ["ADMIN", "SUPER_ADMIN"],
+  // },
   {
     icon: <ListCheck />,
     name: "Amenities",
@@ -123,10 +130,25 @@ const navItems: NavItem[] = [
     roles: ["ADMIN", "SUPER_ADMIN"],
   },
   {
+    icon: <FileText />,
+    name: "CMS",
+    subItems: [
+      { name: "View cms", path: "/cms" },
+      { name: "Add cms", path: "/cms/create" },
+      { name: "Categories", path: "/cms/categories" },
+    ],
+    roles: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
     icon: <BarChart3 />,
     name: "Analytics",
-    path: "/analytics",
     roles: ["ADMIN", "SUPER_ADMIN", "SALES_MANAGER"],
+    subItems: [
+      { name: "Properties Analytics", path: "/properties/analytics" },
+      { name: "Leads Analytics", path: "/leads/analytics" },
+      { name: "Performance Analytics", path: "/performance/analytics" },
+      { name: "Revenue Analytics", path: "/revenue/analytics" },
+    ],
   },
 
   // ----------------------------
@@ -178,13 +200,13 @@ const AppSidebar: React.FC = () => {
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const isActive = useCallback(
     (path: string) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   // Debug effect - remove this in production
@@ -257,7 +279,7 @@ const AppSidebar: React.FC = () => {
 
   const filterNavItemsByRole = (
     items: NavItem[],
-    userRole: string
+    userRole: string,
   ): NavItem[] => {
     return items.filter((item) => {
       if (!item.roles || item.roles.includes("*")) {
@@ -414,8 +436,8 @@ const AppSidebar: React.FC = () => {
           isExpanded || isMobileOpen
             ? "w-[290px]"
             : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+              ? "w-[290px]"
+              : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -463,7 +485,7 @@ const AppSidebar: React.FC = () => {
               {user.roleId &&
                 renderMenuItems(
                   filterNavItemsByRole(navItems, user.role.name),
-                  "main"
+                  "main",
                 )}
             </div>
             <div className="">
@@ -483,7 +505,7 @@ const AppSidebar: React.FC = () => {
               {user.roleId &&
                 renderMenuItems(
                   filterNavItemsByRole(manage, user.role.name),
-                  "others"
+                  "others",
                 )}
             </div>
           </div>

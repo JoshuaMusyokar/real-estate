@@ -23,7 +23,7 @@ import {
   useRemoveFromFavoritesMutation,
 } from "../../../services/propertyApi";
 import { useAuth } from "../../../hooks/useAuth";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 
 interface PropertyShowcaseProps {
   property: Property;
@@ -37,15 +37,15 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
   favProperties,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isSaved, setIsSaved] = useState(false);
   const { isAuthenticated } = useAuth();
   const [addToFavorites, { isLoading: isAdding }] = useAddToFavoritesMutation();
   const [removeFromFavorites, { isLoading: isRemoving }] =
     useRemoveFromFavoritesMutation();
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
-    null
+    null,
   );
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const images = property.images || [];
   const sortedImages = [...images].sort((a, b) => a.order - b.order);
@@ -99,32 +99,9 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
     setSelectedImageIndex(
       selectedImageIndex === 0
         ? sortedImages.length - 1
-        : selectedImageIndex - 1
+        : selectedImageIndex - 1,
     );
   }, [selectedImageIndex, sortedImages.length]);
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % sortedImages.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex(
-      (prev) => (prev - 1 + sortedImages.length) % sortedImages.length
-    );
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedImageIndex === null) return;
-      if (e.key === "Escape") closeLightbox();
-      if (e.key === "ArrowRight") goToNext();
-      if (e.key === "ArrowLeft") goToPrevious();
-    };
-    if (selectedImageIndex !== null) {
-      document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
-    }
-  }, [selectedImageIndex, closeLightbox, goToNext, goToPrevious]);
 
   const stats = [
     {
@@ -165,7 +142,7 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
 
   if (!images.length) {
     return (
-      <div className="w-full h-96 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center">
+      <div className="w-full h-96 bg-gray-100 rounded-2xl flex items-center justify-center">
         <div className="text-center text-gray-400">
           <Images size={48} className="mx-auto mb-3 opacity-50" />
           <p className="text-sm font-medium">No images available</p>
@@ -176,167 +153,156 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-        {/* Main Image Container with Carousel */}
-        <div className="relative h-[500px] md:h-[600px] bg-black">
-          {/* Current Image - Clickable to expand */}
+      <div className="relative overflow-hidden rounded-2xl shadow-2xl bg-black">
+        {/* BENTO GRID LAYOUT */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[500px] md:h-[600px]">
+          {/* Main Large Image (Left 75%) */}
           <div
-            className="absolute inset-0 cursor-pointer"
-            onClick={() => openLightbox(currentImageIndex)}
+            className="md:col-span-3 relative cursor-pointer group overflow-hidden"
+            onClick={() => openLightbox(0)}
           >
             <img
-              src={sortedImages[currentImageIndex].viewableUrl}
+              src={sortedImages[0].viewableUrl}
               alt={property.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
           </div>
 
-          {/* Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40 pointer-events-none" />
+          {/* Right Column Stack (Right 25%) */}
+          <div className="hidden md:grid grid-rows-2 gap-2">
+            <div
+              className="relative cursor-pointer group overflow-hidden"
+              onClick={() => openLightbox(1)}
+            >
+              <img
+                src={
+                  sortedImages[1]?.viewableUrl || sortedImages[0].viewableUrl
+                }
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                alt="Interior"
+              />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+            </div>
+            <div
+              className="relative cursor-pointer group overflow-hidden"
+              onClick={() => openLightbox(2)}
+            >
+              <img
+                src={
+                  sortedImages[2]?.viewableUrl || sortedImages[0].viewableUrl
+                }
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                alt="Detail"
+              />
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
 
-          {/* Navigation Arrows */}
-          {sortedImages.length > 1 && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  prevImage();
-                }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-10 group"
-              >
-                <ChevronLeft className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  nextImage();
-                }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 transition-all z-10 group"
-              >
-                <ChevronRight className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-              </button>
-            </>
-          )}
+              {/* Image Count Badge */}
+              <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/20 flex items-center gap-2">
+                <Images size={14} />
+                1/{sortedImages.length}
+              </div>
+            </div>
+          </div>
+        </div>
 
-          {/* Top Bar - Badges & Actions */}
-          <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-start justify-between z-20">
-            {/* Left: Badges */}
-            <div className="flex flex-wrap gap-2">
-              {property.featured && (
-                <div className="group relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-500 rounded-xl blur-md opacity-75" />
-                  <span className="relative bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
-                    <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                    FEATURED
-                  </span>
-                </div>
-              )}
-              {property.verified && (
-                <div className="group relative">
-                  <div className="absolute inset-0 bg-blue-500 rounded-xl blur-md opacity-50" />
-                  <span className="relative bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    VERIFIED
-                  </span>
-                </div>
-              )}
-              <span className="bg-white/20 backdrop-blur-md border border-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold uppercase shadow-lg">
-                FOR {property.purpose}
+        {/* OVERLAY: Top Bar - Badges & Actions */}
+        <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-start justify-between z-20 pointer-events-none">
+          <div className="flex flex-wrap gap-2 pointer-events-auto">
+            {property.featured && (
+              <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                <Sparkles className="w-3.5 h-3.5" /> FEATURED
               </span>
-            </div>
-
-            {/* Right: Action Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleSave}
-                disabled={isAdding || isRemoving}
-                className={`group relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg backdrop-blur-md border ${
-                  isSaved
-                    ? "bg-red-500/90 border-red-400/50"
-                    : "bg-white/10 border-white/20 hover:bg-white/20"
-                }`}
-              >
-                {isAdding || isRemoving ? (
-                  <div className="w-4 h-4 border-2 border-t-transparent border-white animate-spin rounded-full" />
-                ) : (
-                  <Heart
-                    className={`w-5 h-5 transition-transform group-hover:scale-110 ${
-                      isSaved ? "fill-white text-white" : "text-white"
-                    }`}
-                  />
-                )}
-              </button>
-              <button
-                onClick={onShare}
-                className="group relative w-11 h-11 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
-              >
-                <Share2 className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-              </button>
-              <button
-                onClick={() => openLightbox(currentImageIndex)}
-                className="group relative w-11 h-11 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all duration-300 shadow-lg"
-              >
-                <Maximize2 className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-              </button>
-            </div>
+            )}
+            {property.verified && (
+              <span className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                <CheckCircle2 className="w-3.5 h-3.5" /> VERIFIED
+              </span>
+            )}
           </div>
 
-          {/* Bottom Info Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20">
+          <div className="flex gap-2 pointer-events-auto">
+            <button
+              onClick={handleSave}
+              disabled={isAdding || isRemoving}
+              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg backdrop-blur-md border ${
+                isSaved
+                  ? "bg-red-500 border-red-400"
+                  : "bg-white/10 border-white/20 hover:bg-white/20"
+              }`}
+            >
+              <Heart
+                className={`w-5 h-5 ${isSaved ? "fill-white text-white" : "text-white"}`}
+              />
+            </button>
+            <button
+              onClick={onShare}
+              className="w-11 h-11 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-lg"
+            >
+              <Share2 className="w-5 h-5 text-white" />
+            </button>
+            <button
+              onClick={() => openLightbox(0)}
+              className="w-11 h-11 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center hover:bg-white/20 transition-all shadow-lg"
+            >
+              <Maximize2 className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* OVERLAY: Bottom Info */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 z-20 pointer-events-none">
+          <div className="pointer-events-auto max-w-4xl">
             {property.complexName && (
-              <div className="w-50 flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 shadow-lg">
+              <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1 mb-3">
                 <Building2 className="w-3.5 h-3.5 text-white" />
                 <span className="text-xs font-semibold text-white">
                   {property.complexName}
                 </span>
               </div>
             )}
-            {/* Title & Location */}
-            <div className="mb-4">
-              <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
-                {property.title}
-              </h1>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2 text-white/90">
-                  <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm md:text-base font-medium drop-shadow">
-                    {property.locality}, {property.city.name}
-                  </span>
-                </div>
-                {property.viewCount !== undefined && (
-                  <div className="flex items-center gap-1.5 text-white/80 text-sm">
-                    <Eye className="w-4 h-4" />
-                    <span>{property.viewCount.toLocaleString()} views</span>
-                  </div>
-                )}
+
+            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+              {property.title}
+            </h1>
+
+            <div className="flex items-center gap-4 mb-4 text-white/90">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {property.locality}, {property.city.name}
+                </span>
               </div>
+              {property.viewCount !== undefined && (
+                <div className="flex items-center gap-1.5 text-sm opacity-80">
+                  <Eye className="w-4 h-4" />
+                  <span>{property.viewCount.toLocaleString()} views</span>
+                </div>
+              )}
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
                   <div
                     key={index}
-                    className="group relative bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 hover:bg-white/20 transition-all"
+                    className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`w-9 h-9 bg-gradient-to-br ${stat.gradient} rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg`}
+                        className={`w-8 h-8 bg-gradient-to-br ${stat.gradient} rounded-lg flex items-center justify-center flex-shrink-0`}
                       >
                         <Icon className="w-4 h-4 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xl font-bold text-white leading-none mb-0.5">
+                      <div>
+                        <div className="text-lg font-bold text-white leading-none">
                           {typeof stat.value === "number"
                             ? stat.value.toLocaleString()
                             : stat.value}
                         </div>
-                        <div className="text-[10px] text-white/80 font-medium uppercase">
+                        <div className="text-[10px] text-white/70 uppercase">
                           {stat.label}
                         </div>
                       </div>
@@ -345,118 +311,43 @@ export const PropertyShowcase: React.FC<PropertyShowcaseProps> = ({
                 );
               })}
             </div>
-
-            {/* Additional Info Pills */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {property.builderName && (
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 shadow-lg">
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-[10px]">
-                      {getBuilderInitials(property.postedBy)}
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold text-white">
-                    {property.postedBy}
-                  </span>
-                </div>
-              )}
-              {property.yearBuilt && (
-                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 shadow-lg">
-                  <Calendar className="w-3.5 h-3.5 text-white" />
-                  <span className="text-xs font-semibold text-white">
-                    {property.yearBuilt}
-                  </span>
-                </div>
-              )}
-              {property.furnishingStatus && (
-                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-3 py-1.5 shadow-lg">
-                  <Building2 className="w-3.5 h-3.5 text-white" />
-                  <span className="text-xs font-semibold text-white">
-                    {property.furnishingStatus}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Image Counter & Thumbnails */}
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-            <div className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs font-bold border border-white/20">
-              {currentImageIndex + 1} / {sortedImages.length}
-            </div>
-          </div>
-
-          {/* Thumbnail Strip (Hidden on Mobile) */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex gap-2 max-w-md overflow-hidden z-20">
-            {sortedImages.slice(0, 5).map((image, index) => (
-              <button
-                key={image.id}
-                onClick={() => setCurrentImageIndex(index)}
-                className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                  index === currentImageIndex
-                    ? "border-white scale-110 shadow-xl"
-                    : "border-white/30 hover:border-white/70"
-                }`}
-              >
-                <img
-                  src={image.viewableUrl}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-            {sortedImages.length > 5 && (
-              <button
-                onClick={() => openLightbox(0)}
-                className="flex-shrink-0 w-16 h-16 rounded-lg bg-black/60 backdrop-blur-md border-2 border-white/30 flex items-center justify-center text-white text-xs font-bold hover:border-white/70 transition-all"
-              >
-                +{sortedImages.length - 5}
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal (Logic remains the same) */}
       {selectedImageIndex !== null && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[100] flex items-center justify-center">
-          {/* Close button - Top Right (moved from bottom) */}
           <button
             onClick={closeLightbox}
-            className="fixed top-26 right-6 w-14 h-14 bg-red-500/90 backdrop-blur-md border border-red-400/50 rounded-full flex items-center justify-center hover:bg-red-600 hover:scale-110 transition-all z-[110] group shadow-2xl"
-            aria-label="Close lightbox"
+            className="fixed top-6 right-6 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center z-[110]"
           >
-            <X className="w-7 h-7 text-white group-hover:rotate-90 transition-transform duration-300" />
+            <X className="w-6 h-6 text-white" />
           </button>
 
           {sortedImages.length > 1 && (
             <>
               <button
                 onClick={goToPrevious}
-                className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-[110] shadow-xl"
-                aria-label="Previous image"
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-[110]"
               >
-                <ChevronLeft className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                <ChevronLeft className="w-8 h-8 text-white" />
               </button>
               <button
                 onClick={goToNext}
-                className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center hover:bg-white/20 hover:scale-110 transition-all z-[110] shadow-xl"
-                aria-label="Next image"
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-[110]"
               >
-                <ChevronRight className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                <ChevronRight className="w-8 h-8 text-white" />
               </button>
             </>
           )}
 
-          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-8">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
             <img
               src={sortedImages[selectedImageIndex].viewableUrl}
               alt={property.title}
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              className="max-w-full max-h-full object-contain"
             />
-            <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-black/70 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-semibold border border-white/20 shadow-xl">
-              {selectedImageIndex + 1} / {sortedImages.length}
-            </div>
           </div>
         </div>
       )}

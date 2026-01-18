@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "../../../utils";
 
 // Props for Table
 interface TableProps {
@@ -60,5 +61,19 @@ const TableCell: React.FC<TableCellProps> = ({
   const CellTag = isHeader ? "th" : "td";
   return <CellTag className={` ${className}`}>{children}</CellTag>;
 };
+
+export const TableHead: React.FC<
+  React.ThHTMLAttributes<HTMLTableHeaderCellElement>
+> = ({ children, className, ...props }) => (
+  <th
+    className={cn(
+      "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider",
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </th>
+);
 
 export { Table, TableHeader, TableBody, TableRow, TableCell };

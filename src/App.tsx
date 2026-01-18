@@ -44,6 +44,18 @@ import LocalityPage from "./pages/Location/CitiesPage";
 import CitiesPage from "./pages/Location/LocalityPage";
 import { PropertySearchResults } from "./features/PropertyResult/PropertyResults";
 import PropertyTypesManagementPage from "./pages/PropertyType/PropertyTypeManagementPage";
+import ContentsPage from "./pages/Cms/CmsPage";
+import CreateContentPage from "./features/Cms/CreateContent";
+import EditContentPage from "./pages/Cms/EditContentPage";
+import CategoriesPage from "./pages/Cms/CategoriesPage";
+import { NewsListingPage } from "./features/Cms/NewsListingPage";
+import { ContentDetailsPage } from "./features/Cms/ContentDetails";
+import { PublicContentDetailPage } from "./features/Cms/PublicContentDetailsPage";
+import Dashboard from "./features/Dashboard/Dashboard";
+import PropertiesAnalyticsPage from "./pages/Analytics/PropertyAnalyticsPage";
+import LeadsAnalyticsPage from "./pages/Analytics/LeadAnalyticsPage";
+import RevenueAnalyticsPage from "./pages/Analytics/RevenueAnalyticsPage";
+import PerformanceAnalyticsPage from "./pages/Analytics/PerformanceAnalyticsPage";
 // import {Role } from "./types";
 
 export default function App() {
@@ -56,7 +68,9 @@ export default function App() {
           <Route path="/" element={<MainLanding />} />
           <Route path="/listings/buy" element={<PropertySearchResults />} />
           <Route path="/:template" element={<MainLanding />} />
+          <Route path="/news" element={<NewsListingPage />} />
 
+          <Route path="/:type/:slug" element={<PublicContentDetailPage />} />
           {/* Auth Routes - Only accessible when not authenticated */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
@@ -86,7 +100,7 @@ export default function App() {
             }
           >
             {/* Dashboard - Accessible to all authenticated users */}
-            <Route index path="/dashboard" element={<Home />} />
+            <Route index path="/dashboard" element={<Dashboard />} />
 
             {/* Properties - Different access levels */}
             <Route path="/property" element={<Property />} />
@@ -152,11 +166,37 @@ export default function App() {
             <Route path="/agents" element={<AgentsPage />} />
             {/* Amenity  */}
             <Route path="/amenities" element={<AmenityPage />} />
+            {/* cms  */}
+            <Route path="/cms" element={<ContentsPage />} />
+            <Route path="/cms/create" element={<CreateContentPage />} />
+            <Route path="/cms/categories" element={<CategoriesPage />} />
+            <Route path="/cms/edit/:id" element={<EditContentPage />} />
+            <Route
+              path="/cms/view/:contentId"
+              element={<ContentDetailsPage />}
+            />
 
             {/* User Profile - All authenticated users */}
             <Route path="/profile" element={<UserProfiles />} />
             {/* User Profile - All authenticated users */}
             <Route path="/users" element={<UserManagementPage />} />
+            {/* Properties Analytics - */}
+            <Route
+              path="/properties/analytics"
+              element={<PropertiesAnalyticsPage />}
+            />
+            {/* Performance Analytics - */}
+            <Route
+              path="/performance/analytics"
+              element={<PerformanceAnalyticsPage />}
+            />
+            {/* Lead analytics - */}
+            <Route path="/leads/analytics" element={<LeadsAnalyticsPage />} />
+            {/* Revenue Analytics - */}
+            <Route
+              path="/revenue/analytics"
+              element={<RevenueAnalyticsPage />}
+            />
             {/* RBAC - Roles and permissions */}
             <Route path="/rbac" element={<RBACPage />} />
             {/* Cities -  */}

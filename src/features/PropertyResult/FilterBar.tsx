@@ -146,8 +146,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     icon: React.ComponentType<{ className?: string }>;
   }> = [
     { value: "RESIDENTIAL", label: "Residential", icon: Home },
-    { value: "COMMERCIAL", label: "Commercial", icon: Building2 },
-    { value: "INDUSTRIAL", label: "Industrial", icon: Warehouse },
+    // { value: "COMMERCIAL", label: "Commercial", icon: Building2 },
+    // { value: "INDUSTRIAL", label: "Industrial", icon: Warehouse },
   ];
 
   // Residential specific

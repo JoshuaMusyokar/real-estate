@@ -48,6 +48,11 @@ const HIGHLIGHT_TYPES = [
     examples: ["Public Park", "Playground", "Recreation Area"],
   },
   {
+    value: "metro",
+    label: "Metro Station",
+    examples: ["Metro Station", "Subway Station", "Underground"],
+  },
+  {
     value: "transport",
     label: "Transport",
     examples: ["Bus Station", "Train Station", "Metro Station"],
