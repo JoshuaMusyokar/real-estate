@@ -66,7 +66,14 @@ export default function App() {
         <Routes>
           {/* Public Landing Page */}
           <Route path="/" element={<MainLanding />} />
-          <Route path="/listings/buy" element={<PropertySearchResults />} />
+          <Route
+            path="/properties/search"
+            element={<PropertySearchResults />}
+          />
+          <Route
+            path="/properties/search/:filterHash"
+            element={<PropertySearchResults />}
+          />
           <Route path="/:template" element={<MainLanding />} />
           <Route path="/news" element={<NewsListingPage />} />
 

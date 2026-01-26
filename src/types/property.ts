@@ -667,7 +667,7 @@ export interface PropertySearchFilters {
   bathrooms?: number[];
   minSquareFeet?: number;
   maxSquareFeet?: number;
-  listingSource?: string[];
+  listingSource?: string | string[];
   amenities?: string[];
   featured?: boolean;
   localityId?: string;

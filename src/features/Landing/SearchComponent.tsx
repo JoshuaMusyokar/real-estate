@@ -10,10 +10,14 @@ import type {
   City,
   Locality,
   PropertyPurpose,
+  PropertySearchFilters,
   PropertyType,
 } from "../../types";
 import { Dropdown } from "../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../components/ui/dropdown/DropdownItem";
+import { useAppDispatch } from "../../hooks";
+import { setFilters } from "../../store/slices/filterSlice";
+import { encodeFilters } from "../../utils/filterEncoder";
 
 interface SearchComponentProps {
   variant?: "default" | "compact";
@@ -28,8 +32,8 @@ interface SearchComponentProps {
 interface SearchParams {
   cityId?: string;
   cityName?: string;
-  localityId?: string | string[]; // Update to support array
-  localityName?: string | string[]; // Update to support array
+  localityId?: string | string[];
+  localityName?: string | string[];
   searchText?: string;
   propertyType?: string;
   propertyPurpose?: string;
@@ -88,6 +92,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   onPropertyTypeChange,
 }) => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [purpose, setPurpose] = useState<string>(initialPurpose);
   const [commercialSubPurpose, setCommercialSubPurpose] =
     useState<string>("buy");
@@ -103,7 +108,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   const [showCityDropdown, setShowCityDropdown] = useState<boolean>(false);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [popularLocalities, setPopularLocalities] = useState<SuggestionItem[]>(
-    []
+    [],
   );
   const [searchCityInput, setSearchCityInput] = useState<string>("");
 
@@ -114,7 +119,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   // Fetch cities
   const { data: citiesData } = useGetCitiesQuery({
     search: searchCityInput,
-    limit: 100,
+    limit: 1000,
   });
 
   const cities: City[] = citiesData?.data || [];
@@ -123,11 +128,11 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   const { data: localitiesData } = useGetLocalitiesQuery(
     {
       cityId: selectedCityId,
-      limit: 20,
+      limit: 200,
     },
     {
       skip: !selectedCityId,
-    }
+    },
   );
 
   // Fetch localities for search suggestions
@@ -135,18 +140,18 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     {
       search: searchInput,
       cityId: selectedCityId,
-      limit: 10,
+      limit: 100,
     },
     {
       skip: !selectedCityId || searchInput.length < 1,
-    }
+    },
   );
 
   // Initialize city
   useEffect(() => {
     if (initialCity && cities.length > 0) {
       const city = cities.find(
-        (c) => c.name.toLowerCase() === initialCity.toLowerCase()
+        (c) => c.name.toLowerCase() === initialCity.toLowerCase(),
       );
       if (city) {
         setSelectedCityId(city.id);
@@ -237,7 +242,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         .filter(
           (city) =>
             city.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-            city.state?.toLowerCase().includes(searchInput.toLowerCase())
+            city.state?.toLowerCase().includes(searchInput.toLowerCase()),
         )
         .slice(0, 3)
         .map((city) => ({
@@ -298,14 +303,14 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
           displayName: `${searchInput} (Landmark)`,
           cityId: selectedCityId,
           cityName: selectedCityName,
-        }
+        },
       );
     }
 
     // Add popular searches matching input
     if (searchInput.length >= 2) {
       const popularMatches = POPULAR_SEARCHES.filter((term) =>
-        term.toLowerCase().includes(searchInput.toLowerCase())
+        term.toLowerCase().includes(searchInput.toLowerCase()),
       )
         .slice(0, 3)
         .map((term) => ({
@@ -358,7 +363,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   };
   const getPropertyPurposeFromPurpose = (
     purpose: string,
-    commercialSubPurpose?: string
+    commercialSubPurpose?: string,
   ): PropertyPurpose => {
     if (purpose === "commercial") {
       return commercialSubPurpose === "lease"
@@ -372,18 +377,11 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     return "SALE" as PropertyPurpose; // default
   };
   const handleSuggestionSelect = (suggestion: SuggestionItem) => {
-    // If it's a locality, add to selected localities instead of navigating immediately
     if (suggestion.type === "locality") {
       setSelectedLocalities((prev) => {
         const isAlreadySelected = prev.some((loc) => loc.id === suggestion.id);
-
-        console.log("isAlreadySelected", isAlreadySelected);
-
         if (isAlreadySelected) return prev;
-
-        const updated = [...prev, suggestion];
-        console.log("updated locs", updated);
-        return updated;
+        return [...prev, suggestion];
       });
 
       setSearchInput("");
@@ -391,49 +389,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       return;
     }
 
-    // For non-locality suggestions, proceed with existing logic
-    const queryParams = new URLSearchParams();
-    const finalPropertyPurpose = getPropertyPurposeFromPurpose(
-      purpose,
-      commercialSubPurpose
-    );
-    const finalPropertyType = getPropertyTypeFromPurpose(purpose);
-
-    queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
-    queryParams.set("propertyType", finalPropertyType);
-
-    if (suggestion.cityId) {
-      queryParams.set("cityId", suggestion.cityId);
-    }
-    if (suggestion.cityName) {
-      queryParams.set("city", suggestion.cityName);
-    }
-
-    if (suggestion.name) {
-      queryParams.set("search", suggestion.name);
-    }
-
-    switch (suggestion.type) {
-      case "project":
-      case "builder":
-      case "landmark":
-      case "popular":
-        queryParams.set("search", suggestion.name);
-        break;
-      default:
-        break;
-    }
-
-    window.open(`/listings/buy/?${queryParams.toString()}`, "_blank");
-
-    if (onSearch) {
-      const params: SearchParams = {
-        cityId: suggestion.cityId,
-        cityName: suggestion.cityName,
-        searchText: suggestion.name,
-      };
-      onSearch(params);
-    }
+    // For non-locality suggestions, navigate with filters
+    navigateToSearch({
+      cityId: suggestion.cityId,
+      cityName: suggestion.cityName,
+      searchText: suggestion.name,
+    });
 
     setShowSuggestions(false);
     setSearchInput(suggestion.displayName);
@@ -442,197 +403,93 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   useEffect(() => {
     console.log("SSss", selectedLocalities);
   }, [selectedLocalities]);
-  // const handleSuggestionSelect = (suggestion: SuggestionItem) => {
-  //   // Build query parameters based on suggestion type
-  //   const queryParams = new URLSearchParams();
 
-  //   // Get final purpose and property type
-  //   const finalPropertyPurpose = getPropertyPurposeFromPurpose(
-  //     purpose,
-  //     commercialSubPurpose
-  //   );
-  //   const finalPropertyType = getPropertyTypeFromPurpose(purpose);
-
-  //   // Add purpose parameter
-  //   queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
-
-  //   // Add property type parameter
-  //   queryParams.set("propertyType", finalPropertyType);
-
-  //   // Add property type parameter
-  //   if (purpose === "commercial") {
-  //     queryParams.set("propertyType", "COMMERCIAL");
-  //   } else if (purpose === "plots") {
-  //     queryParams.set("propertyType", "LAND");
-  //   } else if (purpose === "pg") {
-  //     queryParams.set("propertyType", "RESIDENTIAL");
-  //   } else {
-  //     queryParams.set("propertyType", "RESIDENTIAL");
-  //   }
-
-  //   // Add city information
-  //   if (suggestion.cityId) {
-  //     queryParams.set("cityId", suggestion.cityId);
-  //   }
-  //   if (suggestion.cityName) {
-  //     queryParams.set("city", suggestion.cityName);
-  //   }
-
-  //   // Add search text //TODO .SEARCHTEXT AND .NAME
-  //   if (suggestion.name || suggestion.name) {
-  //     queryParams.set("search", suggestion.name || suggestion.name);
-  //   }
-
-  //   // Add specific filters based on suggestion type
-  //   switch (suggestion.type) {
-  //     case "locality":
-  //       queryParams.set("locality", suggestion.name);
-  //       queryParams.set("localityId", suggestion.id);
-  //       break;
-  //     case "project":
-  //       queryParams.set("search", suggestion.name);
-  //       break;
-  //     case "builder":
-  //       queryParams.set("search", suggestion.name);
-  //       break;
-  //     case "landmark":
-  //       queryParams.set("search", suggestion.name);
-  //       break;
-  //     case "popular":
-  //       // For popular searches, add them as general search
-  //       queryParams.set("search", suggestion.name);
-  //       break;
-  //     default:
-  //       break;
-  //   }
-
-  //   // Navigate to search results page with query parameters
-  //   // navigate(`/listings/buy/?${queryParams.toString()}`);
-  //   window.open(`/listings/buy/?${queryParams.toString()}`, "_blank");
-
-  //   // Call onSearch callback if provided
-  //   if (onSearch) {
-  //     const params: SearchParams = {
-  //       cityId: suggestion.cityId,
-  //       cityName: suggestion.cityName,
-  //       searchText: suggestion.name,
-  //     };
-  //     if (suggestion.type === "locality") {
-  //       params.localityId = suggestion.id;
-  //       params.localityName = suggestion.name;
-  //     }
-  //     onSearch(params);
-  //   }
-
-  //   setShowSuggestions(false);
-  //   setSearchInput(suggestion.displayName);
-  // };
-  const removeLocality = (localityId: string) => {
-    setSelectedLocalities(
-      selectedLocalities.filter((loc) => loc.id !== localityId)
-    );
-  };
-  const handleSearch = () => {
-    const queryParams = new URLSearchParams();
+  const navigateToSearch = (params: {
+    cityId?: string;
+    cityName?: string;
+    searchText?: string;
+    localities?: SuggestionItem[];
+  }) => {
     const finalPropertyPurpose = getPropertyPurposeFromPurpose(
       purpose,
-      commercialSubPurpose
+      commercialSubPurpose,
     );
     const finalPropertyType = getPropertyTypeFromPurpose(purpose);
 
-    queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
-    queryParams.set("propertyType", finalPropertyType);
+    // Build filters object
+    const filters: PropertySearchFilters = {
+      page: 1,
+      limit: 20,
+      status: "AVAILABLE",
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      purpose: finalPropertyPurpose,
+      propertyType: finalPropertyType,
+    };
 
-    if (selectedCityId) {
-      queryParams.set("cityId", selectedCityId);
+    if (params.cityId) {
+      filters.cityId = params.cityId;
     }
-    if (selectedCityName) {
-      queryParams.set("city", selectedCityName);
-    }
-
-    // Add multiple localities
-    if (selectedLocalities.length > 0) {
-      const localityNames = selectedLocalities.map((l) => l.name).join(",");
-      const localityIds = selectedLocalities.map((l) => l.id).join(",");
-
-      queryParams.set("locality", localityNames);
-      queryParams.set("localityId", localityIds);
-    }
-
-    console.log("src params", queryParams.toString());
-
-    // Add search text if present
-    if (searchInput.trim()) {
-      queryParams.set("search", searchInput.trim());
+    if (params.cityName) {
+      filters.city = [params.cityName];
     }
 
-    // window.open(
-    //   `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`,
-    //   "_blank"
-    // );
-    window.open(`/listings/buy?${queryParams.toString()}`, "_blank");
+    // Add localities
+    const localitiesToUse = params.localities || selectedLocalities;
+    if (localitiesToUse.length > 0) {
+      filters.locality = localitiesToUse.map((l) => l.name);
+      filters.localityId = localitiesToUse.map((l) => l.id).join(",");
+    }
+
+    if (params.searchText && params.searchText.trim()) {
+      filters.search = params.searchText.trim();
+    }
+
+    // Dispatch to Redux
+    dispatch(setFilters(filters));
+
+    // Encode and navigate
+    const encoded = encodeFilters(filters);
+    if (encoded) {
+      window.open(`/properties/search/${encoded}`, "_blank");
+    } else {
+      window.open(`/properties/search`, "_blank");
+    }
 
     if (onSearch) {
-      const params: SearchParams = {
-        cityId: selectedCityId,
-        cityName: selectedCityName,
-        searchText: searchInput.trim(),
+      onSearch({
+        cityId: params.cityId,
+        cityName: params.cityName,
+        localityId:
+          localitiesToUse.length > 0
+            ? localitiesToUse.map((l) => l.id)
+            : undefined,
+        localityName:
+          localitiesToUse.length > 0
+            ? localitiesToUse.map((l) => l.name)
+            : undefined,
+        searchText: params.searchText,
         propertyType: finalPropertyType,
         propertyPurpose: finalPropertyPurpose,
-      };
-      onSearch(params);
+      });
     }
   };
-  // const handleSearch = () => {
-  //   if (!searchInput.trim()) return;
 
-  //   // Build query parameters
-  //   const queryParams = new URLSearchParams();
+  const handleSearch = () => {
+    navigateToSearch({
+      cityId: selectedCityId,
+      cityName: selectedCityName,
+      searchText: searchInput.trim(),
+      localities: selectedLocalities,
+    });
+  };
 
-  //   // Get final purpose and property type
-  //   const finalPropertyPurpose = getPropertyPurposeFromPurpose(
-  //     purpose,
-  //     commercialSubPurpose
-  //   );
-  //   const finalPropertyType = getPropertyTypeFromPurpose(purpose);
+  const removeLocality = (localityId: string) => {
+    setSelectedLocalities(
+      selectedLocalities.filter((loc) => loc.id !== localityId),
+    );
+  };
 
-  //   // Add purpose parameter
-  //   queryParams.set("purpose", finalPropertyPurpose.toLowerCase());
-
-  //   // Add property type parameter
-  //   queryParams.set("propertyType", finalPropertyType);
-
-  //   // Add city information
-  //   if (selectedCityId) {
-  //     queryParams.set("cityId", selectedCityId);
-  //   }
-  //   if (selectedCityName) {
-  //     queryParams.set("city", selectedCityName);
-  //   }
-
-  //   // Add search text
-  //   queryParams.set("search", searchInput.trim());
-
-  //   // Navigate to appropriate listings page
-  //   // navigate(
-  //   //   `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`
-  //   // );
-  //   window.open(
-  //     `/listings/${finalPropertyPurpose.toLowerCase()}?${queryParams.toString()}`,
-  //     "_blank"
-  //   );
-
-  //   if (onSearch) {
-  //     const params: SearchParams = {
-  //       cityId: selectedCityId,
-  //       cityName: selectedCityName,
-  //       searchText: searchInput.trim(),
-  //       propertyType: finalPropertyType,
-  //       propertyPurpose: finalPropertyPurpose,
-  //     };
-  //     onSearch(params);
-  //   }
-  // };
   const handlePurposeChange = (newPurpose: string) => {
     const oldPurpose = purpose;
     setPurpose(newPurpose);
@@ -651,12 +508,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     // Use the effective commercial sub-purpose (not the state value)
     const newPropertyPurpose = getPropertyPurposeFromPurpose(
       newPurpose,
-      newPurpose === "commercial" ? effectiveCommercialSubPurpose : undefined
+      newPurpose === "commercial" ? effectiveCommercialSubPurpose : undefined,
     );
 
     const oldPropertyPurpose = getPropertyPurposeFromPurpose(
       oldPurpose,
-      oldPurpose === "commercial" ? commercialSubPurpose : undefined
+      oldPurpose === "commercial" ? commercialSubPurpose : undefined,
     );
 
     // Only call if values actually changed
@@ -689,7 +546,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     if (purpose === "commercial") {
       const propertyPurpose = getPropertyPurposeFromPurpose(
         "commercial",
-        subPurpose
+        subPurpose,
       );
       if (onPropertyPurposeChange) {
         onPropertyPurposeChange(propertyPurpose);
@@ -733,7 +590,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       (city) =>
         searchCityInput === "" ||
         city.name.toLowerCase().includes(searchCityInput.toLowerCase()) ||
-        city.state?.toLowerCase().includes(searchCityInput.toLowerCase())
+        city.state?.toLowerCase().includes(searchCityInput.toLowerCase()),
     )
     .slice(0, 20);
 
@@ -955,14 +812,14 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                           suggestion.type === "city"
                             ? "bg-blue-100"
                             : suggestion.type === "locality"
-                            ? "bg-green-100"
-                            : suggestion.type === "project"
-                            ? "bg-purple-100"
-                            : suggestion.type === "builder"
-                            ? "bg-amber-100"
-                            : suggestion.type === "popular"
-                            ? "bg-indigo-100"
-                            : "bg-gray-100"
+                              ? "bg-green-100"
+                              : suggestion.type === "project"
+                                ? "bg-purple-100"
+                                : suggestion.type === "builder"
+                                  ? "bg-amber-100"
+                                  : suggestion.type === "popular"
+                                    ? "bg-indigo-100"
+                                    : "bg-gray-100"
                         }`}
                       >
                         {suggestion.type === "city" && (
@@ -1272,14 +1129,14 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                           suggestion.type === "city"
                             ? "bg-blue-100"
                             : suggestion.type === "locality"
-                            ? "bg-green-100"
-                            : suggestion.type === "project"
-                            ? "bg-purple-100"
-                            : suggestion.type === "builder"
-                            ? "bg-amber-100"
-                            : suggestion.type === "popular"
-                            ? "bg-indigo-100"
-                            : "bg-gray-100"
+                              ? "bg-green-100"
+                              : suggestion.type === "project"
+                                ? "bg-purple-100"
+                                : suggestion.type === "builder"
+                                  ? "bg-amber-100"
+                                  : suggestion.type === "popular"
+                                    ? "bg-indigo-100"
+                                    : "bg-gray-100"
                         }`}
                       >
                         {suggestion.type === "city" && (

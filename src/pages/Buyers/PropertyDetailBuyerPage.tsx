@@ -1,63 +1,98 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { type FC } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import PageMeta from "../../components/common/PageMeta";
-import { useAuth } from "../../hooks/useAuth";
 import { PropertyDetailBuyer } from "../../features/Buyers/PropertyDetailBuyer";
 import { PublicHeader } from "../../layout/PublicHeader";
 import { Footer } from "../../layout/Footer";
+import { setFilters } from "../../store/slices/filterSlice";
+import { encodeFilters } from "../../utils/filterEncoder";
+import type { PropertySearchFilters } from "../../types";
+import type { RootState } from "../../store/store";
 
 // Define the expected URL params
 interface RouteParams {
   slug: string;
-  [key: string]: string | undefined; // Add index signature
+  [key: string]: string | undefined;
 }
 
 const PropertyDetailBuyerPage: FC = () => {
-  //   const { user } = useAuth();
   const { id } = useParams<RouteParams>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const dispatch = useDispatch();
+
+  // Get current filters from Redux
+  const currentFilters = useSelector(
+    (state: RootState) => state.filters.currentFilters,
+  );
 
   const handleLocalityChange = (localityId: string, localityName?: string) => {
-    if (localityId) {
-      const newParams = new URLSearchParams(searchParams);
+    if (localityId && localityName) {
+      // Add locality to existing filters
+      const updatedFilters: PropertySearchFilters = {
+        ...currentFilters,
+        localityId: localityId,
+        locality: [localityName],
+        page: 1,
+      };
 
-      // Set locality parameters
-      newParams.set("localityId", localityId);
+      // Update Redux
+      dispatch(setFilters(updatedFilters));
 
-      if (localityName) {
-        newParams.set("search", localityName);
-        newParams.set("locality", localityName);
+      // Encode and navigate
+      const encoded = encodeFilters(updatedFilters);
+      if (encoded) {
+        navigate(`/properties/search/${encoded}`, { replace: true });
+      } else {
+        navigate(`/properties/search`, { replace: true });
       }
-      newParams.delete("page");
-
-      // Update URL immediately
-      navigate(`/listings/buy?${newParams.toString()}`, { replace: true });
     } else {
-      // Clear locality
-      const newParams = new URLSearchParams(searchParams);
-      newParams.delete("localityId");
-      newParams.delete("locality");
-      newParams.delete("page");
+      // Clear locality from filters
+      const updatedFilters: PropertySearchFilters = {
+        ...currentFilters,
+        page: 1,
+      };
+      delete updatedFilters.localityId;
+      delete updatedFilters.locality;
 
-      // Update URL immediately
-      navigate(`/listings/buy?${newParams.toString()}`, { replace: true });
+      // Update Redux
+      dispatch(setFilters(updatedFilters));
+
+      // Encode and navigate
+      const encoded = encodeFilters(updatedFilters);
+      if (encoded) {
+        navigate(`/properties/search/${encoded}`, { replace: true });
+      } else {
+        navigate(`/properties/search`, { replace: true });
+      }
     }
   };
+
   // Handle city change from header
   const handleCityChange = (cityId: string, cityName?: string) => {
-    const newParams = new URLSearchParams(searchParams);
+    // Reset filters with new city
+    const updatedFilters: PropertySearchFilters = {
+      page: 1,
+      limit: 20,
+      status: "AVAILABLE",
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      cityId: cityId,
+      city: cityName ? [cityName] : undefined,
+    };
 
-    // Update URL query params
-    newParams.set("cityId", cityId);
-    if (cityName) newParams.set("city", cityName);
-    newParams.delete("localityId");
-    newParams.delete("locality");
-    newParams.delete("page");
+    // Update Redux
+    dispatch(setFilters(updatedFilters));
 
-    navigate(`/listings/buy?${newParams.toString()}`, { replace: true });
+    // Encode and navigate
+    const encoded = encodeFilters(updatedFilters);
+    if (encoded) {
+      navigate(`/properties/search/${encoded}`, { replace: true });
+    } else {
+      navigate(`/properties/search`, { replace: true });
+    }
   };
+
   // Handle invalid or missing slug
   if (!id) {
     return (
@@ -66,6 +101,7 @@ const PropertyDetailBuyerPage: FC = () => {
       </div>
     );
   }
+
   const handleShowFavorites = () => {
     // Navigate to favorites page or show favorites modal
     navigate("/saved-properties");
@@ -75,6 +111,7 @@ const PropertyDetailBuyerPage: FC = () => {
     // Navigate to appointments page
     navigate("/appointments");
   };
+
   return (
     <>
       <PageMeta
@@ -90,11 +127,7 @@ const PropertyDetailBuyerPage: FC = () => {
           onLocalityChange={handleLocalityChange}
           onCityChange={handleCityChange}
         />
-        <PropertyDetailBuyer
-          id={id}
-          //   userRole={user ? user.role : undefined}
-          //   userId={user?.id ?? ""}
-        />
+        <PropertyDetailBuyer id={id} />
         <Footer />
       </div>
     </>

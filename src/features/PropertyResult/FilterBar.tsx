@@ -21,6 +21,8 @@ import type {
   PropertyType,
   PropertyPurpose,
 } from "../../types";
+import { useGetPropertyTypesQuery } from "../../services/propertyApi";
+import { getIconForPropertyType, getIconForSubType } from "../../utils";
 
 interface FilterBarProps {
   filters: PropertySearchFilters;
@@ -139,28 +141,39 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   activeDropdown,
   setActiveDropdown,
 }) => {
-  // Property Types
-  const propertyTypes: Array<{
-    value: string;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { value: "RESIDENTIAL", label: "Residential", icon: Home },
-    // { value: "COMMERCIAL", label: "Commercial", icon: Building2 },
-    // { value: "INDUSTRIAL", label: "Industrial", icon: Warehouse },
-  ];
+  const { data: propertyTypesData, isLoading: loading } =
+    useGetPropertyTypesQuery({
+      isActive: true,
+      includeSubTypes: true,
+    });
+
+  const propertyTypes = propertyTypesData?.data || [];
+  //TODO: REMOVE Property Types
+  // const propertyTypes: Array<{
+  //   value: string;
+  //   label: string;
+  //   icon: React.ComponentType<{ className?: string }>;
+  // }> = [
+  //   { value: "RESIDENTIAL", label: "Residential", icon: Home },
+  //   { value: "COMMERCIAL", label: "Commercial", icon: Building2 },
+  //   { value: "INDUSTRIAL", label: "Industrial", icon: Warehouse },
+  // ];
+
+  const currentPropertyType = propertyTypes.find(
+    (pt) => pt.id === filters.propertyType || pt.name === filters.propertyType,
+  );
+
+  // Get subtypes for current property type
+  const availableSubTypes =
+    currentPropertyType?.subTypes?.filter((st) => st.isActive) || [];
+
+  // Determine if commercial/residential
+  const isCommercial = currentPropertyType?.name === "COMMERCIAL";
+  const isResidential =
+    !filters.propertyType || currentPropertyType?.name === "RESIDENTIAL";
 
   // Residential specific
   const bhkOptions = [1, 2, 3, 4, 5, 6];
-
-  // Commercial specific
-  const commercialSubTypes = [
-    { value: "OFFICE", label: "Office Space", icon: Building },
-    { value: "RETAIL", label: "Retail Shop", icon: Store },
-    { value: "WAREHOUSE", label: "Warehouse", icon: Package },
-    { value: "SHOWROOM", label: "Showroom", icon: Building2 },
-    { value: "RESTAURANT", label: "Restaurant", icon: Store },
-  ];
 
   const commercialPriceRanges = [
     { label: "₹0 - ₹25 L", min: 1, max: 2500000 },
@@ -212,11 +225,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     { value: "SOUTH_WEST", label: "South-West" },
   ];
 
-  // Determine if commercial property type is selected
-  const isCommercial = filters.propertyType === "COMMERCIAL";
-  const isResidential =
-    !filters.propertyType || filters.propertyType === "RESIDENTIAL";
-
   // Helper to count active filters
   const getActiveFilterCount = () => {
     let count = 0;
@@ -250,7 +258,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const handleFilterChange = (
     key: keyof PropertySearchFilters,
     value: any,
-    closeDropdown = true
+    closeDropdown = true,
   ) => {
     setFilters((prev) => ({
       ...prev,
@@ -262,7 +270,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   const handleFilterToggle = (
     key: keyof PropertySearchFilters,
     value: any,
-    closeDropdown = true
+    closeDropdown = true,
   ) => {
     setFilters((prev) => ({
       ...prev,
@@ -335,6 +343,21 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       document.removeEventListener("click", handleContainerClick);
     };
   }, [activeDropdown, setActiveDropdown]);
+  if (loading) {
+    return (
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm pt-20">
+        <div className="max-w-full mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="animate-pulse bg-gray-200 h-10 w-32 rounded-full"></div>
+            <div className="animate-pulse bg-gray-200 h-10 w-24 rounded-full"></div>
+            <div className="animate-pulse bg-gray-200 h-10 w-28 rounded-full"></div>
+            <div className="animate-pulse bg-gray-200 h-10 w-28 rounded-full"></div>
+            <div className="animate-pulse bg-gray-200 h-10 w-28 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -355,32 +378,92 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             setActiveDropdown={setActiveDropdown}
           >
             <div className="p-3 space-y-1">
-              {propertyTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFilterToggle("propertyType", type.value);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                    filters.propertyType === type.value
-                      ? "bg-purple-50 text-purple-600 font-semibold"
-                      : "hover:bg-gray-50 text-gray-700"
-                  }`}
-                >
-                  <type.icon className="w-5 h-5" />
-                  <span>{type.label}</span>
-                  {filters.propertyType === type.value && (
-                    <Check className="w-4 h-4 ml-auto text-purple-600" />
-                  )}
-                </button>
-              ))}
+              {propertyTypes.map((type) => {
+                const IconComponent = getIconForPropertyType(type.name);
+                const isActive =
+                  filters.propertyType === type.id ||
+                  filters.propertyType === type.name;
+
+                return (
+                  <button
+                    key={type.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFilterToggle("propertyType", type.id);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
+                      isActive
+                        ? "bg-purple-50 text-purple-600 font-semibold"
+                        : "hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5" />
+                    <span>
+                      {type.name.charAt(0) +
+                        type.name.slice(1).toLowerCase().replace("_", " ")}
+                    </span>
+                    {isActive && (
+                      <Check className="w-4 h-4 ml-auto text-purple-600" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </Dropdown>
 
           {/* RESIDENTIAL FILTERS */}
           {isResidential && (
             <>
+              {/* residential Sub Type */}
+              <Dropdown
+                label="Property Sub Type"
+                id="commercial-subtype"
+                count={filters.subType ? 1 : 0}
+                activeDropdown={activeDropdown}
+                setActiveDropdown={setActiveDropdown}
+              >
+                <div className="p-3 space-y-1">
+                  {availableSubTypes.length > 0 ? (
+                    availableSubTypes.map((subType) => {
+                      const IconComponent = getIconForSubType(subType.name);
+                      const isActive =
+                        filters.subType === subType.id ||
+                        filters.subType === subType.name;
+
+                      return (
+                        <button
+                          key={subType.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFilterToggle("subType", subType.id);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
+                            isActive
+                              ? "bg-purple-50 text-purple-600 font-semibold"
+                              : "hover:bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          <IconComponent className="w-5 h-5" />
+                          <span>
+                            {subType.name.charAt(0) +
+                              subType.name
+                                .slice(1)
+                                .toLowerCase()
+                                .replace("_", " ")}
+                          </span>
+                          {isActive && (
+                            <Check className="w-4 h-4 ml-auto text-purple-600" />
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      No subtypes available
+                    </div>
+                  )}
+                </div>
+              </Dropdown>
               {/* BHK Type Filter */}
               <Dropdown
                 label="BHK Type"
@@ -444,12 +527,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                           handleFilterChange(
                             "minPrice",
                             isActive ? undefined : range.min,
-                            false
+                            false,
                           );
                           handleFilterChange(
                             "maxPrice",
                             isActive ? undefined : range.max,
-                            false
+                            false,
                           );
                           setActiveDropdown(null);
                         }}
@@ -483,26 +566,45 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 setActiveDropdown={setActiveDropdown}
               >
                 <div className="p-3 space-y-1">
-                  {commercialSubTypes.map((subType) => (
-                    <button
-                      key={subType.value}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFilterToggle("subType", subType.value);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                        filters.subType === subType.value
-                          ? "bg-purple-50 text-purple-600 font-semibold"
-                          : "hover:bg-gray-50 text-gray-700"
-                      }`}
-                    >
-                      <subType.icon className="w-5 h-5" />
-                      <span>{subType.label}</span>
-                      {filters.subType === subType.value && (
-                        <Check className="w-4 h-4 ml-auto text-purple-600" />
-                      )}
-                    </button>
-                  ))}
+                  {availableSubTypes.length > 0 ? (
+                    availableSubTypes.map((subType) => {
+                      const IconComponent = getIconForSubType(subType.name);
+                      const isActive =
+                        filters.subType === subType.id ||
+                        filters.subType === subType.name;
+
+                      return (
+                        <button
+                          key={subType.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFilterToggle("subType", subType.id);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
+                            isActive
+                              ? "bg-purple-50 text-purple-600 font-semibold"
+                              : "hover:bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          <IconComponent className="w-5 h-5" />
+                          <span>
+                            {subType.name.charAt(0) +
+                              subType.name
+                                .slice(1)
+                                .toLowerCase()
+                                .replace("_", " ")}
+                          </span>
+                          {isActive && (
+                            <Check className="w-4 h-4 ml-auto text-purple-600" />
+                          )}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      No subtypes available
+                    </div>
+                  )}
                 </div>
               </Dropdown>
 
@@ -527,12 +629,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                           handleFilterChange(
                             "minPrice",
                             isActive ? undefined : range.min,
-                            false
+                            false,
                           );
                           handleFilterChange(
                             "maxPrice",
                             isActive ? undefined : range.max,
-                            false
+                            false,
                           );
                           setActiveDropdown(null);
                         }}
@@ -605,7 +707,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                           e.stopPropagation();
                           handleFilterToggle(
                             "facingDirection",
-                            direction.value
+                            direction.value,
                           );
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
@@ -706,8 +808,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           >
             <div className="p-3 space-y-1">
               {listingSources.map((source) => {
-                const isActive =
-                  filters.listingSource?.includes(source.value) ?? false;
+                const isActive = filters.listingSource === source.value;
                 return (
                   <button
                     key={source.value}
@@ -750,7 +851,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   e.stopPropagation();
                   handleFilterToggle(
                     "verified",
-                    !filters.verified ? true : undefined
+                    !filters.verified ? true : undefined,
                   );
                 }}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-sm ${
