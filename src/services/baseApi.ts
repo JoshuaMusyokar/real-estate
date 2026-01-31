@@ -51,8 +51,6 @@ const baseQueryWithReauth: BaseQueryFn<
 
   // Handle other common errors
   if (result.error) {
-    console.error("API Error:", result.error);
-
     const errorData = result.error.data as { message?: string; error?: string };
     if (
       errorData?.message?.includes("token") ||

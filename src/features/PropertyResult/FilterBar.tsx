@@ -148,16 +148,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     });
 
   const propertyTypes = propertyTypesData?.data || [];
-  //TODO: REMOVE Property Types
-  // const propertyTypes: Array<{
-  //   value: string;
-  //   label: string;
-  //   icon: React.ComponentType<{ className?: string }>;
-  // }> = [
-  //   { value: "RESIDENTIAL", label: "Residential", icon: Home },
-  //   { value: "COMMERCIAL", label: "Commercial", icon: Building2 },
-  //   { value: "INDUSTRIAL", label: "Industrial", icon: Warehouse },
-  // ];
+
+  useEffect(() => {
+    if (propertyTypes.length > 0) {
+      // Only if propertyType is set as a name, not UUID
+      if (filters.propertyType && !filters.propertyType.includes("-")) {
+        const matched = propertyTypes.find(
+          (pt) => pt.name === filters.propertyType,
+        );
+        if (matched) {
+          setFilters((prev) => ({
+            ...prev,
+            propertyType: matched.id, // set UUID
+          }));
+        }
+      }
+    }
+  }, [propertyTypes]);
 
   const currentPropertyType = propertyTypes.find(
     (pt) => pt.id === filters.propertyType || pt.name === filters.propertyType,

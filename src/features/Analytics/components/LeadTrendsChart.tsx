@@ -99,10 +99,29 @@ export default function LeadTrendsChart({
   ];
 
   // Calculate stats
-  const totalLeads = leadValues.reduce((sum, val) => sum + val, 0);
-  const avgLeadsPerDay = (totalLeads / leadValues.length).toFixed(1);
-  const peakLeads = Math.max(...leadValues);
-  const peakDate = data[leadValues.indexOf(peakLeads)]?.date || "";
+  const hasData = leadValues.length > 0;
+
+  const totalLeads = hasData
+    ? leadValues.reduce((sum, val) => sum + val, 0)
+    : 0;
+
+  const avgLeadsPerDay = hasData
+    ? (totalLeads / leadValues.length).toFixed(1)
+    : "0.0";
+
+  const peakLeads = hasData ? Math.max(...leadValues) : 0;
+
+  const peakIndex = hasData ? leadValues.indexOf(peakLeads) : -1;
+  const peakDate = peakIndex >= 0 ? data[peakIndex]?.date : null;
+
+  const growth =
+    leadValues.length > 1 && leadValues[0] > 0
+      ? (
+          ((leadValues[leadValues.length - 1] - leadValues[0]) /
+            leadValues[0]) *
+          100
+        ).toFixed(1)
+      : "0.0";
 
   return (
     <div>
@@ -142,11 +161,15 @@ export default function LeadTrendsChart({
             {peakLeads.toLocaleString()}
           </div>
           <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-            {new Date(peakDate).toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            })}
+            {peakDate ? (
+              new Date(peakDate).toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })
+            ) : (
+              <span className="text-xs text-gray-400">No data</span>
+            )}
           </div>
         </div>
 
@@ -158,9 +181,7 @@ export default function LeadTrendsChart({
             </span>
           </div>
           <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-            {leadValues.length > 1
-              ? `${(((leadValues[leadValues.length - 1] - leadValues[0]) / leadValues[0]) * 100).toFixed(1)}%`
-              : "0%"}
+            {growth}%
           </div>
           <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">
             vs start of period

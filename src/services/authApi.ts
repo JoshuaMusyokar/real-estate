@@ -1,4 +1,3 @@
-
 import { baseApi } from "./baseApi";
 import type {
   LoginRequest,
@@ -8,6 +7,7 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   User,
+  UserProfileResponse,
 } from "../types";
 
 export const authApi = baseApi.injectEndpoints({
@@ -63,9 +63,12 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
-    getProfile: builder.query<{ success: boolean; data: User }, void>({
+    getProfile: builder.query<
+      { success: boolean; data: UserProfileResponse },
+      void
+    >({
       query: () => "/auth/profile",
-      providesTags: ["User"],
+      // providesTags: ["User"],
     }),
 
     updateProfile: builder.mutation<

@@ -1,6 +1,8 @@
 import type { ZeroBrokerageProperty } from "../features/PropertyResult/ZeroBrokarageCard";
 
 export const BASE_URL = "https://api.bengalproperty.com/api/v1";
+export const CURRENCY_CODE = "₹";
+export const CURRENCY = "INR";
 // Inside PropertyList.tsx (or in a separate data file)
 
 export const zeroBrokerageData: ZeroBrokerageProperty[] = [

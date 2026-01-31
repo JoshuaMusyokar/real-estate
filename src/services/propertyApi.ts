@@ -157,16 +157,16 @@ export const propertyApi = baseApi.injectEndpoints({
         if (status) params.append("status", status);
         return `/properties/user/my-properties?${params.toString()}`;
       },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map(({ id }) => ({
-                type: "Property" as const,
-                id,
-              })),
-              "Property",
-            ]
-          : ["Property"],
+      // providesTags: (result) =>
+      //   result
+      //     ? [
+      //         ...result.data.map(({ id }) => ({
+      //           type: "Property" as const,
+      //           id,
+      //         })),
+      //         "Property",
+      //       ]
+      //     : ["Property"],
     }),
 
     // Get property stats
@@ -231,7 +231,7 @@ export const propertyApi = baseApi.injectEndpoints({
           method: "DELETE",
         }),
         invalidatesTags: ["Property", "Favorite"],
-      }
+      },
     ),
 
     // Get user's favorite properties
@@ -441,7 +441,7 @@ export const propertyApi = baseApi.injectEndpoints({
         if (params?.includeSubTypes !== undefined) {
           urlParams.append(
             "includeSubTypes",
-            params.includeSubTypes.toString()
+            params.includeSubTypes.toString(),
           );
         }
         return `/properties/pt/property-types?${urlParams.toString()}`;

@@ -3,9 +3,11 @@ import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import { useAuth } from "../../hooks/useAuth";
 import { useState, useEffect } from "react";
-import { useUpdateProfileMutation } from "../../services/authApi";
+import {
+  useUpdateProfileMutation,
+  useGetProfileQuery,
+} from "../../services/authApi";
 
 interface SocialLinks {
   facebook?: string;
@@ -15,16 +17,17 @@ interface SocialLinks {
 }
 
 export default function UserMetaCard() {
-  const { user } = useAuth();
+  const { data: profileData, isLoading, isError } = useGetProfileQuery();
+  const user = profileData?.data;
+
   const { isOpen, openModal, closeModal } = useModal();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    // bio: user?.bio || "Team Manager", // Default bio
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
     socialLinks: {
       facebook: "#",
       twitter: "#",
@@ -90,7 +93,7 @@ export default function UserMetaCard() {
   };
 
   const getRoleDisplay = () => {
-    if (user?.role) {
+    if (user?.role?.name) {
       return user.role.name
         .split("_")
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
@@ -99,6 +102,39 @@ export default function UserMetaCard() {
     return "Team Manager";
   };
 
+  const getLocationDisplay = () => {
+    if (user?.cities && user.cities.length > 0) {
+      const firstCity = user.cities[0];
+      const locality = firstCity.localities[0] || "";
+      return { city: firstCity.city, locality };
+    }
+    return { city: "Arizona", locality: "United States" };
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Loading profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return (
+      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-red-500">Failed to load profile</p>
+        </div>
+      </div>
+    );
+  }
+
+  const location = getLocationDisplay();
+
   return (
     <>
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
@@ -106,7 +142,7 @@ export default function UserMetaCard() {
           <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
             <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
               <img
-                src={user?.avatar || "/images/user/owner.jpg"}
+                src={user.avatar || "/images/user/owner.jpg"}
                 alt={getDisplayName()}
                 className="object-cover w-full h-full"
               />
@@ -121,8 +157,7 @@ export default function UserMetaCard() {
                 </p>
                 <div className="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {user?.allowedCities?.[0] || "Arizona"},{" "}
-                  {user?.allowedLocalities?.[0] || "United States"}
+                  {location.city}, {location.locality}
                 </p>
               </div>
             </div>
@@ -342,16 +377,6 @@ export default function UserMetaCard() {
                       onChange={handleInputChange}
                     />
                   </div>
-
-                  {/* <div className="col-span-2">
-                    <Label>Bio</Label>
-                    <Input
-                      type="text"
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleInputChange}
-                    />
-                  </div> */}
                 </div>
               </div>
             </div>

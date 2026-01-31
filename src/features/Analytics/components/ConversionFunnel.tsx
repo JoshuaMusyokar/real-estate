@@ -55,16 +55,27 @@ export default function ConversionFunnel({ data }: ConversionFunnelProps) {
     },
   ];
 
-  const maxValue = Math.max(...funnelStages.map((stage) => stage.value));
+  const hasValues = funnelStages.some((stage) => stage.value > 0);
+
+  const maxValue = hasValues
+    ? Math.max(...funnelStages.map((stage) => stage.value))
+    : 0;
 
   return (
     <div className="space-y-6">
       {/* Funnel Visualization */}
       <div className="relative flex flex-col items-center">
         {funnelStages.map((stage, index) => {
-          const widthPercentage = (stage.value / maxValue) * 100;
-          const funnelWidth = 100 - index * 25; // Creates funnel shape
+          const widthPercentage =
+            maxValue > 0 ? (stage.value / maxValue) * 100 : 0;
+
+          const funnelWidth = 100 - index * 25;
           const actualWidth = Math.min(widthPercentage, funnelWidth);
+
+          const conversion =
+            index > 0 && funnelStages[index - 1].value > 0
+              ? ((stage.value / funnelStages[index - 1].value) * 100).toFixed(1)
+              : "0.0";
 
           return (
             <div key={stage.stage} className="relative w-full mb-4">
@@ -84,13 +95,7 @@ export default function ConversionFunnel({ data }: ConversionFunnelProps) {
                     {stage.value.toLocaleString()}
                   </span>
                   {index > 0 && (
-                    <span className="text-sm text-gray-500">
-                      {(
-                        (stage.value / funnelStages[index - 1].value) *
-                        100
-                      ).toFixed(1)}
-                      %
-                    </span>
+                    <span className="text-sm text-gray-500">{conversion}%</span>
                   )}
                 </div>
               </div>
@@ -172,7 +177,7 @@ export default function ConversionFunnel({ data }: ConversionFunnelProps) {
           <div className="text-xs text-gray-500">Overall Conversion</div>
         </div>
 
-        <div className="text-center">
+        {/* <div className="text-center">
           <div className="text-2xl font-bold">
             $
             {data.closed.total > 0
@@ -180,7 +185,7 @@ export default function ConversionFunnel({ data }: ConversionFunnelProps) {
               : "0"}
           </div>
           <div className="text-xs text-gray-500">Estimated Value</div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -1,15 +1,18 @@
-// src/components/user/UserInfoCard.tsx
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import { useAuth } from "../../hooks/useAuth";
 import { useState, useEffect } from "react";
-import { useUpdateProfileMutation } from "../../services/authApi";
+import {
+  useUpdateProfileMutation,
+  useGetProfileQuery,
+} from "../../services/authApi";
 
 export default function UserInfoCard() {
-  const { user } = useAuth();
+  const { data: profileData, isLoading, isError } = useGetProfileQuery();
+  const user = profileData?.data;
+
   const { isOpen, openModal, closeModal } = useModal();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
@@ -55,6 +58,36 @@ export default function UserInfoCard() {
     }
   };
 
+  const getRoleDisplay = () => {
+    if (user?.role?.name) {
+      return user.role.name
+        .split("_")
+        .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+        .join(" ");
+    }
+    return "Not set";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return (
+      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-red-500">Failed to load information</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -69,7 +102,7 @@ export default function UserInfoCard() {
                 First Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.firstName || "Not set"}
+                {user.firstName || "Not set"}
               </p>
             </div>
 
@@ -78,7 +111,7 @@ export default function UserInfoCard() {
                 Last Name
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.lastName || "Not set"}
+                {user.lastName || "Not set"}
               </p>
             </div>
 
@@ -87,7 +120,7 @@ export default function UserInfoCard() {
                 Email address
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.email || "Not set"}
+                {user.email || "Not set"}
               </p>
             </div>
 
@@ -96,16 +129,7 @@ export default function UserInfoCard() {
                 Phone
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.phone || "Not set"}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                Bio
-              </p>
-              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.role.name || "N/A"}
+                {user.phone || "Not set"}
               </p>
             </div>
 
@@ -114,14 +138,16 @@ export default function UserInfoCard() {
                 Role
               </p>
               <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                {user?.role
-                  ? user.role.name
-                      .split("_")
-                      .map(
-                        (word) => word.charAt(0) + word.slice(1).toLowerCase()
-                      )
-                      .join(" ")
-                  : "Not set"}
+                {getRoleDisplay()}
+              </p>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                Status
+              </p>
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                {user.status || "Active"}
               </p>
             </div>
           </div>
@@ -213,16 +239,6 @@ export default function UserInfoCard() {
                       onChange={handleInputChange}
                     />
                   </div>
-
-                  {/* <div className="col-span-2">
-                    <Label>Bio</Label>
-                    <Input 
-                      type="text" 
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleInputChange}
-                    />
-                  </div> */}
                 </div>
               </div>
             </div>

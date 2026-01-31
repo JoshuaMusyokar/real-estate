@@ -147,7 +147,7 @@ const navItems: NavItem[] = [
       { name: "Properties Analytics", path: "/properties/analytics" },
       { name: "Leads Analytics", path: "/leads/analytics" },
       { name: "Performance Analytics", path: "/performance/analytics" },
-      { name: "Revenue Analytics", path: "/revenue/analytics" },
+      // { name: "Revenue Analytics", path: "/revenue/analytics" },
     ],
   },
 

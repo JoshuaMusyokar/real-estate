@@ -4,35 +4,6 @@ import {
   Filter,
   Home,
   Search,
-  X,
-  Building2,
-  Sparkles,
-  TrendingUp,
-  Shield,
-  Users,
-  Award,
-  MapPin,
-  ChevronRight,
-  Bath,
-  Bed,
-  Check,
-  Eye,
-  Heart,
-  Share2,
-  Square,
-  Menu,
-  Star,
-  Clock,
-  ChevronDown,
-  Zap,
-  Phone,
-  Mail,
-  Play,
-  Camera,
-  Video,
-  Ruler,
-  Car,
-  TreePine,
   Building,
   LandPlot,
   HomeIcon,
@@ -44,11 +15,7 @@ import {
 import { useEffect, useState } from "react";
 import { FilterPanel } from "./FilterPanel";
 import { LandingPropertyCard } from "./LandingPropertyCard";
-import {
-  type PropertySearchFilters,
-  type PropertySubType,
-  type PropertyType,
-} from "../../types";
+import { type PropertySearchFilters } from "../../types";
 import {
   useGetUserFavoritesQuery,
   useSearchPropertiesQuery,
@@ -93,7 +60,7 @@ export const Template4PropertyLanding = () => {
 
   const properties = data?.data || [];
   const activeFilterCount = Object.keys(filters).filter(
-    (key) => filters[key as keyof PropertySearchFilters] !== undefined
+    (key) => filters[key as keyof PropertySearchFilters] !== undefined,
   ).length;
 
   // Housing.com style property categories

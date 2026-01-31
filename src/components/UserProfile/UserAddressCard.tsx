@@ -1,12 +1,13 @@
-// src/components/user/UserAddressCard.tsx
 import { useModal } from "../../hooks/useModal";
 import { Modal } from "../ui/modal";
 import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
-import { useAuth } from "../../hooks/useAuth";
 import { useState, useEffect } from "react";
-import { useUpdateProfileMutation } from "../../services/authApi";
+import {
+  useUpdateProfileMutation,
+  useGetProfileQuery,
+} from "../../services/authApi";
 
 interface AddressData {
   country: string;
@@ -17,7 +18,9 @@ interface AddressData {
 }
 
 export default function UserAddressCard() {
-  const { user } = useAuth();
+  const { data: profileData, isLoading, isError } = useGetProfileQuery();
+  const user = profileData?.data;
+
   const { isOpen, openModal, closeModal } = useModal();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
@@ -31,12 +34,15 @@ export default function UserAddressCard() {
 
   // Extract location from user data if available
   useEffect(() => {
-    if (user?.allowedCities?.[0] && user?.allowedLocalities?.[0]) {
+    if (user?.cities && user.cities.length > 0) {
+      const firstCity = user.cities[0];
+      const locality = firstCity.localities[0] || "";
+
       setFormData((prev) => ({
         ...prev,
         country: "United States", // Default, could be enhanced
-        state: user.allowedLocalities[0],
-        city: user.allowedCities[0],
+        state: locality,
+        city: firstCity.city,
       }));
     }
   }, [user]);
@@ -66,6 +72,47 @@ export default function UserAddressCard() {
     }
   };
 
+  const getLocationDisplay = () => {
+    if (user?.cities && user.cities.length > 0) {
+      const cities = user.cities.map((c) => c.city).join(", ");
+      return cities;
+    }
+    return "Not set";
+  };
+
+  const getLocalitiesDisplay = () => {
+    if (user?.cities && user.cities.length > 0) {
+      const localities = user.cities
+        .flatMap((c) => c.localities)
+        .filter((v, i, a) => a.indexOf(v) === i) // unique values
+        .join(", ");
+      return localities || "Not set";
+    }
+    return "Not set";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return (
+      <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+        <div className="flex items-center justify-center h-32">
+          <p className="text-sm text-red-500">
+            Failed to load address information
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
@@ -90,7 +137,8 @@ export default function UserAddressCard() {
                   City/State
                 </p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                  {formData.city}, {formData.state}, {formData.country}
+                  {getLocationDisplay()}, {getLocalitiesDisplay()},{" "}
+                  {formData.country}
                 </p>
               </div>
 

@@ -332,3 +332,54 @@ export interface ExportRequest {
   filters?: UserFilter;
   config: ExportConfig;
 }
+
+export type UserProfileResponse = {
+  // Basic user info
+  id: string;
+  email: string;
+  phone: string | null;
+  firstName: string;
+  lastName: string;
+  avatar: string | null;
+  status: string;
+
+  role: {
+    id: string;
+    name: string;
+  } | null;
+
+  // Counts
+  propertyCount: number;
+  assignedLeadsCount: number;
+
+  // Cities with localities
+  cities: {
+    city: string;
+    localities: string[];
+  }[];
+
+  // Manager (if user has one)
+  manager: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    roleId: string | null;
+  } | null;
+
+  // Managed users (if user is a manager)
+  managedUsers: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    roleId: string | null;
+    status: string;
+  }[];
+
+  // Metadata
+  twoFactorEnabled: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};

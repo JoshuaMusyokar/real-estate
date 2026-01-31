@@ -18,6 +18,7 @@ import { DropdownItem } from "../../components/ui/dropdown/DropdownItem";
 import { useAppDispatch } from "../../hooks";
 import { setFilters } from "../../store/slices/filterSlice";
 import { encodeFilters } from "../../utils/filterEncoder";
+import { useGetPropertyTypesQuery } from "../../services/propertyApi";
 
 interface SearchComponentProps {
   variant?: "default" | "compact";
@@ -121,7 +122,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     search: searchCityInput,
     limit: 1000,
   });
+  const { data: propertyTypesData } = useGetPropertyTypesQuery({
+    isActive: true,
+    includeSubTypes: false,
+  });
 
+  const propertyTypes = propertyTypesData?.data || [];
   const cities: City[] = citiesData?.data || [];
 
   // Fetch localities for the selected city
@@ -361,6 +367,20 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         return "RESIDENTIAL";
     }
   };
+  const getPropertyTypeIdFromPurpose = (
+    purpose: string,
+  ): string | undefined => {
+    const propertyTypeName = getPropertyTypeFromPurpose(purpose);
+
+    // Try to find the property type by matching the category/name
+    const propertyType = propertyTypes.find(
+      (type) =>
+        type.description?.toUpperCase() === propertyTypeName.toUpperCase() ||
+        type.name.toUpperCase() === propertyTypeName.toUpperCase(),
+    );
+
+    return propertyType?.id;
+  };
   const getPropertyPurposeFromPurpose = (
     purpose: string,
     commercialSubPurpose?: string,
@@ -400,10 +420,6 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     setSearchInput(suggestion.displayName);
   };
 
-  useEffect(() => {
-    console.log("SSss", selectedLocalities);
-  }, [selectedLocalities]);
-
   const navigateToSearch = (params: {
     cityId?: string;
     cityName?: string;
@@ -416,6 +432,8 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     );
     const finalPropertyType = getPropertyTypeFromPurpose(purpose);
 
+    const propertyTypeId = getPropertyTypeIdFromPurpose(purpose);
+
     // Build filters object
     const filters: PropertySearchFilters = {
       page: 1,
@@ -426,6 +444,10 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       purpose: finalPropertyPurpose,
       propertyType: finalPropertyType,
     };
+
+    if (propertyTypeId) {
+      filters.propertyType = propertyTypeId;
+    }
 
     if (params.cityId) {
       filters.cityId = params.cityId;

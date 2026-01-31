@@ -13,7 +13,6 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { useToast } from "../../hooks/useToast";
 
-// Mock types - replace with your actual types
 type Role = "OWNER" | "AGENT" | "BUILDER" | "BUYER";
 
 interface RegisterRequest {
@@ -166,22 +165,22 @@ export default function SignUpForm() {
       }
 
       // RERA number validation (if provided)
-      if (formData.reraNumber && formData.reraNumber.trim()) {
-        const reraRegex = /^[A-Z]{2}\/[A-Z]{2}\/\d+\/\d+$/;
-        if (!reraRegex.test(formData.reraNumber.trim())) {
-          newErrors.reraNumber =
-            "Invalid RERA format (e.g., AP/TS/12345/67890)";
-        }
-      }
+      // if (formData.reraNumber && formData.reraNumber.trim()) {
+      //   const reraRegex = /^[A-Z]{2}\/[A-Z]{2}\/\d+\/\d+$/;
+      //   if (!reraRegex.test(formData.reraNumber.trim())) {
+      //     newErrors.reraNumber =
+      //       "Invalid RERA format (e.g., AP/TS/12345/67890)";
+      //   }
+      // }
 
       // GST number validation (if provided)
-      if (formData.gstNumber && formData.gstNumber.trim()) {
-        const gstRegex =
-          /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/;
-        if (!gstRegex.test(formData.gstNumber.trim())) {
-          newErrors.gstNumber = "Invalid GST format";
-        }
-      }
+      // if (formData.gstNumber && formData.gstNumber.trim()) {
+      //   const gstRegex =
+      //     /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/;
+      //   if (!gstRegex.test(formData.gstNumber.trim())) {
+      //     newErrors.gstNumber = "Invalid GST format";
+      //   }
+      // }
     }
 
     if (!isChecked) {
@@ -204,7 +203,7 @@ export default function SignUpForm() {
 
       // Show success message based on role
       const isPosterRole = ["PROPERTY_OWNER", "AGENT", "BUILDER"].includes(
-        formData.roleName
+        formData.roleName,
       );
 
       // if (result.success) {
@@ -213,7 +212,7 @@ export default function SignUpForm() {
       if (isPosterRole) {
         success(
           "Account created successfully!",
-          "Your property listings will require admin approval before going live."
+          "Your property listings will require admin approval before going live.",
         );
       } else {
         success("Account created successfully!", "Welcome to the platform.");

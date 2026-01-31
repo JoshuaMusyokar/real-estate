@@ -19,14 +19,15 @@ export default function LeadFunnelChart({ data }: LeadFunnelChartProps) {
     { label: "Closed", value: data.closed.total, color: "bg-blue-100" },
   ];
 
-  const maxValue = Math.max(...funnelStages.map((stage) => stage.value));
+  const maxValue = Math.max(...funnelStages.map((stage) => stage.value), 1);
 
   return (
     <div className="space-y-2">
       {funnelStages.map((stage, index) => {
         const widthPercentage = (stage.value / maxValue) * 100;
+        const prevValue = funnelStages[index - 1]?.value ?? 0;
         const conversionRate =
-          index > 0 ? (stage.value / funnelStages[index - 1].value) * 100 : 100;
+          index > 0 && prevValue > 0 ? (stage.value / prevValue) * 100 : 0;
 
         return (
           <div key={index} className="space-y-1">
