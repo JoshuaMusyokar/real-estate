@@ -21,6 +21,7 @@ import SidebarWidget from "./SidebarWidget";
 import {
   BarChart2,
   BarChart3,
+  Bell,
   Briefcase,
   Building2,
   Calendar,
@@ -180,11 +181,17 @@ const manage: NavItem[] = [
     subItems: [{ name: "Users", path: "/users" }],
   },
   {
-    icon: <Settings2 />,
-    name: "Settings",
-    roles: ["ADMIN", "SUPER_ADMIN"],
-    subItems: [{ name: "Landing Page", path: "/landing" }],
+    icon: <Bell />,
+    name: "Notifications",
+    roles: ["*"],
+    path: "/notifications",
   },
+  // {
+  //   icon: <Settings2 />,
+  //   name: "Settings",
+  //   roles: ["ADMIN", "SUPER_ADMIN"],
+  //   subItems: [{ name: "Landing Page", path: "/landing" }],
+  // },
 ];
 
 const AppSidebar: React.FC = () => {

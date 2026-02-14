@@ -56,6 +56,7 @@ import PropertiesAnalyticsPage from "./pages/Analytics/PropertyAnalyticsPage";
 import LeadsAnalyticsPage from "./pages/Analytics/LeadAnalyticsPage";
 import RevenueAnalyticsPage from "./pages/Analytics/RevenueAnalyticsPage";
 import PerformanceAnalyticsPage from "./pages/Analytics/PerformanceAnalyticsPage";
+import NotificationsPage from "./pages/Notifications/NotificationPage";
 // import {Role } from "./types";
 
 export default function App() {
@@ -217,6 +218,8 @@ export default function App() {
             <Route path="/localities" element={<LocalityPage />} />
             {/* User Profile - All authenticated users */}
             <Route path="/landing" element={<LandingPagesAdmin />} />
+            {/* User Ntfs -  */}
+            <Route path="/notifications" element={<NotificationsPage />} />
 
             {/* Admin Only Routes */}
             <Route

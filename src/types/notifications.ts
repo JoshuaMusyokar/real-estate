@@ -2,8 +2,6 @@
 // NOTIFICATIONS
 // ============================================
 
-import type { User } from "./user";
-
 export type NotificationType =
   | "LEAD_ASSIGNED"
   | "APPOINTMENT_REMINDER"
@@ -27,9 +25,21 @@ export interface Notification {
   title: string;
   message: string;
   isRead: boolean;
-  link?: string;
-  metadata?: NotificationMetadata;
-  createdAt: Date;
-  readAt?: Date;
-  user: User;
+  link: string | null;
+  metadata: NotificationMetadata | null;
+  createdAt: string; // ISO string from the wire
+  readAt: string | null;
+}
+
+export interface NotificationRes {
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
+}
+
+export interface NotificationSearchFilters {
+  limit?: number;
+  offset?: number;
+  unreadOnly?: boolean;
+  type?: NotificationType; // optional single-type filter
 }
