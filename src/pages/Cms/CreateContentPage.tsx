@@ -27,7 +27,7 @@ const CreateContentPage: React.FC = () => {
         <div className="mb-6">
           <Button
             variant="primary"
-            onClick={() => navigate("/cms/content")}
+            onClick={() => navigate("/cms")}
             startIcon={<ArrowLeft className="h-4 w-4" />}
             className="mb-4"
           >

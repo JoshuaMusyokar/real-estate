@@ -7,12 +7,9 @@ const CitiesPage: FC = () => {
     <>
       <PageMeta
         title={`User Management`}
-        description="View detailed information and analytics for User."
+        description="View detailed information and analytics for City."
       />
-
-      <div className="container mx-auto px-4 py-6">
-        <CitiesManagement />
-      </div>
+      <CitiesManagement />
     </>
   );
 };

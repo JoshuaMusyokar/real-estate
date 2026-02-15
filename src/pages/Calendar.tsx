@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// components/appointments/AppointmentsCalendar.tsx
 import React, { useState, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -9,51 +9,16 @@ import type {
   DateSelectArg,
   EventClickArg,
 } from "@fullcalendar/core";
-import {
-  X,
-  Calendar as CalendarIcon,
-  Clock,
-  MapPin,
-  User,
-  Phone,
-  Mail,
-  Home,
-  Loader2,
-  Plus,
-  Edit,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import type { AppointmentStatus, CalendarEvent } from "../types";
+import { useAuth } from "../hooks/useAuth";
 import {
   useGetAdminAppointmentsQuery,
-  useGetSuperAdminAppointmentsQuery,
   useGetPropertyOwnerAppointmentsQuery,
-  useCreateAppointmentMutation,
-  useUpdateAppointmentMutation,
-  useCancelAppointmentMutation,
-  useCompleteAppointmentMutation,
+  useGetSuperAdminAppointmentsQuery,
 } from "../services/appointmentApi";
-import type {
-  CalendarEvent,
-  AppointmentType,
-  AppointmentStatus,
-  AppointmentCreateRequest,
-} from "../types";
-import { useAuth } from "../hooks/useAuth"; // Your auth hook
-
-const APPOINTMENT_TYPES: {
-  value: AppointmentType;
-  label: string;
-  color: string;
-}[] = [
-  { value: "PROPERTY_VIEWING", label: "Property Viewing", color: "#3B82F6" },
-  { value: "CONSULTATION", label: "Consultation", color: "#8B5CF6" },
-  { value: "NEGOTIATION", label: "Negotiation", color: "#F59E0B" },
-  { value: "DOCUMENTATION", label: "Documentation", color: "#10B981" },
-  { value: "CLOSING", label: "Closing", color: "#EF4444" },
-  { value: "FOLLOW_UP", label: "Follow Up", color: "#6B7280" },
-];
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { AppointmentModal } from "../features/Lead/components/AppointmentModal";
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   SCHEDULED: "#3B82F6",
@@ -64,437 +29,10 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
   RESCHEDULED: "#8B5CF6",
 };
 
-interface AppointmentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedEvent: CalendarEvent | null;
-  selectedDate: { start: Date; end: Date } | null;
-  onSuccess: () => void;
-}
-
-const AppointmentModal: React.FC<AppointmentModalProps> = ({
-  isOpen,
-  onClose,
-  selectedEvent,
-  selectedDate,
-  onSuccess,
-}) => {
-  const [createAppointment, { isLoading: isCreating }] =
-    useCreateAppointmentMutation();
-  const [updateAppointment, { isLoading: isUpdating }] =
-    useUpdateAppointmentMutation();
-  const [cancelAppointment] = useCancelAppointmentMutation();
-  const [completeAppointment] = useCompleteAppointmentMutation();
-
-  const [formData, setFormData] = useState({
-    title: selectedEvent?.title || "",
-    type: selectedEvent?.type || ("PROPERTY_VIEWING" as AppointmentType),
-    startDate: selectedEvent?.start
-      ? new Date(selectedEvent.start).toISOString().slice(0, 16)
-      : selectedDate?.start.toISOString().slice(0, 16) || "",
-    endDate: selectedEvent?.end
-      ? new Date(selectedEvent.end).toISOString().slice(0, 16)
-      : selectedDate?.end.toISOString().slice(0, 16) || "",
-    location: selectedEvent?.location || "",
-    description: selectedEvent?.description || "",
-    leadEmail: selectedEvent?.lead?.email || "",
-    leadPhone: selectedEvent?.lead?.phone || "",
-    leadFirstName: selectedEvent?.lead?.firstName || "",
-    leadLastName: selectedEvent?.lead?.lastName || "",
-  });
-
-  const handleSubmit = async (): Promise<void> => {
-    try {
-      if (selectedEvent) {
-        // Update existing appointment
-        await updateAppointment({
-          id: selectedEvent.id,
-          data: {
-            title: formData.title,
-            type: formData.type,
-            scheduledAt: new Date(formData.startDate).toISOString(),
-            duration: Math.floor(
-              (new Date(formData.endDate).getTime() -
-                new Date(formData.startDate).getTime()) /
-                60000
-            ),
-            location: formData.location,
-            description: formData.description,
-          },
-        }).unwrap();
-      } else {
-        // Create new appointment
-        const duration = Math.floor(
-          (new Date(formData.endDate).getTime() -
-            new Date(formData.startDate).getTime()) /
-            60000
-        );
-
-        await createAppointment({
-          agentId: null, // Will be set by backend
-          type: formData.type,
-          title: formData.title,
-          scheduledAt: new Date(formData.startDate),
-          duration,
-          location: formData.location,
-          description: formData.description,
-          email: formData.leadEmail,
-          phone: formData.leadPhone,
-          firstName: formData.leadFirstName,
-          lastName: formData.leadLastName,
-        } as AppointmentCreateRequest).unwrap();
-      }
-
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Failed to save appointment:", error);
-      alert("Failed to save appointment. Please try again.");
-    }
-  };
-
-  const handleComplete = async (): Promise<void> => {
-    if (!selectedEvent) return;
-    try {
-      await completeAppointment({ id: selectedEvent.id }).unwrap();
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Failed to complete appointment:", error);
-    }
-  };
-
-  const handleCancel = async (): Promise<void> => {
-    if (!selectedEvent || !confirm("Cancel this appointment?")) return;
-    try {
-      await cancelAppointment({ id: selectedEvent.id }).unwrap();
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Failed to cancel appointment:", error);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  const isEditing = !!selectedEvent;
-  const canComplete =
-    selectedEvent?.status === "SCHEDULED" ||
-    selectedEvent?.status === "CONFIRMED";
-  const canCancel =
-    selectedEvent?.status !== "COMPLETED" &&
-    selectedEvent?.status !== "CANCELLED";
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">
-              {isEditing ? "Edit Appointment" : "Schedule Appointment"}
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              {isEditing
-                ? "Update appointment details"
-                : "Create a new appointment"}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Event Details (View Mode) */}
-        {isEditing && selectedEvent && (
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              {selectedEvent.lead && (
-                <div>
-                  <div className="text-gray-600 mb-1">Lead</div>
-                  <div className="font-semibold text-gray-900">
-                    {selectedEvent.lead.firstName} {selectedEvent.lead.lastName}
-                  </div>
-                  <div className="text-gray-600 text-xs">
-                    {selectedEvent.lead.email}
-                  </div>
-                </div>
-              )}
-              {selectedEvent.agent && (
-                <div>
-                  <div className="text-gray-600 mb-1">Agent</div>
-                  <div className="font-semibold text-gray-900">
-                    {selectedEvent.agent.firstName}{" "}
-                    {selectedEvent.agent.lastName}
-                  </div>
-                </div>
-              )}
-              {selectedEvent.property && (
-                <div className="col-span-2">
-                  <div className="text-gray-600 mb-1">Property</div>
-                  <div className="font-semibold text-gray-900">
-                    {selectedEvent.property.title}
-                  </div>
-                  <div className="text-gray-600 text-xs">
-                    {selectedEvent.property.locality},{" "}
-                    {selectedEvent.property.city}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Form */}
-        <div className="p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Appointment Title *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="e.g., Property Viewing with Client"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Appointment Type *
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {APPOINTMENT_TYPES.map((type) => (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, type: type.value })}
-                  className={`p-3 border-2 rounded-xl transition-all text-left ${
-                    formData.type === type.value
-                      ? "border-blue-600 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: type.color }}
-                    />
-                    <span className="font-medium text-sm text-gray-900">
-                      {type.label}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Start Date & Time *
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.startDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, startDate: e.target.value })
-                }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                End Date & Time *
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.endDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, endDate: e.target.value })
-                }
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                required
-              />
-            </div>
-          </div>
-
-          {!isEditing && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.leadFirstName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        leadFirstName: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.leadLastName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, leadLastName: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.leadEmail}
-                    onChange={(e) =>
-                      setFormData({ ...formData, leadEmail: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.leadPhone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, leadPhone: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Location
-            </label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData({ ...formData, location: e.target.value })
-              }
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="e.g., Office or Property Address"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              rows={3}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-              placeholder="Additional notes..."
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 flex items-center justify-between gap-3 border-t border-gray-200 rounded-b-2xl">
-          <div className="flex gap-2">
-            {isEditing && canComplete && (
-              <button
-                onClick={handleComplete}
-                className="px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Complete
-              </button>
-            )}
-            {isEditing && canCancel && (
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <XCircle className="w-4 h-4" />
-                Cancel
-              </button>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-            >
-              Close
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={
-                isCreating ||
-                isUpdating ||
-                !formData.title ||
-                !formData.startDate
-              }
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isCreating || isUpdating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  {isEditing ? (
-                    <Edit className="w-4 h-4" />
-                  ) : (
-                    <Plus className="w-4 h-4" />
-                  )}
-                  {isEditing ? "Update" : "Create"}
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const AppointmentsCalendar: React.FC = () => {
-  const { user } = useAuth(); // Get current user from your auth hook
+  const { user } = useAuth();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
-    null
+    null,
   );
   const [selectedDate, setSelectedDate] = useState<{
     start: Date;
@@ -514,7 +52,7 @@ export const AppointmentsCalendar: React.FC = () => {
         user?.role.name !== "ADMIN" &&
         user?.role.name !== "SALES_MANAGER" &&
         user?.role.name !== "SALES_AGENT",
-    }
+    },
   );
 
   const {
@@ -525,7 +63,7 @@ export const AppointmentsCalendar: React.FC = () => {
     {},
     {
       skip: user?.role.name !== "SUPER_ADMIN",
-    }
+    },
   );
 
   const {
@@ -536,7 +74,7 @@ export const AppointmentsCalendar: React.FC = () => {
     { ownerId: user?.id || "" },
     {
       skip: user?.role.name !== "PROPERTY_OWNER",
-    }
+    },
   );
 
   // Determine which events to show based on role
@@ -580,7 +118,6 @@ export const AppointmentsCalendar: React.FC = () => {
   };
 
   const handleSuccess = (): void => {
-    // Refetch based on role
     if (user?.role.name === "SUPER_ADMIN") {
       refetchSuperAdmin();
     } else if (user?.role.name === "PROPERTY_OWNER") {
@@ -592,60 +129,73 @@ export const AppointmentsCalendar: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-32">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading calendar...</p>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center py-20 sm:py-24 md:py-32">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 animate-spin text-blue-600 mx-auto mb-3 sm:mb-4" />
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium">
+              Loading calendar...
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <CalendarIcon className="w-7 h-7 text-blue-600" />
-              Appointments Calendar
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Manage your appointments and schedule new ones
-            </p>
+    <>
+      <Card className="overflow-hidden">
+        <CardHeader className="p-3 sm:p-4 md:p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-600 dark:text-blue-400" />
+                Appointments Calendar
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">
+                Manage your appointments and schedule new ones
+              </p>
+            </div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-gray-200 dark:border-gray-700">
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {events.length}
+              </span>{" "}
+              appointments
+            </div>
           </div>
-          <div className="text-sm text-gray-600 bg-white px-4 py-2 rounded-lg border border-gray-200">
-            <span className="font-semibold text-gray-900">{events.length}</span>{" "}
-            appointments
-          </div>
-        </div>
-      </div>
+        </CardHeader>
 
-      <div className="p-6">
-        <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={{
-            left: "prev,next today",
-            center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
-          }}
-          events={calendarEvents}
-          selectable={true}
-          select={handleDateSelect}
-          eventClick={handleEventClick}
-          height="auto"
-          eventTimeFormat={{
-            hour: "2-digit",
-            minute: "2-digit",
-            meridiem: "short",
-          }}
-        />
-      </div>
+        <CardContent className="p-3 sm:p-4 md:p-6">
+          <FullCalendar
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            headerToolbar={{
+              left: "prev,next today",
+              center: "title",
+              right: "dayGridMonth,timeGridWeek,timeGridDay",
+            }}
+            events={calendarEvents}
+            selectable={true}
+            select={handleDateSelect}
+            eventClick={handleEventClick}
+            height="auto"
+            eventTimeFormat={{
+              hour: "2-digit",
+              minute: "2-digit",
+              meridiem: "short",
+            }}
+            buttonText={{
+              today: "Today",
+              month: "Month",
+              week: "Week",
+              day: "Day",
+            }}
+          />
+        </CardContent>
+      </Card>
 
       <AppointmentModal
-        isOpen={false}
-        // isOpen={isModalOpen}
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         selectedEvent={selectedEvent}
         selectedDate={selectedDate}
@@ -659,10 +209,17 @@ export const AppointmentsCalendar: React.FC = () => {
         .fc .fc-button {
           background-color: #3B82F6;
           border-color: #3B82F6;
-          padding: 8px 16px;
+          padding: 6px 12px;
           border-radius: 8px;
           font-weight: 600;
           text-transform: capitalize;
+          font-size: 0.875rem;
+        }
+        @media (min-width: 640px) {
+          .fc .fc-button {
+            padding: 8px 16px;
+            font-size: 0.9375rem;
+          }
         }
         .fc .fc-button:hover {
           background-color: #2563EB;
@@ -672,26 +229,95 @@ export const AppointmentsCalendar: React.FC = () => {
           background-color: #1D4ED8 !important;
           border-color: #1D4ED8 !important;
         }
+        .fc .fc-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
         .fc .fc-daygrid-day-number {
           font-weight: 600;
           color: #374151;
+          font-size: 0.875rem;
+        }
+        @media (prefers-color-scheme: dark) {
+          .fc .fc-daygrid-day-number {
+            color: #D1D5DB;
+          }
         }
         .fc .fc-col-header-cell {
           background-color: #F9FAFB;
           font-weight: 700;
           color: #374151;
-          padding: 12px 0;
+          padding: 8px 0;
+          font-size: 0.75rem;
+        }
+        @media (min-width: 640px) {
+          .fc .fc-col-header-cell {
+            padding: 12px 0;
+            font-size: 0.875rem;
+          }
+        }
+        @media (prefers-color-scheme: dark) {
+          .fc .fc-col-header-cell {
+            background-color: #1F2937;
+            color: #D1D5DB;
+          }
         }
         .fc .fc-event {
           border-radius: 6px;
-          padding: 2px 6px;
+          padding: 2px 4px;
           font-weight: 500;
           cursor: pointer;
+          font-size: 0.75rem;
+        }
+        @media (min-width: 640px) {
+          .fc .fc-event {
+            padding: 2px 6px;
+            font-size: 0.8125rem;
+          }
         }
         .fc .fc-event:hover {
           opacity: 0.85;
         }
+        .fc .fc-toolbar-title {
+          font-size: 1.125rem;
+          font-weight: 700;
+        }
+        @media (min-width: 640px) {
+          .fc .fc-toolbar-title {
+            font-size: 1.25rem;
+          }
+        }
+        @media (min-width: 768px) {
+          .fc .fc-toolbar-title {
+            font-size: 1.5rem;
+          }
+        }
+        @media (prefers-color-scheme: dark) {
+          .fc .fc-toolbar-title {
+            color: #F3F4F6;
+          }
+        }
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .fc {
+            --fc-border-color: #374151;
+            --fc-neutral-bg-color: #1F2937;
+            --fc-page-bg-color: #111827;
+          }
+          .fc .fc-scrollgrid {
+            border-color: #374151;
+          }
+          .fc td, .fc th {
+            border-color: #374151;
+          }
+          .fc .fc-daygrid-day {
+            background-color: #1F2937;
+          }
+          .fc .fc-daygrid-day.fc-day-today {
+            background-color: #1E3A8A;
+          }
+        }
       `}</style>
-    </div>
+    </>
   );
 };

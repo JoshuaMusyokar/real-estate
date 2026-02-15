@@ -212,7 +212,7 @@ export default function RBACManagement() {
       } catch (error: any) {
         showToast(
           error?.data?.message || "Failed to delete permission",
-          "error"
+          "error",
         );
       }
     }
@@ -234,26 +234,34 @@ export default function RBACManagement() {
   const permissionsPagination = permissionsData?.pagination;
 
   return (
-    <div className={`min-h-screen ${bgClass} transition-colors duration-300`}>
+    <>
       {/* Header */}
       <div
         className={`sticky top-0 z-50 ${headerBgClass} border-b backdrop-blur-md`}
       >
-        <div className="max-w-full mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg">
-                <Lock className="w-6 h-6 text-white" />
+        <div className="max-w-full mx-auto px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Icon + Title */}
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex-shrink-0">
+                <Lock className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className={`text-2xl font-bold ${textClass}`}>
+              <div className="min-w-0">
+                <h1
+                  className={`text-lg sm:text-xl font-semibold ${textClass} truncate`}
+                >
                   RBAC Management
                 </h1>
-                <p className={`text-sm ${mutedTextClass}`}>
+                <p className={`text-xs sm:text-sm ${mutedTextClass} truncate`}>
                   Manage roles, permissions, and access control
                 </p>
               </div>
             </div>
+
+            {/* Placeholder for any actions/buttons if needed */}
+            {/* <div className="flex items-center gap-2">
+          <Button>Action</Button>
+      </div> */}
           </div>
         </div>
       </div>
@@ -275,7 +283,7 @@ export default function RBACManagement() {
       )}
 
       {/* Main Content */}
-      <div className="max-w-full mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-full mx-auto py-8">
         {/* Stats */}
         {!statsLoading && stats && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -290,7 +298,7 @@ export default function RBACManagement() {
                 label: "Total Users",
                 value: stats.usersByRole.reduce(
                   (sum, r) => sum + r.userCount,
-                  0
+                  0,
                 ),
                 icon: "👥",
               },
@@ -467,7 +475,7 @@ export default function RBACManagement() {
                       <div className="flex justify-center gap-2 mt-6">
                         {Array.from(
                           { length: rolesPagination.totalPages },
-                          (_, i) => i + 1
+                          (_, i) => i + 1,
                         ).map((page) => (
                           <button
                             key={page}
@@ -569,7 +577,7 @@ export default function RBACManagement() {
                         <div className="flex justify-center gap-2 mt-6">
                           {Array.from(
                             { length: permissionsPagination.totalPages },
-                            (_, i) => i + 1
+                            (_, i) => i + 1,
                           ).map((page) => (
                             <button
                               key={page}
@@ -677,7 +685,7 @@ export default function RBACManagement() {
                             setRoleForm({
                               ...roleForm,
                               permissionIds: roleForm.permissionIds.filter(
-                                (id) => id !== perm.id
+                                (id) => id !== perm.id,
                               ),
                             });
                           }
@@ -796,6 +804,6 @@ export default function RBACManagement() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

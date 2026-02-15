@@ -21,6 +21,14 @@ import { MediaSection } from "./components/MediaSection";
 import { AmenitiesSection } from "./components/AmenitiesSection";
 import { DocumentsSection } from "./components/DocumentSection";
 import { useAuth } from "../../hooks/useAuth";
+import { FileText, BarChart3, Eye, MessageSquare, Share2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/Card";
+import Button from "../../components/ui/button/Button";
 
 interface PropertyDetailProps {
   slug: string;
@@ -43,7 +51,7 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
     propertyId || "",
     {
       skip: !propertyId,
-    }
+    },
   );
   const { user } = useAuth();
   const amenities: Amenity[] = amenitiesData?.data || [];
@@ -61,13 +69,13 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
         await deleteProperty(property!.id).unwrap();
         success(
           "Property deleted",
-          "The property has been successfully deleted."
+          "The property has been successfully deleted.",
         );
         // Navigate to properties list
       } catch (err) {
         showError(
           "Delete failed",
-          "Failed to delete the property. Please try again."
+          "Failed to delete the property. Please try again.",
         );
       }
     }
@@ -82,17 +90,13 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/20">
+    <>
       {/* Breadcrumb */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <Breadcrumb property={property} />
-        </div>
-      </div>
+      <Breadcrumb property={property} />
 
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-full mx-auto">
         {/* Image Gallery - Full Width */}
-        <div className="mb-6">
+        <div className="mb-3 sm:mb-4 md:mb-6">
           <ImageGallery
             images={property.images || []}
             title={property.title}
@@ -100,23 +104,19 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {/* Main Content */}
-          <div className="xl:col-span-3 space-y-6">
+          <div className="lg:col-span-2 xl:col-span-3 space-y-3 sm:space-y-4 md:space-y-6">
             {/* Header */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <PropertyHeader
-                property={property}
-                isOwner={isOwner}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
+            <PropertyHeader
+              property={property}
+              isOwner={isOwner}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
 
             {/* Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <PropertyStats property={property} />
-            </div>
+            <PropertyStats property={property} />
 
             {/* Media Section */}
             {(property.images?.length > 0 ||
@@ -155,106 +155,139 @@ export const PropertyDetail: React.FC<PropertyDetailProps> = ({
           </div>
 
           {/* Sidebar */}
-          <div className="xl:col-span-1">
-            <div className="sticky top-6 space-y-6">
-              {/* Property Actions */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Property Actions
-                </h3>
-                <div className="space-y-3">
-                  <button className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 17v-2a4 4 0 014-4h4M9 17V9a4 4 0 014-4h4M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-4"
-                      />
-                    </svg>
-                    Generate Report
-                  </button>
-                  <button className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium flex items-center justify-center gap-2">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    View Analytics
-                  </button>
-                </div>
-              </div>
+          <div className="lg:col-span-1 xl:col-span-1">
+            <div className="sticky top-3 sm:top-4 md:top-6 space-y-3 sm:space-y-4 md:space-y-6">
+              {/* Quick Stats - Mobile Compact Version */}
+              <Card className="lg:hidden">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center">
+                      <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                        {property.viewCount}
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
+                        Views
+                      </div>
+                    </div>
+                    <div className="text-center border-x border-gray-200 dark:border-gray-700">
+                      <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                        {property.inquiryCount}
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
+                        Inquiries
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                        {property.shareCount}
+                      </div>
+                      <div className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
+                        Shares
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              {/* Quick Stats */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Quick Stats
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Views
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {property.viewCount}
-                    </span>
+              {/* Property Actions */}
+              <Card>
+                <CardHeader className="p-3 sm:p-4 md:p-5 lg:p-6">
+                  <CardTitle className="text-base sm:text-lg font-semibold">
+                    Property Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 md:p-5 lg:p-6 pt-0">
+                  <div className="space-y-2 sm:space-y-3">
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="w-full"
+                      startIcon={<FileText className="w-4 h-4" />}
+                    >
+                      <span className="hidden sm:inline">Generate Report</span>
+                      <span className="sm:hidden">Report</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      className="w-full"
+                      startIcon={<BarChart3 className="w-4 h-4" />}
+                    >
+                      <span className="hidden sm:inline">View Analytics</span>
+                      <span className="sm:hidden">Analytics</span>
+                    </Button>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Inquiries
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {property.inquiryCount}
-                    </span>
+                </CardContent>
+              </Card>
+
+              {/* Quick Stats - Desktop Version */}
+              <Card className="hidden lg:block">
+                <CardHeader className="p-4 md:p-5 lg:p-6">
+                  <CardTitle className="text-base sm:text-lg font-semibold">
+                    Quick Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-5 lg:p-6 pt-0">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        Views
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {property.viewCount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Inquiries
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {property.inquiryCount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                        <Share2 className="w-4 h-4" />
+                        Shares
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {property.shareCount}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Shares
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {property.shareCount}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Status Badge */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                  Status
-                </h3>
-                <div
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    property.status === "AVAILABLE"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                      : property.status === "UNDER_REVIEW"
-                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                      : property.status === "SOLD" ||
-                        property.status === "RENTED"
-                      ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-                  }`}
-                >
-                  {property.status.replace("_", " ")}
-                </div>
-              </div>
+              <Card>
+                <CardHeader className="p-3 sm:p-4 md:p-5 lg:p-6">
+                  <CardTitle className="text-base sm:text-lg font-semibold">
+                    Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 md:p-5 lg:p-6 pt-0">
+                  <div
+                    className={`inline-flex items-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium ${
+                      property.status === "AVAILABLE"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                        : property.status === "UNDER_REVIEW"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                          : property.status === "SOLD" ||
+                              property.status === "RENTED"
+                            ? "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                    }`}
+                  >
+                    {property.status.replace("_", " ")}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

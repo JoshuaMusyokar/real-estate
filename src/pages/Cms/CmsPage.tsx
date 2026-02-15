@@ -9,10 +9,7 @@ const ContentsPage: FC = () => {
         title={`Contents Management`}
         description="View detailed information and analytics for Contents."
       />
-
-      <div className="container mx-auto px-4 py-6">
-        <ContentList />
-      </div>
+      <ContentList />
     </>
   );
 };

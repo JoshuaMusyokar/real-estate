@@ -11,9 +11,7 @@ const RBACPage: FC = () => {
         description="View detailed information and analytics for RBAC."
       />
 
-      <div className="container mx-auto px-4 py-6">
-        <RBACManagement />
-      </div>
+      <RBACManagement />
     </>
   );
 };

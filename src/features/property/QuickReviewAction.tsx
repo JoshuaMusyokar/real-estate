@@ -84,24 +84,28 @@ export const QuickReviewActions: React.FC<QuickReviewActionsProps> = ({
 
   return (
     <div className="flex gap-2">
-      <button
-        onClick={handleQuickApprove}
-        disabled={isLoading}
-        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
-        title="Approve property"
-      >
-        <CheckCircle className="w-4 h-4" />
-        Approve
-      </button>
-      <button
-        onClick={() => setShowRejectInput(true)}
-        disabled={isLoading}
-        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
-        title="Reject property"
-      >
-        <XCircle className="w-4 h-4" />
-        Reject
-      </button>
+      {property.status !== "AVAILABLE" && (
+        <button
+          onClick={handleQuickApprove}
+          disabled={isLoading}
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
+          title="Approve property"
+        >
+          <CheckCircle className="w-4 h-4" />
+          Approve
+        </button>
+      )}
+      {property.status !== "REJECTED" && (
+        <button
+          onClick={() => setShowRejectInput(true)}
+          disabled={isLoading}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
+          title="Reject property"
+        >
+          <XCircle className="w-4 h-4" />
+          Reject
+        </button>
+      )}
     </div>
   );
 };

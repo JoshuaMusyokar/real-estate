@@ -6,9 +6,7 @@ const AgentsPage: FC = () => {
     <>
       <PageMeta title={`Agents Analytics`} description="Track Your Agents." />
 
-      <div className="mx-auto px-4 py-6">
-        <Agents />
-      </div>
+      <Agents />
     </>
   );
 };

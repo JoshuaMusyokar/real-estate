@@ -11,9 +11,7 @@ const AllLeadsPage: FC = () => {
         description="View detailed information and analytics for a selected lead."
       />
 
-      <div className="container mx-auto px-4 py-6">
-        <AllLeads />
-      </div>
+      <AllLeads />
     </>
   );
 };

@@ -19,21 +19,26 @@ const CreateContentPage: React.FC = () => {
   return (
     <>
       <div className="py-6">
-        <div className="mb-6">
-          <Button
-            variant="primary"
-            onClick={() => navigate("/cms/content")}
-            startIcon={<ArrowLeft className="h-4 w-4" />}
-            className="mb-4"
-          >
-            Back to Content
-          </Button>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Create New Content
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Fill in the details below to create new content
-          </p>
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/cms")}
+              startIcon={<ArrowLeft className="w-4 h-4" />}
+              className="h-8 px-3 text-xs sm:text-sm"
+            >
+              <span className="hidden sm:inline">Back</span>
+            </Button>
+          </div>
+
+          <div>
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+              Create Content
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              Fill in details to create content
+            </p>
+          </div>
         </div>
 
         <ContentForm onSuccess={handleSuccess} onCancel={handleCancel} />

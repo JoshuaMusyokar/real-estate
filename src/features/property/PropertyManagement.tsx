@@ -1,15 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  DollarSign,
-  Eye,
-  Filter,
-  Grid,
-  Home,
-  List,
-  Plus,
-  Search,
-  TrendingUp,
-} from "lucide-react";
+import { DollarSign, Eye, Home, Plus, TrendingUp } from "lucide-react";
 import { PropertyListItem } from "./PropertyListItem";
 import { PropertyCard } from "./PropertyCard";
 import type { PropertyStatus } from "../../types";
@@ -21,16 +11,19 @@ import {
 } from "../../services/propertyApi";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { PropertyFilters } from "./components/PropertyFilters";
 
 export const PropertyManagement: React.FC = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<PropertyStatus | "all">(
-    "all"
+    "all",
   );
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState("all");
+  const [purposeFilter, setPurposeFilter] = useState("all");
+  const [priceRangeFilter, setPriceRangeFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
 
   const { data: propertiesData, isLoading } = useGetUserPropertiesQuery({
     page,
@@ -44,7 +37,6 @@ export const PropertyManagement: React.FC = () => {
 
   const handleEdit = (id: string) => {
     navigate(`/properties/${id}/edit`);
-    // Navigate to edit page: navigate(`/properties/${id}/edit`)
   };
 
   const handleDelete = async (id: string) => {
@@ -57,56 +49,76 @@ export const PropertyManagement: React.FC = () => {
     }
   };
 
-  //   const handleView = (id: string) => {
-  //     navigate(`/properties/${slug}`);
-  //     // Navigate to detail page: navigate(`/properties/${id}`)
-  //   };
   const handleView = (slug: string) => {
     navigate(`/properties/${slug}`);
-    // Navigate to detail page: navigate(`/properties/${id}`)
   };
 
   const handleCreateNew = () => {
     navigate("/properties/new");
   };
 
+  // Enhanced filtering logic
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
       property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      property.city.name.toLowerCase().includes(searchQuery.toLowerCase());
+      property.city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      property.locality.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus =
       statusFilter === "all" || property.status === statusFilter;
-    return matchesSearch && matchesStatus;
+
+    // Add property type filtering logic if you have this field
+    const matchesPropertyType = propertyTypeFilter === "all";
+    // || property.propertyType === propertyTypeFilter;
+
+    // Add purpose filtering logic
+    const matchesPurpose = purposeFilter === "all";
+    // || property.purpose.toLowerCase() === purposeFilter;
+
+    // Add price range filtering logic
+    let matchesPriceRange = true;
+    if (priceRangeFilter === "under-500k") {
+      matchesPriceRange = property.price < 500000;
+    } else if (priceRangeFilter === "500k-1m") {
+      matchesPriceRange = property.price >= 500000 && property.price <= 1000000;
+    } else if (priceRangeFilter === "over-1m") {
+      matchesPriceRange = property.price > 1000000;
+    }
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesPropertyType &&
+      matchesPurpose &&
+      matchesPriceRange
+    );
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm mb-2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 mb-4 sm:mb-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              {/* <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Property Management
-              </h1> */}
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base lg:text-lg">
                 Manage and monitor your property listings
               </p>
             </div>
             <button
               onClick={handleCreateNew}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg hover:shadow-xl"
+              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition font-medium text-sm sm:text-base whitespace-nowrap"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               Add Property
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-full mx-auto">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
           <StatsCard
             icon={Home}
             label="Total Properties"
@@ -137,102 +149,38 @@ export const PropertyManagement: React.FC = () => {
           />
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search properties by title, city..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as PropertyStatus | "all")
-              }
-              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium transition-all"
-            >
-              <option value="all">All Status</option>
-              <option value="AVAILABLE">Available</option>
-              <option value="PENDING">Pending</option>
-              <option value="SOLD">Sold</option>
-              <option value="RENTED">Rented</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="DRAFT">Draft</option>
-            </select>
-
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-5 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-            >
-              <Filter className="w-5 h-5" />
-              Filters
-            </button>
-
-            <div className="flex items-center gap-2 border border-gray-300 rounded-xl p-1.5">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === "grid"
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-100 text-gray-600"
-                }`}
-              >
-                <Grid className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === "list"
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-100 text-gray-600"
-                }`}
-              >
-                <List className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {showFilters && (
-            <div className="mt-5 pt-5 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <select className="px-4 py-3 border border-gray-300 rounded-xl font-medium">
-                <option>Property Type</option>
-                <option>Residential</option>
-                <option>Commercial</option>
-                <option>Land</option>
-              </select>
-              <select className="px-4 py-3 border border-gray-300 rounded-xl font-medium">
-                <option>Purpose</option>
-                <option>Sale</option>
-                <option>Rent</option>
-                <option>Lease</option>
-              </select>
-              <select className="px-4 py-3 border border-gray-300 rounded-xl font-medium">
-                <option>Price Range</option>
-                <option>Under $500K</option>
-                <option>$500K - $1M</option>
-                <option>Over $1M</option>
-              </select>
-            </div>
-          )}
-        </div>
+        {/* Filters Component */}
+        <PropertyFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          propertyTypeFilter={propertyTypeFilter}
+          setPropertyTypeFilter={setPropertyTypeFilter}
+          purposeFilter={purposeFilter}
+          setPurposeFilter={setPurposeFilter}
+          priceRangeFilter={priceRangeFilter}
+          setPriceRangeFilter={setPriceRangeFilter}
+        />
 
         {/* Properties Grid/List */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            className={`grid gap-4 sm:gap-5 md:gap-6 ${
+              viewMode === "grid"
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                : "grid-cols-1"
+            }`}
+          >
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse"
               >
-                <div className="h-56 bg-gray-200" />
-                <div className="p-5 space-y-3">
+                <div className="h-40 sm:h-48 md:h-56 bg-gray-200" />
+                <div className="p-3 sm:p-4 md:p-5 space-y-3">
                   <div className="h-5 bg-gray-200 rounded w-3/4" />
                   <div className="h-4 bg-gray-200 rounded w-1/2" />
                   <div className="h-8 bg-gray-200 rounded w-1/3" />
@@ -241,7 +189,7 @@ export const PropertyManagement: React.FC = () => {
             ))}
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {filteredProperties.map((property) => (
               <PropertyCard
                 key={property.id}
@@ -253,7 +201,7 @@ export const PropertyManagement: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             {filteredProperties.map((property) => (
               <PropertyListItem
                 key={property.id}
@@ -268,19 +216,19 @@ export const PropertyManagement: React.FC = () => {
 
         {/* Empty State */}
         {!isLoading && filteredProperties.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-            <Home className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="text-center py-12 sm:py-16 bg-white rounded-xl border border-gray-200">
+            <Home className="w-16 h-16 sm:w-20 sm:h-20 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
               No properties found
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Try adjusting your search or filters
             </p>
             <button
               onClick={handleCreateNew}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg text-sm sm:text-base"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               Add Your First Property
             </button>
           </div>

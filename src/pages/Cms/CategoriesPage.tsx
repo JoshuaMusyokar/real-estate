@@ -10,9 +10,7 @@ const CategoriesPage: FC = () => {
         description="View detailed information and analytics for Categories."
       />
 
-      <div className="container mx-auto px-4 py-6">
-        <Categories />
-      </div>
+      <Categories />
     </>
   );
 };

@@ -102,19 +102,21 @@ export const UserForm: React.FC<UserFormProps> = ({
       roleNames: ["BUILDER", "AGENT", "OWNER"],
       status: ["ACTIVE"],
       page: 1,
-      limit: 100,
-    }
+      limit: 1000,
+    },
   );
   const { data: citiesData, isLoading: isLoadingCities } = useGetCitiesQuery({
     page: 1,
-    limit: 100,
+    limit: 10000,
   });
 
   const { data: localitiesData, isLoading: isLoadingLocalities } =
     useGetLocalitiesQuery(
       { cityId: selectedCityForLocalities },
-      { skip: !selectedCityForLocalities }
+      { skip: !selectedCityForLocalities },
     );
+
+  console.log("sssel city", selectedCityForLocalities, formData.cities);
 
   const roles = rolesData?.data || [];
   const cities = citiesData?.data || [];
@@ -160,6 +162,14 @@ export const UserForm: React.FC<UserFormProps> = ({
     setErrors({});
     setTouched(new Set());
   }, [user, isOpen]);
+
+  useEffect(() => {
+    if (formData.cities.length > 0) {
+      setSelectedCityForLocalities(formData.cities[0]);
+    } else {
+      setSelectedCityForLocalities("");
+    }
+  }, [formData.cities]);
 
   // Validation functions
   const validateField = (name: string, value: any): string | undefined => {
@@ -285,8 +295,6 @@ export const UserForm: React.FC<UserFormProps> = ({
         [field]: error,
       }));
     }
-
-    console.log(formData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

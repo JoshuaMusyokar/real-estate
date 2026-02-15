@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
   {
     icon: <LayoutDashboard />,
     name: "Dashboard",
-    subItems: [{ name: "Overview", path: "/", pro: false }],
+    path: "/dashboard",
     roles: ["*"],
   },
 

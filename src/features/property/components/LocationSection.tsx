@@ -10,6 +10,13 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Property } from "../../../types";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/Card";
+import Button from "../../../components/ui/button/Button";
 
 interface NearbyPlace {
   name: string;
@@ -93,7 +100,7 @@ export const LocationSection: React.FC<{ property: Property }> = ({
           const L = (window as any).L;
           const map = L.map(mapContainerRef.current).setView(
             [property.latitude, property.longitude],
-            14
+            14,
           );
 
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -180,7 +187,7 @@ export const LocationSection: React.FC<{ property: Property }> = ({
     if (property.latitude && property.longitude) {
       window.open(
         `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`,
-        "_blank"
+        "_blank",
       );
     }
   };
@@ -189,44 +196,45 @@ export const LocationSection: React.FC<{ property: Property }> = ({
     if (property.latitude && property.longitude) {
       window.open(
         `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`,
-        "_blank"
+        "_blank",
       );
     }
   };
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Glass Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-white/50 to-teal-50/80 backdrop-blur-xl" />
-
-      {/* Main Content */}
-      <div className="relative p-5">
-        {/* Compact Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+    <Card className="overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-teal-50/50">
+      <CardHeader className="p-4 sm:p-5 md:p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-teal-600 rounded-xl blur-md opacity-50" />
-              <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                <MapPin className="w-5 h-5 text-white" />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg sm:rounded-xl blur-md opacity-50" />
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Location</h3>
-              <p className="text-xs text-gray-600">{property.locality}</p>
+              <CardTitle className="text-base sm:text-lg md:text-xl">
+                Location
+              </CardTitle>
+              <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">
+                {property.locality}
+              </p>
             </div>
           </div>
           <button
             onClick={openInGoogleMaps}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full transition-colors"
+            className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full transition-colors"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Open
+            <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">Open</span>
           </button>
         </div>
+      </CardHeader>
 
-        {/* Address - Compact */}
-        <div className="mb-4 p-3 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl">
-          <div className="text-sm text-gray-700 leading-relaxed">
+      <CardContent className="p-4 sm:p-5 md:p-6 pt-0">
+        {/* Address */}
+        <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg sm:rounded-xl">
+          <div className="text-xs sm:text-sm text-gray-700 leading-relaxed">
             {property.address}, {property.locality}
             <br />
             {property.city.name}, {property.state && `${property.state}, `}
@@ -235,41 +243,43 @@ export const LocationSection: React.FC<{ property: Property }> = ({
           </div>
         </div>
 
-        {/* Nearby Places Quick View */}
+        {/* Nearby Places */}
         {property.latitude && property.longitude && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-bold text-gray-900">What's Nearby</h4>
+          <div className="mb-3 sm:mb-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <h4 className="text-xs sm:text-sm font-bold text-gray-900">
+                What's Nearby
+              </h4>
               <button
                 onClick={() => setShowFullMap(!showFullMap)}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                className="text-[10px] sm:text-xs font-semibold text-blue-600 hover:text-blue-700"
               >
                 {showFullMap ? "Hide Map" : "View Map"}
               </button>
             </div>
 
-            {/* Nearby Quick Cards */}
-            <div className="grid grid-cols-5 gap-2 mb-3">
+            {/* Nearby Quick Cards - Responsive Grid */}
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {nearbyPlaces.map((place, idx) => {
                 const Icon = place.icon;
                 return (
                   <div
                     key={idx}
-                    className="text-center p-2 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl hover:bg-white/80 transition-all"
+                    className="text-center p-2 sm:p-2.5 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg sm:rounded-xl hover:bg-white/80 transition-all"
                   >
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1 shadow-sm"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mx-auto mb-1 shadow-sm"
                       style={{ backgroundColor: `${place.color}15` }}
                     >
                       <Icon
-                        className="w-4 h-4"
+                        className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                         style={{ color: place.color }}
                       />
                     </div>
-                    <div className="text-[10px] font-semibold text-gray-700 leading-tight">
+                    <div className="text-[9px] sm:text-[10px] font-semibold text-gray-700 leading-tight">
                       {place.name}
                     </div>
-                    <div className="text-[9px] text-gray-500 mt-0.5">
+                    <div className="text-[8px] sm:text-[9px] text-gray-500 mt-0.5">
                       {place.distance}km
                     </div>
                   </div>
@@ -281,18 +291,18 @@ export const LocationSection: React.FC<{ property: Property }> = ({
 
         {/* Expandable Map */}
         {showFullMap && property.latitude && property.longitude && (
-          <div className="mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="relative rounded-xl overflow-hidden border border-gray-200/50 shadow-lg">
+          <div className="mb-3 sm:mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="relative rounded-lg sm:rounded-xl overflow-hidden border border-gray-200/50 shadow-lg">
               <div
                 ref={mapContainerRef}
-                className="h-64 bg-gray-200"
+                className="h-48 sm:h-56 md:h-64 bg-gray-200"
                 style={{ zIndex: 1 }}
               >
                 {!mapLoaded && !mapError && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
                     <div className="text-center">
-                      <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <span className="text-xs text-gray-600 font-medium">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 sm:border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
                         Loading map...
                       </span>
                     </div>
@@ -300,9 +310,9 @@ export const LocationSection: React.FC<{ property: Property }> = ({
                 )}
                 {mapError && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-                    <div className="text-center p-4">
-                      <Navigation className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                      <span className="text-xs text-gray-600 font-medium">
+                    <div className="text-center p-3 sm:p-4">
+                      <Navigation className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mx-auto mb-2" />
+                      <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
                         Map unavailable
                       </span>
                     </div>
@@ -312,19 +322,19 @@ export const LocationSection: React.FC<{ property: Property }> = ({
 
               {/* Map Controls */}
               {mapLoaded && (
-                <div className="absolute top-3 right-3 flex gap-2 z-10">
+                <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex gap-2 z-10">
                   <button
                     onClick={() => {
                       if (mapRef.current) {
                         mapRef.current.setView(
                           [property.latitude, property.longitude],
-                          14
+                          14,
                         );
                       }
                     }}
-                    className="bg-white/90 backdrop-blur-sm border border-gray-200/50 p-2 rounded-lg shadow-md hover:bg-white transition-all"
+                    className="bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 sm:p-2 rounded-lg shadow-md hover:bg-white transition-all"
                   >
-                    <Navigation className="w-4 h-4 text-gray-700" />
+                    <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
                   </button>
                 </div>
               )}
@@ -332,64 +342,73 @@ export const LocationSection: React.FC<{ property: Property }> = ({
           </div>
         )}
 
-        {/* Action Buttons - Compact */}
+        {/* Action Buttons */}
         {property.latitude && property.longitude && (
-          <div className="grid grid-cols-2 gap-2">
-            <button
+          <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
+            <Button
+              variant="primary"
+              size="sm"
               onClick={getDirections}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg"
+              startIcon={<Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+              className="text-xs sm:text-sm"
             >
-              <Navigation className="w-4 h-4" />
-              Directions
-            </button>
-            <button
+              <span className="hidden xs:inline">Directions</span>
+              <span className="xs:hidden">Route</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={openInGoogleMaps}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/80 backdrop-blur-sm border border-gray-200/50 text-gray-700 rounded-xl text-sm font-semibold hover:bg-white transition-all shadow-md hover:shadow-lg"
+              startIcon={<ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+              className="text-xs sm:text-sm"
             >
-              <ExternalLink className="w-4 h-4" />
-              Google Maps
-            </button>
+              <span className="hidden sm:inline">Google Maps</span>
+              <span className="sm:hidden">Maps</span>
+            </Button>
           </div>
         )}
 
         {/* Fallback when no coordinates */}
         {(!property.latitude || !property.longitude) && (
-          <div className="bg-gray-50/80 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
-            <MapPin className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-            <div className="text-sm text-gray-600 font-medium">
+          <div className="bg-gray-50/80 border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl p-4 sm:p-6 text-center mb-3 sm:mb-4">
+            <MapPin className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mx-auto mb-2" />
+            <div className="text-xs sm:text-sm text-gray-600 font-medium">
               Exact location not available
             </div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
               Contact owner for details
             </div>
           </div>
         )}
 
-        {/* Distance Stats - Compact Footer */}
-        <div className="mt-4 pt-4 border-t border-gray-200/50 grid grid-cols-3 gap-2">
+        {/* Location Stats */}
+        <div className="grid grid-cols-3 gap-2">
           <div className="text-center p-2 bg-blue-50/80 rounded-lg">
-            <div className="text-xs font-semibold text-blue-600">
+            <div className="text-[10px] sm:text-xs font-semibold text-blue-600 truncate">
               {property.city.name}
             </div>
-            <div className="text-[10px] text-blue-700 mt-0.5">City</div>
+            <div className="text-[8px] sm:text-[10px] text-blue-700 mt-0.5">
+              City
+            </div>
           </div>
           <div className="text-center p-2 bg-teal-50/80 rounded-lg">
-            <div className="text-xs font-semibold text-teal-600">
+            <div className="text-[10px] sm:text-xs font-semibold text-teal-600 truncate">
               {property.locality}
             </div>
-            <div className="text-[10px] text-teal-700 mt-0.5">Locality</div>
+            <div className="text-[8px] sm:text-[10px] text-teal-700 mt-0.5">
+              Locality
+            </div>
           </div>
           <div className="text-center p-2 bg-purple-50/80 rounded-lg">
-            <div className="text-xs font-semibold text-purple-600">
+            <div className="text-[10px] sm:text-xs font-semibold text-purple-600 truncate">
               {property.zipCode || "N/A"}
             </div>
-            <div className="text-[10px] text-purple-700 mt-0.5">Pincode</div>
+            <div className="text-[8px] sm:text-[10px] text-purple-700 mt-0.5">
+              Pincode
+            </div>
           </div>
         </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-500/10 to-teal-500/10 rounded-full blur-3xl -z-10" />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

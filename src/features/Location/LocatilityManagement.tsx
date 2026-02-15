@@ -18,6 +18,7 @@ import { LocalityForm } from "./LocalityForm";
 import { ConfirmationDialog } from "./ConfirmationDialogue";
 import { useToast } from "../../hooks/useToast";
 import { LocalityDetailModal } from "./LocalityDetailModal";
+import Button from "../../components/ui/button/Button";
 
 export function LocalitiesManagement() {
   const [page, setPage] = useState(1);
@@ -27,7 +28,7 @@ export function LocalitiesManagement() {
   const [viewingLocality, setViewingLocality] = useState<Locality | null>(null);
   const [editingLocality, setEditingLocality] = useState<Locality | null>(null);
   const [localityToDelete, setLocalityToDelete] = useState<Locality | null>(
-    null
+    null,
   );
   const { success, error: showError } = useToast();
   const { data, isLoading, error } = useGetLocalitiesQuery({
@@ -85,7 +86,7 @@ export function LocalitiesManagement() {
         render: (value: string) => new Date(value).toLocaleDateString(),
       },
     ],
-    []
+    [],
   );
 
   const handleEdit = (locality: Locality) => {
@@ -111,26 +112,38 @@ export function LocalitiesManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+    <>
       <div className="max-w-full mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Localities Management
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3">
+            {/* Title */}
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+                Localities
               </h1>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 Manage localities within cities
               </p>
             </div>
-            <button
+
+            {/* Button */}
+            <Button
               onClick={() => setIsFormOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+              className="
+        flex items-center gap-1.5
+        px-3 py-1.5 sm:px-4 sm:py-2
+        bg-blue-600 dark:bg-blue-500
+        text-white
+        text-xs sm:text-sm font-medium
+        rounded-md
+        hover:bg-blue-700 dark:hover:bg-blue-600
+        transition
+      "
             >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Add Locality
-            </button>
+              <PlusIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Add</span>
+            </Button>
           </div>
         </div>
 
@@ -236,6 +249,6 @@ export function LocalitiesManagement() {
           onClose={() => setViewingLocality(null)}
         />
       )}
-    </div>
+    </>
   );
 }

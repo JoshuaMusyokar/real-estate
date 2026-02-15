@@ -75,16 +75,16 @@ export const Agents: React.FC = () => {
       agent.currentWorkload === "low"
         ? 20
         : agent.currentWorkload === "medium"
-        ? 10
-        : 0;
+          ? 10
+          : 0;
     const propertiesWeight = Math.min(agent.ownedPropertiesCount / 20, 1) * 10;
     return Math.round(
-      conversionWeight + closedWeight + workloadWeight + propertiesWeight
+      conversionWeight + closedWeight + workloadWeight + propertiesWeight,
     );
   };
 
   return (
-    <div className="min-h-screen">
+    <>
       <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -284,7 +284,7 @@ export const Agents: React.FC = () => {
                 ? Math.round(
                     (agents.reduce((acc, a) => acc + a.conversionRate, 0) /
                       agents.length) *
-                      100
+                      100,
                   )
                 : 0}
               %
@@ -345,14 +345,14 @@ export const Agents: React.FC = () => {
                     <div className="absolute top-4 right-4 flex gap-2">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                          agent.status
+                          agent.status,
                         )}`}
                       >
                         {agent.status}
                       </span>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${getWorkloadColor(
-                          agent.currentWorkload
+                          agent.currentWorkload,
                         )}`}
                       >
                         {agent.currentWorkload}
@@ -495,14 +495,14 @@ export const Agents: React.FC = () => {
                         <div className="flex gap-2">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              agent.status
+                              agent.status,
                             )}`}
                           >
                             {agent.status}
                           </span>
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-semibold ${getWorkloadColor(
-                              agent.currentWorkload
+                              agent.currentWorkload,
                             )}`}
                           >
                             {agent.currentWorkload}
@@ -581,6 +581,6 @@ export const Agents: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };

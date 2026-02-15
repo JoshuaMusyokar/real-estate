@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import Unauthorized from "./pages/OtherPage/Unauthorized";
-import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
 import Alerts from "./pages/UiElements/Alerts";
@@ -20,14 +17,12 @@ import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
 import Property from "./pages/Property/Property";
 import MainLanding from "./pages/Landing/MainLanding";
 import PropertyDetailPage from "./pages/Property/PropertyDetailPage";
 import PropertyCreatePage from "./pages/Property/PropertyCreatePage";
 import PropertyUpdatePage from "./pages/Property/PropertyUpdatePage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import PublicRoute from "./components/auth/PublicRoute";
 import RoleBasedRoute from "./components/auth/RoleBasedRoute";
 import PropertyDetailBuyerPage from "./pages/Buyers/PropertyDetailBuyerPage";
 import PipelineViewPage from "./pages/Lead/PipelineView";
@@ -57,6 +52,8 @@ import LeadsAnalyticsPage from "./pages/Analytics/LeadAnalyticsPage";
 import RevenueAnalyticsPage from "./pages/Analytics/RevenueAnalyticsPage";
 import PerformanceAnalyticsPage from "./pages/Analytics/PerformanceAnalyticsPage";
 import NotificationsPage from "./pages/Notifications/NotificationPage";
+import UserProfilesPage from "./pages/UserProfiles";
+import FAQPage from "./pages/FAQS/Faqs";
 // import {Role } from "./types";
 
 export default function App() {
@@ -77,6 +74,7 @@ export default function App() {
           />
           <Route path="/:template" element={<MainLanding />} />
           <Route path="/news" element={<NewsListingPage />} />
+          <Route path="/faqs" element={<FAQPage />} />
 
           <Route path="/:type/:slug" element={<PublicContentDetailPage />} />
           {/* Auth Routes - Only accessible when not authenticated */}
@@ -185,7 +183,7 @@ export default function App() {
             />
 
             {/* User Profile - All authenticated users */}
-            <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/profile" element={<UserProfilesPage />} />
             {/* User Profile - All authenticated users */}
             <Route path="/users" element={<UserManagementPage />} />
             {/* Properties Analytics - */}

@@ -12,9 +12,7 @@ const AmenityPage: FC = () => {
         description="Amenity Management."
       />
 
-      <div className="mx-auto px-4 py-6">
-        <AmenitiesManagement />
-      </div>
+      <AmenitiesManagement />
     </>
   );
 };

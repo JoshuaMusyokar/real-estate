@@ -117,31 +117,33 @@ export const Categories: React.FC = () => {
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (category.description || "")
         .toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(searchTerm.toLowerCase()),
   );
 
   return (
     <>
-      <div className="py-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="py-2">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          {/* Title */}
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
               Content Categories
             </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Organize your content into categories
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              Organize your content
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="primary"
-              onClick={() => setIsCreateModalOpen(true)}
-              endIcon={<Plus className="h-4 w-4" />}
-              disabled={isCreating}
-            >
-              New Category
-            </Button>
-          </div>
+
+          {/* Button */}
+          <Button
+            variant="primary"
+            onClick={() => setIsCreateModalOpen(true)}
+            endIcon={<Plus className="w-4 h-4" />}
+            disabled={isCreating}
+            className="h-8 px-3 text-xs sm:text-sm"
+          >
+            <span className="hidden sm:inline">New Category</span>
+          </Button>
         </div>
 
         <Card>

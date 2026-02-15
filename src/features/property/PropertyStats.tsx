@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 import type { FC } from "react";
 import type { Property } from "../../types";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/Card";
 
 interface PropertyStatsProps {
   property: Property;
@@ -43,7 +49,7 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
     return value ? "Yes" : "No";
   };
 
-  // Get the primary area measurement (prioritize carpet > built-up > super built-up > square feet)
+  // Get the primary area measurement
   const getPrimaryArea = () => {
     if (property.carpetArea) {
       return formatArea(property.carpetArea, property.carpetAreaUnit);
@@ -71,37 +77,41 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         icon: Bed,
         label: "Bedrooms",
         value: property.bedrooms || "N/A",
-        show: property.bedrooms !== null,
+        show: property.bedrooms !== null && property.bedrooms !== undefined,
       },
       {
         icon: Bath,
         label: "Bathrooms",
         value: property.bathrooms || "N/A",
-        show: property.bathrooms !== null,
+        show: property.bathrooms !== null && property.bathrooms !== undefined,
       },
       {
         icon: Square,
         label: "Area",
         value: getPrimaryArea(),
-        show: true,
+        show: getPrimaryArea() !== "N/A",
       },
       {
         icon: Building2,
         label: property.floors ? "Floors" : "Floor Number",
         value: property.floors || property.floorNumber || "N/A",
-        show: property.floors !== null || property.floorNumber !== null,
+        show:
+          (property.floors !== null && property.floors !== undefined) ||
+          (property.floorNumber !== null && property.floorNumber !== undefined),
       },
       {
         icon: Home,
         label: "Furnishing",
         value: property.furnishingStatus || "N/A",
-        show: property.furnishingStatus !== null,
+        show:
+          property.furnishingStatus !== null &&
+          property.furnishingStatus !== undefined,
       },
       {
         icon: Calendar,
         label: "Year Built",
         value: property.yearBuilt || "N/A",
-        show: property.yearBuilt !== null,
+        show: property.yearBuilt !== null && property.yearBuilt !== undefined,
       },
       {
         icon: ParkingCircle,
@@ -109,18 +119,24 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value:
           (property.coveredParking || 0) + (property.openParking || 0) || "N/A",
         show:
-          (property.coveredParking !== null && property.coveredParking > 0) ||
-          (property.openParking !== null && property.openParking > 0),
+          (property.coveredParking !== null &&
+            property.coveredParking !== undefined &&
+            property.coveredParking > 0) ||
+          (property.openParking !== null &&
+            property.openParking !== undefined &&
+            property.openParking > 0),
       },
       {
         icon: DoorClosed,
         label: "Balconies",
         value: property.balconies || "N/A",
-        show: property.balconies !== null && property.balconies > 0,
+        show:
+          property.balconies !== null &&
+          property.balconies !== undefined &&
+          property.balconies > 0,
       },
     ];
   } else if (isCommercial) {
-    // Commercial property stats
     const officeSubType = property.subType?.name === "OFFICE";
     const retailSubType = property.subType?.name === "RETAIL";
 
@@ -129,43 +145,57 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         icon: Square,
         label: "Area",
         value: getPrimaryArea(),
-        show: true,
+        show: getPrimaryArea() !== "N/A",
       },
       {
         icon: Home,
         label: "Furnishing",
         value: property.furnishingStatus || "N/A",
-        show: property.furnishingStatus !== null,
+        show:
+          property.furnishingStatus !== null &&
+          property.furnishingStatus !== undefined,
       },
       {
         icon: Building2,
         label: "Floor",
         value: property.floorNumber || "N/A",
-        show: property.floorNumber !== null,
+        show:
+          property.floorNumber !== null && property.floorNumber !== undefined,
       },
       {
         icon: Navigation,
         label: "Facing",
         value: property.facingDirection || "N/A",
-        show: property.facingDirection !== null,
+        show:
+          property.facingDirection !== null &&
+          property.facingDirection !== undefined,
       },
       {
         icon: DoorClosed,
         label: "Cabins",
         value: property.cabins || "N/A",
-        show: officeSubType && property.cabins !== null,
+        show:
+          officeSubType &&
+          property.cabins !== null &&
+          property.cabins !== undefined,
       },
       {
         icon: Users,
         label: "Seats",
         value: property.seats || "N/A",
-        show: officeSubType && property.seats !== null,
+        show:
+          officeSubType &&
+          property.seats !== null &&
+          property.seats !== undefined,
       },
       {
         icon: Briefcase,
         label: "Meeting Rooms",
         value: property.meetingRooms || "N/A",
-        show: officeSubType && property.meetingRooms !== null,
+        show:
+          officeSubType &&
+          property.meetingRooms !== null &&
+          property.meetingRooms !== undefined,
       },
       {
         icon: ParkingCircle,
@@ -173,42 +203,50 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value:
           (property.coveredParking || 0) + (property.openParking || 0) || "N/A",
         show:
-          (property.coveredParking !== null && property.coveredParking > 0) ||
-          (property.openParking !== null && property.openParking > 0),
+          (property.coveredParking !== null &&
+            property.coveredParking !== undefined &&
+            property.coveredParking > 0) ||
+          (property.openParking !== null &&
+            property.openParking !== undefined &&
+            property.openParking > 0),
       },
       {
         icon: CheckCircle2,
         label: "Pre-Rented",
         value: formatBoolean(property.preRented),
-        show: property.preRented !== null,
+        show: property.preRented !== null && property.preRented !== undefined,
       },
       {
         icon: Ruler,
         label: "Frontage Width",
         value: property.frontageWidth ? `${property.frontageWidth} ft` : "N/A",
-        show: retailSubType && property.frontageWidth !== null,
+        show:
+          retailSubType &&
+          property.frontageWidth !== null &&
+          property.frontageWidth !== undefined,
       },
       {
         icon: Building,
         label: "Main Road",
         value: formatBoolean(property.mainRoadFacing),
-        show: property.mainRoadFacing !== null,
+        show:
+          property.mainRoadFacing !== null &&
+          property.mainRoadFacing !== undefined,
       },
       {
         icon: Calendar,
         label: "Year Built",
         value: property.yearBuilt || "N/A",
-        show: property.yearBuilt !== null,
+        show: property.yearBuilt !== null && property.yearBuilt !== undefined,
       },
     ];
   } else if (isIndustrial) {
-    // Industrial/Warehouse stats
     stats = [
       {
         icon: Square,
         label: "Total Area",
         value: getPrimaryArea(),
-        show: true,
+        show: getPrimaryArea() !== "N/A",
       },
       {
         icon: Warehouse,
@@ -216,7 +254,8 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value: property.coveredArea
           ? `${property.coveredArea.toLocaleString()} sq ft`
           : "N/A",
-        show: property.coveredArea !== null,
+        show:
+          property.coveredArea !== null && property.coveredArea !== undefined,
       },
       {
         icon: Package,
@@ -224,31 +263,35 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value: property.openArea
           ? `${property.openArea.toLocaleString()} sq ft`
           : "N/A",
-        show: property.openArea !== null,
+        show: property.openArea !== null && property.openArea !== undefined,
       },
       {
         icon: Building2,
         label: "Ceiling Height",
         value: property.ceilingHeight || "N/A",
-        show: property.ceilingHeight !== null,
+        show:
+          property.ceilingHeight !== null &&
+          property.ceilingHeight !== undefined,
       },
       {
         icon: DoorClosed,
         label: "Loading Docks",
         value: property.loadingDocks || "N/A",
-        show: property.loadingDocks !== null,
+        show:
+          property.loadingDocks !== null && property.loadingDocks !== undefined,
       },
       {
         icon: Briefcase,
         label: "Power Load",
         value: property.powerLoad || "N/A",
-        show: property.powerLoad !== null,
+        show: property.powerLoad !== null && property.powerLoad !== undefined,
       },
       {
         icon: Square,
         label: "Flooring",
         value: property.flooringType || "N/A",
-        show: property.flooringType !== null,
+        show:
+          property.flooringType !== null && property.flooringType !== undefined,
       },
       {
         icon: ParkingCircle,
@@ -256,18 +299,21 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value:
           (property.coveredParking || 0) + (property.openParking || 0) || "N/A",
         show:
-          (property.coveredParking !== null && property.coveredParking > 0) ||
-          (property.openParking !== null && property.openParking > 0),
+          (property.coveredParking !== null &&
+            property.coveredParking !== undefined &&
+            property.coveredParking > 0) ||
+          (property.openParking !== null &&
+            property.openParking !== undefined &&
+            property.openParking > 0),
       },
       {
         icon: Calendar,
         label: "Year Built",
         value: property.yearBuilt || "N/A",
-        show: property.yearBuilt !== null,
+        show: property.yearBuilt !== null && property.yearBuilt !== undefined,
       },
     ];
   } else if (isLand) {
-    // Land/Plot stats
     stats = [
       {
         icon: Square,
@@ -275,49 +321,54 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value: property.plotArea
           ? formatArea(property.plotArea, property.plotAreaUnit)
           : "N/A",
-        show: true,
+        show: property.plotArea !== null && property.plotArea !== undefined,
       },
       {
         icon: Ruler,
         label: "Dimensions",
         value: property.plotDimensions || "N/A",
-        show: property.plotDimensions !== null,
+        show:
+          property.plotDimensions !== null &&
+          property.plotDimensions !== undefined,
       },
       {
         icon: Navigation,
         label: "Facing",
         value: property.facingDirection || "N/A",
-        show: property.facingDirection !== null,
+        show:
+          property.facingDirection !== null &&
+          property.facingDirection !== undefined,
       },
       {
         icon: Building,
         label: "Boundary Wall",
         value: formatBoolean(property.boundaryWall),
-        show: property.boundaryWall !== null,
+        show:
+          property.boundaryWall !== null && property.boundaryWall !== undefined,
       },
       {
         icon: CheckCircle2,
         label: "Corner Plot",
         value: formatBoolean(property.cornerPlot),
-        show: property.cornerPlot !== null,
+        show: property.cornerPlot !== null && property.cornerPlot !== undefined,
       },
       {
         icon: Building2,
         label: "Road Width",
         value: property.roadWidth || "N/A",
-        show: property.roadWidth !== null,
+        show: property.roadWidth !== null && property.roadWidth !== undefined,
       },
       {
         icon: Home,
         label: "Clear Title",
         value: formatBoolean(property.clearTitle),
-        show: property.clearTitle !== null,
+        show: property.clearTitle !== null && property.clearTitle !== undefined,
       },
       {
         icon: Calendar,
         label: "Zoning",
         value: property.zoningType || "N/A",
-        show: property.zoningType !== null,
+        show: property.zoningType !== null && property.zoningType !== undefined,
       },
     ];
   }
@@ -328,42 +379,55 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
   // Show message if no stats available
   if (visibleStats.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-        <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-        <p className="text-gray-600">Property specifications not available</p>
-      </div>
+      <Card>
+        <CardContent className="p-6 sm:p-8 text-center">
+          <Building2 className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-sm sm:text-base text-gray-600">
+            Property specifications not available
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div
-      className={`grid grid-cols-2 md:grid-cols-3 ${
-        visibleStats.length >= 6
-          ? "lg:grid-cols-6"
-          : visibleStats.length >= 4
-          ? "lg:grid-cols-4"
-          : "lg:grid-cols-3"
-      } gap-4`}
-    >
-      {visibleStats.map((stat, idx) => {
-        const Icon = stat.icon;
-        return (
-          <div
-            key={idx}
-            className="bg-white border border-gray-200 rounded-xl p-4 text-center hover:shadow-md hover:border-purple-300 transition-all duration-200"
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-50 to-indigo-50 text-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-              <Icon className="w-6 h-6" />
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">
-              {stat.value}
-            </div>
-            <div className="text-xs text-gray-600 font-medium uppercase tracking-wide">
-              {stat.label}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+    <Card>
+      <CardHeader className="p-4 sm:p-5 md:p-6">
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+          Property Specifications
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 sm:p-5 md:p-6 pt-0">
+        <div
+          className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${
+            visibleStats.length >= 8
+              ? "lg:grid-cols-5 xl:grid-cols-6"
+              : visibleStats.length >= 6
+                ? "lg:grid-cols-4 xl:grid-cols-5"
+                : "lg:grid-cols-3 xl:grid-cols-4"
+          } gap-3 sm:gap-4`}
+        >
+          {visibleStats.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={idx}
+                className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 text-center hover:shadow-md hover:border-blue-300 hover:from-blue-50 hover:to-white transition-all duration-200"
+              >
+                <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                </div>
+                <div className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-0.5 sm:mb-1 truncate">
+                  {stat.value}
+                </div>
+                <div className="text-[10px] sm:text-xs text-gray-600 font-medium uppercase tracking-wide line-clamp-1">
+                  {stat.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

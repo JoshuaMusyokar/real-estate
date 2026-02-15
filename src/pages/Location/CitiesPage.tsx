@@ -9,10 +9,7 @@ const LocalityPage: FC = () => {
         title={`Locality Management`}
         description="View detailed information and analytics for Locality."
       />
-
-      <div className="container mx-auto px-4 py-6">
-        <LocalitiesManagement />
-      </div>
+      <LocalitiesManagement />
     </>
   );
 };

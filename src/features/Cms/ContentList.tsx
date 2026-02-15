@@ -7,16 +7,7 @@ import {
 } from "../../services/cmsApi";
 import type { ContentStatus, ContentType } from "../../types/cms";
 
-import {
-  Edit,
-  Trash2,
-  Eye,
-  EyeOff,
-  Star,
-  Calendar,
-  Filter,
-  Plus,
-} from "lucide-react";
+import { Edit, Trash2, Eye, Star, Calendar, Filter, Plus } from "lucide-react";
 import { format } from "date-fns";
 // import { Link } from "react-router-dom";
 import ConfirmDialog from "../../components/ui/ConfirmDialogue";
@@ -109,17 +100,26 @@ export const ContentList: React.FC = () => {
   const pagination = data?.pagination;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        {/* Title */}
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
             Content Management
           </h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Create and manage your website content
           </p>
         </div>
-        <Button startIcon={<Plus className="h-4 w-4" />}>New Content</Button>
+
+        {/* Action Button */}
+        <Button
+          variant="primary"
+          startIcon={<Plus className="w-4 h-4" />}
+          className="h-8 px-3 text-xs sm:text-sm"
+        >
+          <span className="hidden sm:inline">New Content</span>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -277,7 +277,7 @@ export const ContentList: React.FC = () => {
                               "h-4 w-4",
                               content.isFeatured
                                 ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-400"
+                                : "text-gray-400",
                             )}
                           />
                         </Button>
