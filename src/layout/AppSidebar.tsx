@@ -460,7 +460,7 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/dashboard" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <img src={appLogo} alt="Property4India" className="h-10" />
+            <img src={appLogo} alt="Property4India" className="h-42 w-58 object-contain" />
           ) : (
             <img src={mobileLogo} alt="P4I" className="h-8" />
           )}
