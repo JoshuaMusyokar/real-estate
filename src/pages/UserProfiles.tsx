@@ -7,8 +7,8 @@ export default function UserProfilesPage() {
   return (
     <>
       <PageMeta
-        title="Bengal Profile Dashboard"
-        description="This is Bengal Profile Dashboard page for users"
+        title="Property4india Profile Dashboard"
+        description="This is Property4india Profile Dashboard page for users"
       />
       <PageBreadcrumb pageTitle="Profile" />
       <UserProfile />

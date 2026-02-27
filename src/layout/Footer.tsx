@@ -12,6 +12,7 @@ import {
   Send,
 } from "lucide-react";
 import { useState } from "react";
+import appLogo from "../assets/logomin.png";
 
 export const Footer = () => {
   const [email, setEmail] = useState("");
@@ -73,16 +74,18 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10 lg:gap-12 mb-8 sm:mb-10 md:mb-12">
           {/* Company Info */}
           <div className="sm:col-span-2 lg:col-span-5">
-            <Link
-              to="/"
-              className="flex items-center gap-0 group mb-4 sm:mb-5 md:mb-6"
-            >
-              <span className="text-xl sm:text-2xl font-black text-blue-500">
+            <Link to="/" className="">
+              <img
+                src={appLogo}
+                alt="Property4india Property"
+                className="h-42 w-58 object-contain"
+              />
+              {/* <span className="text-xl sm:text-2xl font-black text-blue-500">
                 BENGALPROPERTY
               </span>
               <span className="text-lg sm:text-xl font-bold text-gray-300">
                 .COM
-              </span>
+              </span> */}
             </Link>
 
             <p className="text-gray-400 mb-4 sm:mb-5 md:mb-6 text-sm sm:text-base max-w-md leading-relaxed">

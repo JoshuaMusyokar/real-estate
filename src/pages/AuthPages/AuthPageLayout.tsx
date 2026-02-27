@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router";
 import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
+import appLogo from "../../assets/logo.png";
 
 export default function AuthLayout({
   children,
@@ -86,17 +87,22 @@ export default function AuthLayout({
           <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl">
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl border border-white/20 dark:border-gray-700/30 shadow-2xl shadow-blue-500/10 dark:shadow-gray-900/20 p-8 lg:p-10">
               {/* Logo */}
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-0 rounded-lg p-4">
                 <Link
                   to="/"
                   className="flex items-center gap-0 group flex-shrink-0"
                 >
-                  <span className={`text-2xl font-black ${styles.logoText}`}>
+                  <img
+                    src={appLogo}
+                    alt="Property4India"
+                    className="h-42 w-58 object-contain"
+                  />
+                  {/* <span className={`text-2xl font-black ${styles.logoText}`}>
                     BENGALPROPERTY
                   </span>
                   <span className={`text-xl font-bold ${styles.logoSubtext}`}>
                     .COM
-                  </span>
+                  </span> */}
                 </Link>
               </div>
 
@@ -129,19 +135,20 @@ export default function AuthLayout({
                     to="/"
                     className="flex items-center gap-0 group flex-shrink-0"
                   >
-                    <span className={`text-2xl font-black ${styles.logoText}`}>
+                    <img src={appLogo} alt="Property4India" className="h-12" />
+                    {/* <span className={`text-2xl font-black ${styles.logoText}`}>
                       BENGALPROPERTY
                     </span>
                     <span className={`text-xl font-bold ${styles.logoSubtext}`}>
                       .COM
-                    </span>
+                    </span> */}
                   </Link>
                 </div>
               </div>
 
               {/* Heading */}
               <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                Welcome to <span>Bengal Properties</span>{" "}
+                Welcome to <span>Property4india.com Properties</span>{" "}
               </h1>
 
               {/* Description */}

@@ -6,8 +6,8 @@ export default function SignUp() {
   return (
     <>
       <PageMeta
-        title="Bengal SignUp Dashboard"
-        description="This is Bengal SignUp"
+        title="Property4India SignUp Dashboard"
+        description="This is Property4India SignUp"
       />
       <AuthLayout>
         <SignUpForm />

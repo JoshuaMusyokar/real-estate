@@ -7,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import UserDropdown from "../components/header/UserDropdown";
 import NotificationDropdown from "../components/header/NotificationDropdown";
+import appLogo from "../assets/logo.png";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
@@ -55,12 +56,17 @@ const AppHeader: React.FC = () => {
               to="/"
               className="flex items-center gap-0 group flex-shrink-0"
             >
-              <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-500">
+              <img
+                src={appLogo}
+                alt="property4india Logo"
+                className="w-8 h-8 sm:w-10 sm:h-10"
+              />
+              {/* <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-500">
                 BENGALPROPERTY
               </span>
               <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-700 dark:text-gray-300">
                 .COM
-              </span>
+              </span> */}
             </Link>
 
             {/* Desktop Navigation */}
@@ -217,12 +223,18 @@ const AppHeader: React.FC = () => {
             to="/"
             className="flex items-center gap-0 lg:hidden flex-shrink-0"
           >
-            <span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-500">
+            <img
+              src={appLogo}
+              alt="Property4India Logo"
+              className="w-8 h-8 sm:w-10 sm:h-10"
+            />
+            {/* <span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-500">
               BENGALPROPERTY
             </span>
-            <span className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300">
+            <span className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300"
+            >
               .COM
-            </span>
+            </span> */}
           </Link>
 
           {/* Mobile App Menu Toggle */}

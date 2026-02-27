@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import appLogo from "../assets/logo.png";
+import mobileLogo from "../assets/favicon.png";
 
 // Assume these icons are imported from an icon library
 import {
@@ -456,19 +458,11 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/">
+        <Link to="/dashboard" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <div className="flex items-center">
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                Bengal Properties
-              </span>
-            </div>
+            <img src={appLogo} alt="Property4India" className="h-10" />
           ) : (
-            <div className="flex items-center">
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                BP
-              </span>
-            </div>
+            <img src={mobileLogo} alt="P4I" className="h-8" />
           )}
         </Link>
       </div>

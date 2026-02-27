@@ -22,7 +22,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center gap-4">
           <Link to="/" className="text-2xl font-bold text-purple-600">
-            Bengal Property
+            Property4India
           </Link>
 
           <div className="flex-1 relative max-w-2xl">

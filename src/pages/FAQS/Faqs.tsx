@@ -5,8 +5,8 @@ export default function FAQPage() {
   return (
     <>
       <PageMeta
-        title="FAQS | TailAdmin - Bengal faqs"
-        description="This is frequently asked questions page for bengal properties"
+        title="FAQS | TailAdmin - Property4India faqs"
+        description="This is frequently asked questions page for property4india properties"
       />
       <FAQ />
     </>

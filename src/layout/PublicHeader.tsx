@@ -23,6 +23,7 @@ import {
   useGetLocalitiesQuery,
 } from "../services/locationApi";
 import { useToast } from "../hooks/useToast";
+import appLogo from "../assets/logomin.png";
 
 interface PublicHeaderProps {
   onShowFavorites?: () => void;
@@ -70,7 +71,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   // Fetch favorites
   const { data: favoritesData } = useGetFavoritePropertiesQuery(
     { page: 1, limit: 5 },
-    { skip: !user }
+    { skip: !user },
   );
 
   useEffect(() => {
@@ -99,11 +100,11 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   const selectedCity = cities.find((city) => city.id === selectedCityId);
 
   const filteredCities = cities.filter((city) =>
-    city.name.toLowerCase().includes(citySearchTerm.toLowerCase())
+    city.name.toLowerCase().includes(citySearchTerm.toLowerCase()),
   );
 
   const filteredLocalities = localities.filter((locality) =>
-    locality.name.toLowerCase().includes(localitySearchTerm.toLowerCase())
+    locality.name.toLowerCase().includes(localitySearchTerm.toLowerCase()),
   );
 
   // Check if user has dashboard access
@@ -144,7 +145,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
     if (!user) {
       warning(
         "Sign In!",
-        "Please login or create account preferably as Owner to post property"
+        "Please login or create account preferably as Owner to post property",
       );
     }
     navigate("/properties/new");
@@ -169,7 +170,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   const handleLocalitySelect = (locality: any) => {
     // Check if locality is already selected
     const isAlreadySelected = selectedLocalities?.some(
-      (loc) => loc.id === locality.id
+      (loc) => loc.id === locality.id,
     );
 
     if (isAlreadySelected) {
@@ -283,18 +284,18 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-[60px] md:h-20">
             {/* 1. Logo & City Selector (Left) */}
-            <div className="flex items-center gap-4 flex-shrink-0">
+            <div className="flex items-center gap-4 flex-shrink-0 min-w-fit">
               {/* Logo */}
               <Link
                 to="/"
                 className="flex items-center gap-0 group flex-shrink-0"
               >
-                <span className={`text-2xl font-black ${styles.logoText}`}>
-                  BENGALPROPERTY
-                </span>
-                <span className={`text-xl font-bold ${styles.logoSubtext}`}>
-                  .COM
-                </span>
+                <img
+                  src={appLogo}
+                  alt="property4india Logo"
+                  className="h-42 w-58 object-contain"
+                  // className="h-14 sm:h-16 md:h-20 w-auto max-w-[200px] object-contain group-hover:scale-105 transition-transform"
+                />
               </Link>
 
               {/* City Selector */}

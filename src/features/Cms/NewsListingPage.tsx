@@ -23,6 +23,8 @@ import type { Content, ContentType } from "../../types";
 import Button from "../../components/ui/button/Button";
 import { Skeleton } from "../../components/ui/skeleton";
 
+import appLogo from "../../assets/logo.png";
+
 // Import specialized card components
 import { ArticleCard } from "./ArticleCard";
 import { PageCard } from "./PageCard";
@@ -173,12 +175,12 @@ export const NewsListingPage: React.FC = () => {
   // Filter content
   const filteredContent = useMemo(() => {
     let filtered = allContent.filter(
-      (item) => !featuredContent.some((f) => f.id === item.id)
+      (item) => !featuredContent.some((f) => f.id === item.id),
     );
 
     if (selectedCategory) {
       filtered = filtered.filter((item) =>
-        item.categories.some((cat) => cat.id === selectedCategory)
+        item.categories.some((cat) => cat.id === selectedCategory),
       );
     }
 
@@ -188,7 +190,7 @@ export const NewsListingPage: React.FC = () => {
         (item) =>
           item.title.toLowerCase().includes(query) ||
           item.excerpt?.toLowerCase().includes(query) ||
-          item.keywords?.some((kw) => kw.toLowerCase().includes(query))
+          item.keywords?.some((kw) => kw.toLowerCase().includes(query)),
       );
     }
 
@@ -213,7 +215,7 @@ export const NewsListingPage: React.FC = () => {
   const totalPages = Math.ceil(filteredContent.length / limit);
   const paginatedContent = filteredContent.slice(
     (currentPage - 1) * limit,
-    currentPage * limit
+    currentPage * limit,
   );
 
   // Handlers
@@ -281,10 +283,15 @@ export const NewsListingPage: React.FC = () => {
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <a href="/" className="flex items-center gap-0 group flex-shrink-0">
-              <span className="text-2xl font-black text-yellow-400">
+              <img
+                src={appLogo}
+                alt="Property4India Logo"
+                className="w-8 h-8 sm:w-10 sm:h-10"
+              />
+              {/* <span className="text-2xl font-black text-yellow-400">
                 BENGALPROPERTY
               </span>
-              <span className="text-xl font-bold text-gray-800">.COM</span>
+              <span className="text-xl font-bold text-gray-800">.COM</span> */}
             </a>
 
             {/* Content Type Navigation */}
@@ -362,7 +369,7 @@ export const NewsListingPage: React.FC = () => {
                 onClick={() =>
                   setCurrentBanner(
                     (prev) =>
-                      (prev - 1 + mockBanners.length) % mockBanners.length
+                      (prev - 1 + mockBanners.length) % mockBanners.length,
                   )
                 }
                 className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -583,7 +590,7 @@ export const NewsListingPage: React.FC = () => {
                             <span className="flex items-center">
                               <Calendar className="w-3 h-3 mr-1" />
                               {new Date(
-                                blog.publishedAt || blog.createdAt
+                                blog.publishedAt || blog.createdAt,
                               ).toLocaleDateString()}
                             </span>
                           </div>
@@ -706,8 +713,8 @@ export const NewsListingPage: React.FC = () => {
                       [
                         ...new Set(
                           allContent.flatMap((c) =>
-                            c.categories.map((cat) => cat.id)
-                          )
+                            c.categories.map((cat) => cat.id),
+                          ),
                         ),
                       ].length
                     }

@@ -15,7 +15,7 @@ export const AdCard: React.FC<AdCardProps> = ({ position }) => {
         List Your Property FREE
       </h3>
       <p className="text-sm text-gray-600 mb-4">
-        Get genuine leads & sell faster on Bengal Property
+        Get genuine leads & sell faster on Property4India.com
       </p>
       <button className="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors">
         Post Property

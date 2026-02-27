@@ -197,6 +197,7 @@ export const PropertyManagement: React.FC = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onView={handleView}
+                
               />
             ))}
           </div>

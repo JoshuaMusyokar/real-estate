@@ -54,7 +54,7 @@ export const Template2PropertyLanding = () => {
 
   const properties = data?.data || [];
   const activeFilterCount = Object.keys(filters).filter(
-    (key) => filters[key as keyof PropertySearchFilters] !== undefined
+    (key) => filters[key as keyof PropertySearchFilters] !== undefined,
   ).length;
 
   const handleSearch = () => {
@@ -86,7 +86,7 @@ export const Template2PropertyLanding = () => {
               Agents. Tours. Loans. Homes.
             </h3>
             <p className="text-xl text-gray-600 mb-8">
-              Find it all here. Get started with Bengal Property.
+              Find it all here. Get started with Property4India.com.
             </p>
 
             {/* Search Bar - Zillow Style */}
@@ -283,7 +283,7 @@ export const Template2PropertyLanding = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Why Choose Bengal Property
+              Why Choose Property4India.com
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               We make finding your dream home easier than ever
