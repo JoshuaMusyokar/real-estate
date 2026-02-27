@@ -11,7 +11,7 @@ import type {
 const baseQuery = fetchBaseQuery({
   baseUrl:
     import.meta.env.VITE_API_BASE_URL ||
-    "https://api.bengalproperty.com/api/v1",
+    "https://api.property4india.com/api/v1",
   // baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
