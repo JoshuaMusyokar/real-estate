@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import appLogo from "../assets/logo.png";
+import appLogo from "../assets/horizontallogo.png";
 import mobileLogo from "../assets/favicon.png";
 
 // Assume these icons are imported from an icon library
