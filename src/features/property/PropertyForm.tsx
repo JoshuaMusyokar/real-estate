@@ -1,5 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  CheckCircle,
+  Clock,
+  Eye,
+  Bell,
+} from "lucide-react";
 import { StepIndicator } from "./StepIndicator";
 import { BasicInfoStep } from "./components/BasicInfoStep";
 import { LocationStep } from "./components/LocationStep";
@@ -34,6 +41,8 @@ import {
   setPropertyType,
   setSubType,
 } from "../../store/slices/propertyFormSlice";
+import { Card, CardContent } from "../../components/ui/Card";
+import Button from "../../components/ui/button/Button";
 
 interface PropertyFormPageProps {
   mode: "create" | "edit";
@@ -73,7 +82,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const amenities = amenitiesData?.data || [];
   const categories = categoriesData?.data || [];
 
-  // Form State - Updated to match PropertyCreateRequest
+  // Form State
   const [formData, setFormData] = useState<PropertyCreateRequest>({
     // Basic Information
     title: "",
@@ -206,6 +215,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     openSides: null,
     storageType: null,
     industryType: null,
+
     // Related Data
     amenities: [],
     images: [],
@@ -219,25 +229,17 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const { data: localitiesData, isLoading: isLoadingLocalities } =
     useGetLocalitiesQuery(
       { cityId: formData.cityId || "" },
-      { skip: !formData.cityId }
+      { skip: !formData.cityId },
     );
 
   const cities = citiesData?.data || [];
   const localities = localitiesData?.data || [];
 
   // Custom Hooks
-  const { errors, touched, validateStep, handleBlur, setErrors, setTouched } =
+  const { errors, touched, validateStep, handleBlur, setErrors } =
     usePropertyValidation();
 
-  const {
-    locationSearch,
-    locationSuggestions,
-    showSuggestions,
-    isSearchingLocation,
-    setLocationSearch,
-    setShowSuggestions,
-    handleLocationSelect: handleLocationSelectBase,
-  } = useLocationSearch();
+  const { setLocationSearch, setShowSuggestions } = useLocationSearch();
 
   const {
     imageFiles,
@@ -256,9 +258,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     if (mode === "edit" && propertyData?.data) {
       const property = propertyData.data;
 
-      // Create a proper update object matching PropertyUpdateRequest
       const updateData: PropertyUpdateRequest = {
-        // Basic Information
         title: property.title,
         description: property.description,
         propertyTypeId: property.propertyTypeId,
@@ -268,8 +268,6 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         builderName: property.builderName,
         hasBalcony: property.hasBalcony,
         reraNumber: property.reraNumber,
-
-        // Pricing
         price: Number(property.price),
         priceNegotiable: property.priceNegotiable,
         currency: property.currency,
@@ -279,8 +277,6 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         monthlyRent: property.monthlyRent,
         leasePeriod: property.leasePeriod,
         pricePerUnit: property.pricePerUnit,
-
-        // Location
         address: property.address,
         cityId: property.cityId,
         locality: property.locality,
@@ -290,8 +286,6 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         zipCode: property.zipCode,
         latitude: property.latitude,
         longitude: property.longitude,
-
-        // Area Measurements
         carpetArea: property.carpetArea,
         carpetAreaUnit: property.carpetAreaUnit,
         builtUpArea: property.builtUpArea,
@@ -302,8 +296,6 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         plotAreaUnit: property.plotAreaUnit,
         squareFeet: property.squareFeet,
         squareMeters: property.squareMeters,
-
-        // Residential Details
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
         balconies: property.balconies,
@@ -314,21 +306,15 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         totalFlats: property.totalFlats,
         totalBuildings: property.totalBuildings,
         yearBuilt: property.yearBuilt,
-
-        // Possession
         possessionStatus: property.possessionStatus,
         possessionDate: property.possessionDate
           ? new Date(property.possessionDate)
           : null,
-
-        // Parking & Lifts
         coveredParking: property.coveredParking,
         openParking: property.openParking,
         publicParking: property.publicParking,
         passengerLifts: property.passengerLifts,
         serviceLifts: property.serviceLifts,
-
-        // Commercial Office Specific
         projectName: property.projectName,
         locatedWithin: property.locatedWithin,
         officeType: property.officeType,
@@ -346,8 +332,6 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         preRented: property.preRented,
         nocCertified: property.nocCertified,
         occupancyCertified: property.occupancyCertified,
-
-        // Land/Plot Specific
         plotDimensions: property.plotDimensions,
         boundaryWall: property.boundaryWall,
         cornerPlot: property.cornerPlot,
@@ -359,16 +343,12 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         electricityAvailable: property.electricityAvailable,
         waterConnection: property.waterConnection,
         sewageConnection: property.sewageConnection,
-
-        // Warehouse/Industrial Specific
         ceilingHeight: property.ceilingHeight,
         loadingDocks: property.loadingDocks,
         powerLoad: property.powerLoad,
         flooringType: property.flooringType,
         coveredArea: property.coveredArea,
         openArea: property.openArea,
-
-        // Features & Media
         youtubeVideoUrl: property.youtubeVideoUrl,
         virtualTourUrl: property.virtualTourUrl,
         nearbyPlaces: property.nearbyPlaces,
@@ -387,13 +367,10 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         displayWindows: property.displayWindows ?? false,
         idealFor: property.idealFor,
         fireSafetyApproved: property.fireSafetyApproved ?? false,
-
         dockHeight: property.dockHeight,
         openSides: property.openSides,
         storageType: property.storageType,
         industryType: property.industryType,
-
-        // Related Data
         amenities: property.amenities?.map((a) => a.amenityId) || [],
         images: [],
       };
@@ -408,7 +385,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           setPropertyType({
             id: property.propertyType.id,
             name: property.propertyType.name,
-          })
+          }),
         );
       }
 
@@ -417,13 +394,12 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           setSubType({
             id: property.subType.id,
             name: property.subType.name,
-          })
+          }),
         );
       } else {
         dispatch(setSubType(null));
       }
 
-      // Load existing images
       if (property.images) {
         setImageFiles(
           property.images.map((img, idx) => ({
@@ -435,11 +411,10 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
             order: img.order || idx,
             isCover: img.isCover,
             preview: img.viewableUrl || img.url,
-          }))
+          })),
         );
       }
 
-      // Load existing documents
       if (property.documents) {
         setDocuments(
           property.documents.map((doc) => ({
@@ -447,76 +422,40 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
             name: doc.name,
             type: doc.type,
             size: doc.size,
-          }))
+          })),
         );
       }
     }
   }, [mode, propertyData, setImageFiles, setDocuments]);
-
-  const handleLocationSelect = (location: any) => {
-    const selectedCity = cities.find(
-      (city) =>
-        city.name.toLowerCase() ===
-        (
-          location.address.city ||
-          location.address.town ||
-          location.address.village
-        )?.toLowerCase()
-    );
-
-    setFormData({
-      ...formData,
-      address: location.display_name.split(",")[0] || location.display_name,
-      cityId: selectedCity?.id || "",
-      locality: selectedCity?.name || "",
-      state: selectedCity?.state || location.address.state || null,
-      country: selectedCity?.country || location.address.country || "",
-      zipCode: location.address.postcode || null,
-      latitude: parseFloat(location.lat),
-      longitude: parseFloat(location.lon),
-    });
-    setLocationSearch(location.display_name);
-    setShowSuggestions(false);
-    setErrors({ ...errors, location: "" });
-  };
 
   const handleFormUpdate = (updates: Partial<PropertyCreateRequest>) => {
     setFormData({ ...formData, ...updates });
   };
 
   const handleNext = () => {
-    console.log("next called", currentStep);
-
     if (validateStep(currentStep, formData, imageFiles)) {
-      console.log("next called 4", currentStep);
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      // Get all error messages from the errors object
       const errorMessages = Object.values(errors);
-
       if (errorMessages.length > 0) {
-        // Join all error messages with line breaks
         const errorText = errorMessages.join("\n");
-
-        // Show all errors in a toast
         showError("Please fix the following issues:", errorText);
       } else {
-        // Fallback if errors object is empty but validation failed
         showError(
           "Validation Failed",
-          "Please complete all required fields in this step."
+          "Please complete all required fields in this step.",
         );
       }
     }
   };
+
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async () => {
-    // Validate all steps
     let allValid = true;
     for (let i = 0; i < steps.length; i++) {
       if (!validateStep(i, formData, imageFiles)) {
@@ -534,167 +473,27 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     try {
       const formDataToSend = new FormData();
 
-      console.log("Image files", imageFiles);
-
       const imageMetadata = imageFiles.map((img, index) => ({
         caption: img.caption || null,
-        isFloorPlan: img.isFloorPlan || false, // ⭐ Include this
+        isFloorPlan: img.isFloorPlan || false,
         order: index,
         isCover: img.isCover || false,
         url: img.url!,
         key: img.key || null,
       }));
 
-      // Prepare property data - updated to match PropertyCreateRequest
       const propertyDataToSend: PropertyCreateRequest = {
-        // Basic Information
-        title: formData.title,
-        description: formData.description,
-        propertyTypeId: formData.propertyTypeId,
-        subTypeId: formData.subTypeId,
-        purpose: formData.purpose,
+        ...formData,
         status: mode === "create" ? "UNDER_REVIEW" : formData.status!,
-        builderName: formData.builderName,
-        hasBalcony: formData.hasBalcony,
-        reraNumber: formData.reraNumber,
-        pricePerUnit: formData.pricePerUnit,
-
-        // Pricing
-        price: formData.price,
-        priceNegotiable: formData.priceNegotiable,
-        currency: formData.currency,
-        stampDutyExcluded: formData.stampDutyExcluded,
-        maintenanceCharges: formData.maintenanceCharges,
-        securityDeposit: formData.securityDeposit,
-        monthlyRent: formData.monthlyRent,
-        leasePeriod: formData.leasePeriod,
-
-        // Location
-        address: formData.address,
-        cityId: formData.cityId,
-        locality: formData.locality,
-        complexName: formData.complexName,
-        state: formData.state,
-        country: formData.country,
-        zipCode: formData.zipCode,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-
-        // Area Measurements
-        carpetArea: formData.carpetArea,
-        carpetAreaUnit: formData.carpetAreaUnit,
-        builtUpArea: formData.builtUpArea,
-        builtUpAreaUnit: formData.builtUpAreaUnit,
-        superBuiltArea: formData.superBuiltArea,
-        superBuiltAreaUnit: formData.superBuiltAreaUnit,
-        plotArea: formData.plotArea,
-        plotAreaUnit: formData.plotAreaUnit,
-        squareFeet: formData.squareFeet,
-        squareMeters: formData.squareMeters,
-
-        // Residential Details
-        bedrooms: formData.bedrooms,
-        bathrooms: formData.bathrooms,
-        balconies: formData.balconies,
-        furnishingStatus: formData.furnishingStatus,
-        floorNumber: formData.floorNumber,
-        totalFloors: formData.totalFloors,
-        floors: formData.floors,
-        totalFlats: formData.totalFlats,
-        totalBuildings: formData.totalBuildings,
-        yearBuilt: formData.yearBuilt,
-
-        // Possession
-        possessionStatus: formData.possessionStatus,
-        possessionDate: formData.possessionDate,
-
-        // Parking & Lifts
-        coveredParking: formData.coveredParking,
-        openParking: formData.openParking,
-        publicParking: formData.publicParking,
-        passengerLifts: formData.passengerLifts,
-        serviceLifts: formData.serviceLifts,
-
-        // Commercial Office Specific
-        projectName: formData.projectName,
-        locatedWithin: formData.locatedWithin,
-        officeType: formData.officeType,
-        officesPerFloor: formData.officesPerFloor,
-        officesInProject: formData.officesInProject,
-        buildingsInProject: formData.buildingsInProject,
-        cabins: formData.cabins,
-        seats: formData.seats,
-        privateWashrooms: formData.privateWashrooms,
-        publicWashrooms: formData.publicWashrooms,
-        conferenceRooms: formData.conferenceRooms,
-        receptionArea: formData.receptionArea,
-        meetingRooms: formData.meetingRooms,
-        pantryType: formData.pantryType,
-        preRented: formData.preRented,
-        nocCertified: formData.nocCertified,
-        occupancyCertified: formData.occupancyCertified,
-
-        // Land/Plot Specific
-        plotDimensions: formData.plotDimensions,
-        boundaryWall: formData.boundaryWall,
-        cornerPlot: formData.cornerPlot,
-        facingDirection: formData.facingDirection,
-        zoningType: formData.zoningType,
-        clearTitle: formData.clearTitle,
-        developmentStatus: formData.developmentStatus,
-        roadWidth: formData.roadWidth,
-        electricityAvailable: formData.electricityAvailable,
-        waterConnection: formData.waterConnection,
-        sewageConnection: formData.sewageConnection,
-
-        // Warehouse/Industrial Specific
-        ceilingHeight: formData.ceilingHeight,
-        loadingDocks: formData.loadingDocks,
-        powerLoad: formData.powerLoad,
-        flooringType: formData.flooringType,
-        coveredArea: formData.coveredArea,
-        openArea: formData.openArea,
-
-        // Features & Media
-        youtubeVideoUrl: formData.youtubeVideoUrl,
-        virtualTourUrl: formData.virtualTourUrl,
-        nearbyPlaces: formData.nearbyPlaces,
-        ownershipType: formData.ownershipType,
-        approvedBy: formData.approvedBy,
-        legalDispute: formData.legalDispute || false,
-        encumbranceFree: formData.encumbranceFree ?? true,
-        preferredTenants: formData.preferredTenants,
-        rentEscalation: formData.rentEscalation,
-
-        brochureAvailable: formData.brochureAvailable ?? false,
-        floorPlanAvailable: formData.floorPlanAvailable ?? false,
-
-        cornerLocation: formData.cornerLocation ?? false,
-        locatedIn: formData.locatedIn,
-        frontageWidth: formData.frontageWidth,
-        mainRoadFacing: formData.mainRoadFacing ?? false,
-        displayWindows: formData.displayWindows ?? false,
-        idealFor: formData.idealFor,
-        fireSafetyApproved: formData.fireSafetyApproved ?? false,
-        dockHeight: formData.dockHeight,
-        openSides: formData.openSides,
-        storageType: formData.storageType,
-        industryType: formData.industryType,
-
-        // Related Data
-        amenities: formData.amenities,
         images: imageMetadata,
       };
 
-      // For update, we need to send a PropertyUpdateRequest
       if (mode === "edit") {
-        // Remove non-updatable fields or keep only changed fields
         const updateData: PropertyUpdateRequest = {
           ...propertyDataToSend,
           roadWidth: propertyDataToSend.roadWidth
             ? propertyDataToSend.roadWidth?.toString()
             : null,
-          // Ensure status is not changed on update unless explicitly intended
           status: formData.status,
         };
         formDataToSend.append("data", JSON.stringify(updateData));
@@ -708,14 +507,12 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         formDataToSend.append("data", JSON.stringify(createData));
       }
 
-      // Add image files
       imageFiles.forEach((img) => {
         if (img.file) {
           formDataToSend.append("images", img.file);
         }
       });
 
-      // Add document files
       documents.forEach((doc) => {
         if (doc.file) {
           formDataToSend.append("documents", doc.file);
@@ -738,7 +535,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       console.error("Failed to save property:", error);
       showError(
         error?.data?.message || "Failed to save property",
-        "Please try again."
+        "Please try again.",
       );
     }
   };
@@ -825,22 +622,22 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const isLoading = isCreating || isUpdating;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-10">
+        <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-colors"
+              className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg sm:rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white truncate">
                 {mode === "create" ? "Add New Property" : "Edit Property"}
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1 truncate">
                 {mode === "create"
                   ? "Fill in the details to list your property"
                   : "Update your property information"}
@@ -851,110 +648,122 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       </div>
 
       {/* Form Container */}
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-          <StepIndicator steps={steps} currentStep={currentStep} />
+      <div className="max-w-full mx-auto">
+        <Card className="shadow-lg">
+          <CardContent className="p-4 sm:p-6 md:p-8">
+            <StepIndicator steps={steps} currentStep={currentStep} />
 
-          <form onSubmit={(e) => e.preventDefault()}>
-            {renderStepContent()}
+            <div className="mt-6 sm:mt-8">
+              <form onSubmit={(e) => e.preventDefault()}>
+                {renderStepContent()}
 
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={currentStep === 0}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                  currentStep === 0
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
-              >
-                <ArrowLeft className="w-5 h-5" />
-                Back
-              </button>
+                {/* Navigation Buttons */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    type="button"
+                    onClick={handleBack}
+                    disabled={currentStep === 0}
+                    variant="outline"
+                    className="order-2 sm:order-1"
+                    startIcon={<ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  >
+                    Back
+                  </Button>
 
-              <div className="text-sm text-gray-600 font-medium">
-                Step {currentStep + 1} of {steps.length}
-              </div>
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium text-center order-1 sm:order-2">
+                    Step {currentStep + 1} of {steps.length}
+                  </div>
 
-              {currentStep < steps.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg"
-                >
-                  Next
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-xl font-bold hover:from-green-700 hover:to-green-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Saving...
-                    </>
+                  {currentStep < steps.length - 1 ? (
+                    <Button
+                      type="button"
+                      onClick={handleNext}
+                      className="order-3"
+                      endIcon={<ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />}
+                    >
+                      Next
+                    </Button>
                   ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      {mode === "create"
-                        ? "Submit Property"
-                        : "Update Property"}
-                    </>
+                    <Button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={isLoading}
+                      variant="primary"
+                      className="order-3 bg-gradient-to-r from-success-600 to-success-700 hover:from-success-700 hover:to-success-800"
+                      startIcon={
+                        isLoading ? (
+                          <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4 sm:w-5 sm:h-5" />
+                        )
+                      }
+                    >
+                      {isLoading
+                        ? "Saving..."
+                        : mode === "create"
+                          ? "Submit Property"
+                          : "Update Property"}
+                    </Button>
                   )}
-                </button>
-              )}
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Additional Info */}
         {mode === "create" && (
-          <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-bold text-gray-900 mb-3">
-              What happens after submission?
-            </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                  1
-                </div>
-                <div>
-                  Your property will be set to <strong>UNDER_REVIEW</strong>{" "}
-                  status
-                </div>
+          <Card className="mt-4 sm:mt-6">
+            <CardContent className="p-4 sm:p-5 md:p-6">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
+                What happens after submission?
+              </h3>
+              <div className="space-y-2 sm:space-y-3">
+                {[
+                  {
+                    icon: Clock,
+                    text: 'Your property will be set to "UNDER_REVIEW" status',
+                    color:
+                      "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30",
+                  },
+                  {
+                    icon: CheckCircle,
+                    text: "Our team will review your listing within 24-48 hours",
+                    color:
+                      "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30",
+                  },
+                  {
+                    icon: Eye,
+                    text: "Once approved, it will be visible to potential buyers/renters",
+                    color:
+                      "text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30",
+                  },
+                  {
+                    icon: Bell,
+                    text: "You'll receive notifications about inquiries and views",
+                    color:
+                      "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30",
+                  },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={idx} className="flex items-start gap-2 sm:gap-3">
+                      <div
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}
+                      >
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 pt-0.5 sm:pt-1">
+                        {item.text}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                  2
-                </div>
-                <div>Our team will review your listing within 24-48 hours</div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                  3
-                </div>
-                <div>
-                  Once approved, it will be visible to potential buyers/renters
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                  4
-                </div>
-                <div>
-                  You'll receive notifications about inquiries and views
-                </div>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
       </div>
-    </div>
+    </>
   );
 };

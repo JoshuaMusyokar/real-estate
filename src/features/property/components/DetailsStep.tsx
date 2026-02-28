@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useEffect, useState, useRef, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Building2,
   CheckCircle,
@@ -12,7 +11,6 @@ import {
   Car,
   DollarSign,
   MapPin,
-  Zap,
   Wrench,
   ChevronDown,
   ChevronUp,
@@ -31,8 +29,18 @@ import {
 } from "../../../config/property-form";
 import { useAppSelector } from "../../../hooks";
 import type { RootState } from "../../../store/store";
-import { MultiSelectTags } from "../../../components/form/MultiSelectTags";
 import { PlotDimensionsInput } from "../../../components/form/PlotDimensionsInput";
+import { MultiSelectTags } from "../../../components/form/MultiSelectTags";
+import Label from "../../../components/form/Label";
+import Input from "../../../components/form/input/InputField";
+import TextArea from "../../../components/form/input/TextArea";
+import Checkbox from "../../../components/form/input/Checkbox";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/Card";
 
 interface DetailsStepProps {
   formData: PropertyCreateRequest;
@@ -59,33 +67,28 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   onBlur,
 }) => {
   const { propertyTypeName, subTypeName } = useAppSelector(
-    (state: RootState) => state.propertyForm
+    (state: RootState) => state.propertyForm,
   );
 
   const [availableFields, setAvailableFields] = useState<string[]>([]);
-
-  // Section visibility states
   const [parkingEnabled, setParkingEnabled] = useState(false);
   const [washroomsEnabled, setWashroomsEnabled] = useState(false);
   const [liftsEnabled, setLiftsEnabled] = useState(false);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({});
-
-  // Multi-select dropdown state
   const [officeTypeDropdownOpen, setOfficeTypeDropdownOpen] = useState(false);
 
   // Auto-calculate price per unit
   useEffect(() => {
     const area = formData.carpetArea ?? formData.plotArea;
-
     if (formData.price && area && area > 0) {
       const pricePerUnit = formData.price / area;
       onUpdate({ pricePerUnit });
     }
   }, [formData.price, formData.carpetArea, formData.plotArea]);
 
-  // Initialize section states based on existing data
+  // Initialize section states
   useEffect(() => {
     if (
       formData.coveredParking ||
@@ -111,7 +114,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
 
         const typeSpecificFields = getRequiredFields(
           propertyTypeKey,
-          subTypeName.toUpperCase().replace(/ /g, "_")
+          subTypeName.toUpperCase().replace(/ /g, "_"),
         );
 
         const basicInfoFields = [
@@ -137,7 +140,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         ];
 
         const detailsFields = typeSpecificFields.filter(
-          (field) => !basicInfoFields.includes(field)
+          (field) => !basicInfoFields.includes(field),
         );
 
         setAvailableFields(detailsFields);
@@ -150,17 +153,11 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     }
   }, [propertyTypeName, subTypeName]);
 
-  // Check if field should be displayed based on conditional logic
   const shouldShowField = (fieldName: string): boolean => {
-    const comprehensiveFormdata = {
-      ...formData,
-      subTypeName,
-    };
+    const comprehensiveFormdata = { ...formData, subTypeName };
     const conditionalRule =
       CONDITIONAL_FIELDS[fieldName as keyof typeof CONDITIONAL_FIELDS];
-
     if (!conditionalRule) return true;
-
     const dependentValue =
       comprehensiveFormdata[
         conditionalRule.dependsOn as keyof PropertyCreateRequest
@@ -168,14 +165,13 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     return conditionalRule.showWhen(dependentValue as string);
   };
 
-  // Group fields by category with enhanced organization
   const groupFieldsByCategory = () => {
     const categories: Record<
       string,
       { icon: ReactNode; fields: string[]; collapsible?: boolean }
     > = {
       "Property Details": {
-        icon: <Home className="w-5 h-5" />,
+        icon: <Home className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "bedrooms",
           "bathrooms",
@@ -190,7 +186,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         collapsible: true,
       },
       "Retail & Commercial Features": {
-        icon: <Building className="w-5 h-5" />,
+        icon: <Building className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "storageType",
           "industryType",
@@ -223,7 +219,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         collapsible: true,
       },
       "Financial Details": {
-        icon: <DollarSign className="w-5 h-5" />,
+        icon: <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "monthlyRent",
           "leasePeriod",
@@ -234,7 +230,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         collapsible: true,
       },
       "Legal & Ownership": {
-        icon: <Landmark className="w-5 h-5" />,
+        icon: <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "ownershipType",
           "approvedBy",
@@ -244,7 +240,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         collapsible: true,
       },
       "Area Measurements": {
-        icon: <Square className="w-5 h-5" />,
+        icon: <Square className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "carpetArea",
           "builtUpArea",
@@ -260,12 +256,12 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         collapsible: true,
       },
       "Tenancy Details": {
-        icon: <DollarSign className="w-5 h-5" />,
+        icon: <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: ["preferredTenants", "rentEscalation"],
         collapsible: true,
       },
       "Media & Documentation": {
-        icon: <MapPin className="w-5 h-5" />,
+        icon: <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "brochureAvailable",
           "floorPlanAvailable",
@@ -274,9 +270,8 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         ],
         collapsible: true,
       },
-
       "Land Details": {
-        icon: <Landmark className="w-5 h-5" />,
+        icon: <Landmark className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: [
           "boundaryWall",
           "cornerPlot",
@@ -292,12 +287,12 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         collapsible: true,
       },
       "Industrial Details": {
-        icon: <Factory className="w-5 h-5" />,
+        icon: <Factory className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: ["ceilingHeight", "loadingDocks", "powerLoad", "flooringType"],
         collapsible: true,
       },
       "General Details": {
-        icon: <Wrench className="w-5 h-5" />,
+        icon: <Wrench className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: ["yearBuilt", "possessionStatus", "possessionDate"],
         collapsible: true,
       },
@@ -311,15 +306,15 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     Object.entries(categories).forEach(
       ([category, { icon, fields, collapsible }]) => {
         const categoryFields = fields.filter(
-          (field) => availableFields.includes(field) && shouldShowField(field)
+          (field) => availableFields.includes(field) && shouldShowField(field),
         );
         if (categoryFields.length > 0) {
           result[category] = { icon, fields: categoryFields, collapsible };
         }
-      }
+      },
     );
 
-    // Handle parking as optional section
+    // Handle parking, washrooms, lifts as optional sections
     const parkingFields = [
       "coveredParking",
       "openParking",
@@ -327,29 +322,27 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     ].filter((field) => availableFields.includes(field));
     if (parkingFields.length > 0) {
       result["Parking Facilities"] = {
-        icon: <Car className="w-5 h-5" />,
+        icon: <Car className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: parkingFields,
       };
     }
 
-    // Handle washrooms as optional section
     const washroomFields = ["privateWashrooms", "publicWashrooms"].filter(
-      (field) => availableFields.includes(field)
+      (field) => availableFields.includes(field),
     );
     if (washroomFields.length > 0) {
       result["Washroom Facilities"] = {
-        icon: <Building className="w-5 h-5" />,
+        icon: <Building className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: washroomFields,
       };
     }
 
-    // Handle lifts as optional section
     const liftFields = ["passengerLifts", "serviceLifts"].filter((field) =>
-      availableFields.includes(field)
+      availableFields.includes(field),
     );
     if (liftFields.length > 0) {
       result["Lift Facilities"] = {
-        icon: <Building2 className="w-5 h-5" />,
+        icon: <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />,
         fields: liftFields,
       };
     }
@@ -360,13 +353,9 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   const fieldCategories = groupFieldsByCategory();
 
   const toggleSection = (category: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
+    setExpandedSections((prev) => ({ ...prev, [category]: !prev[category] }));
   };
 
-  // Multi-select handler for office type
   const handleOfficeTypeChange = (value: string) => {
     const currentValues = formData.officeType
       ? formData.officeType
@@ -375,14 +364,12 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
           .filter(Boolean)
       : [];
     const index = currentValues.indexOf(value);
-
     let newValues: string[];
     if (index > -1) {
       newValues = currentValues.filter((_, i) => i !== index);
     } else {
       newValues = [...currentValues, value];
     }
-
     onUpdate({ officeType: newValues.join(", ") });
   };
 
@@ -397,7 +384,6 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     onUpdate({ officeType: newValues.join(", ") });
   };
 
-  // Handle field rendering
   const renderField = (fieldName: string) => {
     const fieldMeta = FIELD_METADATA[fieldName as keyof typeof FIELD_METADATA];
     const value: FieldValue =
@@ -408,13 +394,12 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       return renderGenericField(fieldName, value, error);
     }
 
-    // Special handling for office type
     if (fieldName === "officeType") {
       return renderMultiSelectField(
         fieldName,
         fieldMeta,
         value as string | undefined,
-        error
+        error,
       );
     }
     if (fieldName === "plotDimensions") {
@@ -434,7 +419,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
         fieldName,
         fieldMeta,
         value as string[] | undefined,
-        error
+        error,
       );
     }
 
@@ -443,42 +428,36 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       case "textarea":
       case "number":
         return renderInputField(fieldName, fieldMeta, value, error);
-
       case "checkbox":
         return renderCheckboxField(
           fieldName,
           fieldMeta,
-          value as boolean | undefined
+          value as boolean | undefined,
         );
-
       case "select":
         return renderSelectField(
           fieldName,
           fieldMeta,
           value as string | undefined,
-          error
+          error,
         );
-
       case "number-with-unit":
         return renderNumberWithUnitField(fieldName, fieldMeta, error);
-
       case "date":
         return renderDateField(
           fieldName,
           fieldMeta,
           value as Date | string | null | undefined,
-          error
+          error,
         );
-
       case "multi-tag":
       case "multi-select":
-        // Handle array-based multi-selects
         if (fieldName === "preferredTenants" || fieldName === "idealFor") {
           return renderMultiSelectTags(
             fieldName,
             fieldMeta,
             value as string[] | undefined,
-            error
+            error,
           );
         }
         return renderGenericField(fieldName, value, error);
@@ -493,10 +472,8 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
             required={fieldMeta.required}
           />
         );
-
       case "file-upload":
         return <></>;
-
       default:
         return renderGenericField(fieldName, value, error);
     }
@@ -506,7 +483,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     fieldName: string,
     fieldMeta: FieldMetadata,
     value: string[] | undefined,
-    error: string | undefined
+    error: string | undefined,
   ) => {
     return (
       <MultiSelectTags
@@ -525,7 +502,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     fieldName: string,
     fieldMeta: FieldMetadata,
     value: string | undefined,
-    error: string | undefined
+    error: string | undefined,
   ) => {
     const selectedValues = value
       ? value
@@ -535,30 +512,27 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       : [];
 
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-900">
-          {fieldMeta.label}{" "}
-          {fieldMeta.required && <span className="text-red-500">*</span>}
-        </label>
-
+      <div>
+        <Label>
+          {fieldMeta.label} {fieldMeta.required && "*"}
+        </Label>
         <div className="relative">
-          {/* Selected values display */}
           <div
             onClick={() => setOfficeTypeDropdownOpen(!officeTypeDropdownOpen)}
-            className={`w-full min-h-[48px] px-4 py-2 border-2 rounded-xl cursor-pointer transition-all ${
+            className={`w-full min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 border-2 rounded-lg sm:rounded-xl cursor-pointer transition-all ${
               error
-                ? "border-red-500"
+                ? "border-error-500"
                 : officeTypeDropdownOpen
-                ? "border-blue-500 ring-2 ring-blue-500"
-                : "border-gray-200"
-            } ${selectedValues.length > 0 ? "bg-white" : "bg-gray-50"}`}
+                  ? "border-brand-500 ring-2 ring-brand-500/20"
+                  : "border-gray-300 dark:border-gray-700"
+            } ${selectedValues.length > 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"}`}
           >
             {selectedValues.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {selectedValues.map((val) => (
                   <span
                     key={val}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-medium rounded-lg"
                   >
                     {val}
                     <button
@@ -567,7 +541,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
                         e.stopPropagation();
                         removeOfficeType(val);
                       }}
-                      className="hover:text-blue-900"
+                      className="hover:text-blue-900 dark:hover:text-blue-100"
                     >
                       <svg
                         className="w-3 h-3"
@@ -585,49 +559,50 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
                 ))}
               </div>
             ) : (
-              <span className="text-gray-500">Select office types...</span>
+              <span className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
+                Select office types...
+              </span>
             )}
             <ChevronDown
-              className={`absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-transform ${
+              className={`absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform ${
                 officeTypeDropdownOpen ? "rotate-180" : ""
               }`}
             />
           </div>
 
-          {/* Dropdown options */}
           {officeTypeDropdownOpen && (
             <>
               <div
                 className="fixed inset-0 z-10"
                 onClick={() => setOfficeTypeDropdownOpen(false)}
               />
-              <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-auto">
+              <div className="absolute z-20 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-xl shadow-lg max-h-48 sm:max-h-60 overflow-auto">
                 {fieldMeta.options?.map((option) => {
                   const isSelected = selectedValues.includes(option);
                   return (
                     <label
                       key={option}
-                      className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        isSelected ? "bg-blue-50" : ""
+                      className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                        isSelected ? "bg-blue-50 dark:bg-blue-900/20" : ""
                       }`}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleOfficeTypeChange(option)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-brand-600 rounded focus:ring-brand-500"
                       />
                       <span
-                        className={`text-sm ${
+                        className={`text-xs sm:text-sm ${
                           isSelected
-                            ? "font-semibold text-blue-900"
-                            : "text-gray-900"
+                            ? "font-semibold text-blue-900 dark:text-blue-100"
+                            : "text-gray-900 dark:text-gray-100"
                         }`}
                       >
                         {option}
                       </span>
                       {isSelected && (
-                        <CheckCircle className="w-4 h-4 text-blue-600 ml-auto" />
+                        <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 ml-auto" />
                       )}
                     </label>
                   );
@@ -636,17 +611,15 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
             </>
           )}
         </div>
-
         {selectedValues.length > 0 && (
-          <p className="text-xs text-gray-600">
+          <p className="mt-1.5 text-xs text-gray-600 dark:text-gray-400">
             {selectedValues.length} office type
             {selectedValues.length !== 1 ? "s" : ""} selected
           </p>
         )}
-
         {error && (
-          <p className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
+          <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5" />
             {error}
           </p>
         )}
@@ -658,55 +631,49 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     fieldName: string,
     fieldMeta: FieldMetadata,
     value: FieldValue,
-    error: string | undefined
+    error: string | undefined,
   ) => {
-    // Special handling for pricePerUnit - read-only
     if (fieldName === "pricePerUnit") {
       return (
-        <div className="space-y-2">
-          <label className="block text-sm font-bold text-gray-900">
-            {fieldMeta.label}
-          </label>
+        <div>
+          <Label>{fieldMeta.label}</Label>
           <div className="relative">
-            <input
+            <Input
               type="text"
               value={value ? `${Number(value).toFixed(2)}` : "Auto-calculated"}
-              readOnly
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600"
+              disabled
+              className="pr-20"
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+            <span className="absolute right-3 sm:right-4 top-3 text-xs text-gray-500 dark:text-gray-400">
               per {formData.carpetAreaUnit || formData.plotAreaUnit || "sqft"}
             </span>
           </div>
-          <p className="text-xs text-gray-500">
-            Automatically calculated from price and carpet area or Plot area
+          <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+            Automatically calculated from price and area
           </p>
         </div>
       );
     }
 
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-900">
-          {fieldMeta.label}{" "}
-          {fieldMeta.required && <span className="text-red-500">*</span>}
-        </label>
+      <div>
+        <Label>
+          {fieldMeta.label} {fieldMeta.required && "*"}
+        </Label>
         {fieldMeta.type === "textarea" ? (
-          <textarea
+          <TextArea
             value={(value as string) || ""}
-            onChange={(e) => onUpdate({ [fieldName]: e.target.value })}
-            onBlur={() => onBlur(fieldName)}
+            onChange={(val) => onUpdate({ [fieldName]: val })}
             rows={3}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-              error ? "border-red-500" : "border-gray-200"
-            }`}
+            error={!!error}
+            hint={error}
             placeholder={
               fieldMeta.placeholder ||
               `Enter ${fieldMeta.label.toLowerCase()}...`
             }
           />
         ) : (
-          <input
+          <Input
             type={fieldMeta.type === "number" ? "number" : "text"}
             value={(value as string | number) || ""}
             onChange={(e) => {
@@ -718,22 +685,14 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
                 onUpdate({ [fieldName]: e.target.value });
               }
             }}
-            onBlur={() => onBlur(fieldName)}
-            className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-              error ? "border-red-500" : "border-gray-200"
-            }`}
+            error={!!error}
+            hint={error}
             placeholder={
               fieldMeta.placeholder ||
               `Enter ${fieldMeta.label.toLowerCase()}...`
             }
-            min={fieldMeta.min}
+            min={fieldMeta.min?.toString()}
           />
-        )}
-        {error && (
-          <p className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            {error}
-          </p>
         )}
       </div>
     );
@@ -742,22 +701,16 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   const renderCheckboxField = (
     fieldName: string,
     fieldMeta: FieldMetadata,
-    value: boolean | undefined
+    value: boolean | undefined,
   ) => {
     return (
-      <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
-        <input
-          type="checkbox"
-          id={fieldName}
+      <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+        <Checkbox
+          label={fieldMeta.label}
           checked={value || false}
-          onChange={(e) => onUpdate({ [fieldName]: e.target.checked })}
-          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          onChange={(checked) => onUpdate({ [fieldName]: checked })}
         />
-        <span className="text-sm font-semibold text-gray-900">
-          {fieldMeta.label}
-        </span>
-        {value && <CheckCircle className="w-4 h-4 text-green-600 ml-auto" />}
-      </label>
+      </div>
     );
   };
 
@@ -765,20 +718,21 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     fieldName: string,
     fieldMeta: FieldMetadata,
     value: string | undefined,
-    error: string | undefined
+    error: string | undefined,
   ) => {
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-900">
-          {fieldMeta.label}{" "}
-          {fieldMeta.required && <span className="text-red-500">*</span>}
-        </label>
+      <div>
+        <Label>
+          {fieldMeta.label} {fieldMeta.required && "*"}
+        </Label>
         <select
           value={value || ""}
           onChange={(e) => onUpdate({ [fieldName]: e.target.value || null })}
           onBlur={() => onBlur(fieldName)}
-          className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-            error ? "border-red-500" : "border-gray-200"
+          className={`h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90 ${
+            error
+              ? "border-error-500 focus:border-error-300 focus:ring-error-500/20"
+              : "bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700"
           }`}
         >
           <option value="">Select {fieldMeta.label}</option>
@@ -789,8 +743,8 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
           ))}
         </select>
         {error && (
-          <p className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
+          <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5" />
             {error}
           </p>
         )}
@@ -801,7 +755,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   const renderNumberWithUnitField = (
     fieldName: string,
     fieldMeta: FieldMetadata,
-    error: string | undefined
+    error: string | undefined,
   ) => {
     const unitFieldName = `${fieldName}Unit` as keyof PropertyCreateRequest;
     const unitValue = formData[unitFieldName] as string | undefined;
@@ -809,30 +763,26 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       | number
       | null
       | undefined;
-
     const unitFieldMeta =
       FIELD_METADATA[unitFieldName as keyof typeof FIELD_METADATA];
 
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-900">
-          {fieldMeta.label}{" "}
-          {fieldMeta.required && <span className="text-red-500">*</span>}
-        </label>
+      <div>
+        <Label>
+          {fieldMeta.label} {fieldMeta.required && "*"}
+        </Label>
         <div className="flex gap-2">
-          <input
+          <Input
             type="number"
             value={numberValue || ""}
             onChange={(e) =>
               onUpdate({ [fieldName]: parseFloat(e.target.value) || null })
             }
-            onBlur={() => onBlur(fieldName)}
-            className={`flex-1 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-              error ? "border-red-500" : "border-gray-200"
-            }`}
             placeholder="0"
             min="0"
-            step="0.01"
+            step={0.01}
+            error={!!error}
+            className="flex-1"
           />
           {(fieldMeta.units || unitFieldMeta) && (
             <select
@@ -840,7 +790,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
               onChange={(e) =>
                 onUpdate({ [unitFieldName]: e.target.value || null })
               }
-              className="w-24 sm:w-32 px-3 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+              className="w-20 sm:w-24 px-2 sm:px-3 py-2.5 border-2 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all text-xs sm:text-sm dark:bg-gray-900 dark:text-white"
             >
               <option value="">Unit</option>
               {(fieldMeta.units || unitFieldMeta?.options)?.map((unit) => (
@@ -852,8 +802,8 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
           )}
         </div>
         {error && (
-          <p className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
+          <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5" />
             {error}
           </p>
         )}
@@ -865,26 +815,21 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
     fieldName: string,
     fieldMeta: FieldMetadata,
     value: Date | string | null | undefined,
-    error: string | undefined
+    error: string | undefined,
   ) => {
     const formatDate = (date: Date | string | null | undefined): string => {
       if (!date) return "";
-      if (date instanceof Date) {
-        return date.toISOString().split("T")[0];
-      }
-      if (typeof date === "string") {
-        return date.split("T")[0];
-      }
+      if (date instanceof Date) return date.toISOString().split("T")[0];
+      if (typeof date === "string") return date.split("T")[0];
       return "";
     };
 
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-900">
-          {fieldMeta.label}{" "}
-          {fieldMeta.required && <span className="text-red-500">*</span>}
-        </label>
-        <input
+      <div>
+        <Label>
+          {fieldMeta.label} {fieldMeta.required && "*"}
+        </Label>
+        <Input
           type="date"
           value={formatDate(value)}
           onChange={(e) =>
@@ -892,17 +837,9 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
               [fieldName]: e.target.value ? new Date(e.target.value) : null,
             })
           }
-          onBlur={() => onBlur(fieldName)}
-          className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-            error ? "border-red-500" : "border-gray-200"
-          }`}
+          error={!!error}
+          hint={error}
         />
-        {error && (
-          <p className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            {error}
-          </p>
-        )}
       </div>
     );
   };
@@ -910,7 +847,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
   const renderGenericField = (
     fieldName: string,
     value: FieldValue,
-    error: string | undefined
+    error: string | undefined,
   ) => {
     const label = fieldName
       .replace(/([A-Z])/g, " $1")
@@ -918,127 +855,125 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
       .trim();
 
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-bold text-gray-900 capitalize">
-          {label}
-        </label>
-        <input
+      <div>
+        <Label>{label}</Label>
+        <Input
           type="text"
           value={(value as string) || ""}
           onChange={(e) => onUpdate({ [fieldName]: e.target.value })}
-          onBlur={() => onBlur(fieldName)}
-          className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-            error ? "border-red-500" : "border-gray-200"
-          }`}
           placeholder={`Enter ${label.toLowerCase()}...`}
+          error={!!error}
+          hint={error}
         />
-        {error && (
-          <p className="text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            {error}
-          </p>
-        )}
       </div>
     );
   };
 
-  // Render optional facility section
   const renderOptionalSection = (
     title: string,
     icon: ReactNode,
     fields: string[],
     enabled: boolean,
-    setEnabled: (value: boolean) => void
+    setEnabled: (value: boolean) => void,
   ) => {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-          <div className="flex items-center gap-3">
-            {icon}
-            <div>
-              <h3 className="text-base font-bold text-gray-900">{title}</h3>
-              <p className="text-xs text-gray-600">
-                Optional - Enable if applicable
-              </p>
+      <Card>
+        <CardContent className="p-4 sm:p-5 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                {icon}
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
+                  {title}
+                </h3>
+                <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400">
+                  Optional - Enable if applicable
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEnabled(!enabled);
+                if (enabled) {
+                  const clearData: any = {};
+                  fields.forEach((field) => {
+                    clearData[field] = null;
+                  });
+                  onUpdate(clearData);
+                }
+              }}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
+                enabled
+                  ? "bg-brand-600 text-white hover:bg-brand-700"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+              }`}
+            >
+              {enabled ? "Enabled" : "Enable"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEnabled(!enabled);
-              if (enabled) {
-                // Clear values when disabled
-                const clearData: any = {};
-                fields.forEach((field) => {
-                  clearData[field] = null;
-                });
-                onUpdate(clearData);
-              }
-            }}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              enabled
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            {enabled ? "Enabled" : "Enable"}
-          </button>
-        </div>
 
-        {enabled && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pl-4">
-            {fields.map((field) => (
-              <div key={field}>{renderField(field)}</div>
-            ))}
-          </div>
-        )}
-      </div>
+          {enabled && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {fields.map((field) => (
+                <div key={field}>{renderField(field)}</div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   };
 
   if (!propertyTypeName || !subTypeName) {
     return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <Building2 className="w-8 h-8 text-blue-600" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
-          Select Property Type First
-        </h3>
-        <p className="text-gray-600">
-          Please go back to Basic Info step and select a property type and
-          subtype to see relevant details.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="text-center py-8 sm:py-12">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+            <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
+            Select Property Type First
+          </h3>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+            Please go back to Basic Info step and select a property type and
+            subtype.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* Property Type Info */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-blue-800 font-medium mb-1">
-              Configuring details for:
-            </p>
-            <p className="text-lg md:text-xl font-bold text-blue-900 capitalize">
-              {propertyTypeName.toLowerCase()} - {subTypeName.toLowerCase()}
-            </p>
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+        <CardContent className="p-3 sm:p-4 md:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div>
+              <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-300 font-medium mb-0.5 sm:mb-1">
+                Configuring details for:
+              </p>
+              <p className="text-base sm:text-lg md:text-xl font-bold text-blue-900 dark:text-blue-100 capitalize">
+                {propertyTypeName.toLowerCase()} - {subTypeName.toLowerCase()}
+              </p>
+            </div>
+            <div className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-3 py-1.5 rounded-full w-fit">
+              {availableFields.length} fields
+            </div>
           </div>
-          <div className="text-sm font-semibold text-blue-700 bg-blue-100 px-4 py-2 rounded-full w-fit">
-            {availableFields.length} fields
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Conditional possession date notice */}
+      {/* Possession Date Notice */}
       {formData.possessionStatus === "Under Construction" &&
         shouldShowField("possessionDate") && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-yellow-800">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 rounded-lg p-3 sm:p-4">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm text-yellow-800 dark:text-yellow-300">
                 Since possession status is "Under Construction", please provide
                 the expected possession date.
               </p>
@@ -1046,91 +981,85 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
           </div>
         )}
 
-      {/* Render fields by category */}
-      <div className="space-y-6 md:space-y-8">
-        {Object.entries(fieldCategories).map(
-          ([category, { icon, fields, collapsible }]) => {
-            // Handle optional sections
-            if (category === "Parking Facilities") {
-              return (
-                <div key={category}>
-                  {renderOptionalSection(
-                    category,
-                    icon,
-                    fields,
-                    parkingEnabled,
-                    setParkingEnabled
-                  )}
-                </div>
-              );
-            }
-
-            if (category === "Washroom Facilities") {
-              return (
-                <div key={category}>
-                  {renderOptionalSection(
-                    category,
-                    icon,
-                    fields,
-                    washroomsEnabled,
-                    setWashroomsEnabled
-                  )}
-                </div>
-              );
-            }
-
-            if (category === "Lift Facilities") {
-              return (
-                <div key={category}>
-                  {renderOptionalSection(
-                    category,
-                    icon,
-                    fields,
-                    liftsEnabled,
-                    setLiftsEnabled
-                  )}
-                </div>
-              );
-            }
-
-            const isExpanded = expandedSections[category] !== false;
-
+      {/* Field Categories */}
+      {Object.entries(fieldCategories).map(
+        ([category, { icon, fields, collapsible }]) => {
+          if (category === "Parking Facilities") {
             return (
-              <div
-                key={category}
-                className="bg-white border-2 border-gray-100 rounded-2xl p-4 md:p-6 hover:border-gray-200 transition-colors"
-              >
+              <div key={category}>
+                {renderOptionalSection(
+                  category,
+                  icon,
+                  fields,
+                  parkingEnabled,
+                  setParkingEnabled,
+                )}
+              </div>
+            );
+          }
+          if (category === "Washroom Facilities") {
+            return (
+              <div key={category}>
+                {renderOptionalSection(
+                  category,
+                  icon,
+                  fields,
+                  washroomsEnabled,
+                  setWashroomsEnabled,
+                )}
+              </div>
+            );
+          }
+          if (category === "Lift Facilities") {
+            return (
+              <div key={category}>
+                {renderOptionalSection(
+                  category,
+                  icon,
+                  fields,
+                  liftsEnabled,
+                  setLiftsEnabled,
+                )}
+              </div>
+            );
+          }
+
+          const isExpanded = expandedSections[category] !== false;
+
+          return (
+            <Card key={category}>
+              <CardHeader className="p-4 sm:p-5 md:p-6">
                 {collapsible ? (
                   <button
                     type="button"
                     onClick={() => toggleSection(category)}
-                    className="w-full flex items-center justify-between mb-4 group"
+                    className="w-full flex items-center justify-between group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg">
+                      <div className="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
                         {icon}
                       </div>
-                      <h3 className="text-base md:text-lg font-bold text-gray-900">
-                        {category}
-                      </h3>
-                    </div>
+                      {category}
+                    </CardTitle>
                     {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                      <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     )}
                   </button>
                 ) : (
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-blue-50 rounded-lg">{icon}</div>
-                    <h3 className="text-base md:text-lg font-bold text-gray-900">
-                      {category}
-                    </h3>
-                  </div>
+                  <CardTitle className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg">
+                    <div className="p-1.5 sm:p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      {icon}
+                    </div>
+                    {category}
+                  </CardTitle>
                 )}
+              </CardHeader>
 
-                {(!collapsible || isExpanded) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+              {(!collapsible || isExpanded) && (
+                <CardContent className="p-4 sm:p-5 md:p-6 pt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
                     {fields.map((field) => (
                       <div
                         key={field}
@@ -1138,7 +1067,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
                           field === "description" ||
                           field === "youtubeVideoUrl" ||
                           field === "virtualTourUrl"
-                            ? "md:col-span-2 xl:col-span-3"
+                            ? "sm:col-span-2 lg:col-span-3"
                             : ""
                         }
                       >
@@ -1146,27 +1075,29 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            );
-          }
-        )}
-      </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        },
+      )}
 
-      {/* No fields message */}
+      {/* No Fields Message */}
       {availableFields.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-2xl">
-          <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No Additional Details Required
-          </h3>
-          <p className="text-gray-600">
-            This property type doesn't require additional details. You can
-            proceed to the next step.
-          </p>
-        </div>
+        <Card>
+          <CardContent className="text-center py-8 sm:py-12 bg-gray-50 dark:bg-gray-800/50">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+              <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-2">
+              No Additional Details Required
+            </h3>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+              This property type doesn't require additional details. You can
+              proceed to the next step.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

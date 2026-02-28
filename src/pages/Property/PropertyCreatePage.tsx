@@ -15,7 +15,7 @@ const PropertyCreatePage: FC = () => {
         description="Create a new property listing with detailed information."
       />
 
-      <div className="container mx-auto px-4 py-6">
+      <div>
         <PropertyForm mode="create" />
       </div>
     </>
