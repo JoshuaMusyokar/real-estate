@@ -54,6 +54,8 @@ import PerformanceAnalyticsPage from "./pages/Analytics/PerformanceAnalyticsPage
 import NotificationsPage from "./pages/Notifications/NotificationPage";
 import UserProfilesPage from "./pages/UserProfiles";
 import FAQPage from "./pages/FAQS/Faqs";
+import ManagementPage from "./pages/UserPage/ManagementPage";
+
 // import {Role } from "./types";
 
 export default function App() {
@@ -186,6 +188,8 @@ export default function App() {
             <Route path="/profile" element={<UserProfilesPage />} />
             {/* User Profile - All authenticated users */}
             <Route path="/users" element={<UserManagementPage />} />
+            {/* User Profile - All authenticated users */}
+            <Route path="/management" element={<ManagementPage />} />
             {/* Properties Analytics - */}
             <Route
               path="/properties/analytics"

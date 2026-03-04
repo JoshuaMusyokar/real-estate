@@ -180,7 +180,10 @@ const manage: NavItem[] = [
     icon: <UserCog />,
     name: "Manage Users",
     roles: ["ADMIN", "SUPER_ADMIN"],
-    subItems: [{ name: "Users", path: "/users" }],
+    subItems: [
+      { path: "/management", name: "Management" },
+      { name: "Users", path: "/users" },
+    ],
   },
   {
     icon: <Bell />,
@@ -460,7 +463,11 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/dashboard" className="flex items-center gap-2">
           {isExpanded || isHovered || isMobileOpen ? (
-            <img src={appLogo} alt="Property4India" className="h-42 w-58 object-contain" />
+            <img
+              src={appLogo}
+              alt="Property4India"
+              className="h-42 w-58 object-contain"
+            />
           ) : (
             <img src={mobileLogo} alt="P4I" className="h-8" />
           )}

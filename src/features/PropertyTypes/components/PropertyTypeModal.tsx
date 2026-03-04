@@ -10,6 +10,7 @@ import type {
   UpdatePropertyTypeRequest,
 } from "../../../types";
 import { useToast } from "../../../hooks/useToast";
+import { parseApiError } from "../../../utils/Apierror";
 
 interface PropertyTypeModalProps {
   isOpen: boolean;
@@ -39,8 +40,9 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
     isActive: true,
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const { success, error: showError } = useToast();
+  // Field-level errors: populated from backend Zod validation errors
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const { success } = useToast();
 
   useEffect(() => {
     if (propertyType) {
@@ -60,30 +62,12 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
         isActive: true,
       });
     }
-    setErrors({});
+    setFieldErrors({});
   }, [propertyType, isOpen]);
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (formData.name && !formData.name.trim()) {
-      newErrors.name = "Name is required";
-    } else if (formData.name && formData.name.length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
-    }
-
-    if (formData.order && formData.order < 0) {
-      newErrors.order = "Order must be a positive number";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) return;
+    setFieldErrors({});
 
     try {
       if (propertyType) {
@@ -94,25 +78,22 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
         success("Property type updated successfully");
       } else {
         await createPropertyType(
-          formData as CreatePropertyTypeRequest
+          formData as CreatePropertyTypeRequest,
         ).unwrap();
         success("Property type created successfully");
       }
       onSuccess();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        showError(
-          error.message ||
-            (propertyType
-              ? "Failed to update property type"
-              : "Failed to create property type")
-        );
-      } else {
-        showError(
-          propertyType
-            ? "Failed to update property type"
-            : "Failed to create property type"
-        );
+    } catch (error) {
+      // The base query already fires an automatic toast for all errors.
+      // We only handle field-level validation errors here to show them
+      // inline on the form inputs — the toast itself is already shown.
+      const parsed = parseApiError(error);
+      if (parsed.fieldErrors?.length) {
+        const mapped: Record<string, string> = {};
+        parsed.fieldErrors.forEach((e) => {
+          if (e.field) mapped[e.field] = e.message;
+        });
+        setFieldErrors(mapped);
       }
     }
   };
@@ -120,7 +101,7 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value, type } = e.target;
 
@@ -130,13 +111,13 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
         type === "checkbox"
           ? (e.target as HTMLInputElement).checked
           : type === "number"
-          ? Number(value)
-          : value,
+            ? Number(value)
+            : value,
     }));
 
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    // Clear inline field error as the user corrects their input
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -145,9 +126,6 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        {/* Background overlay */}
-
-        {/* Modal panel */}
         <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <form onSubmit={handleSubmit}>
             {/* Header */}
@@ -191,15 +169,15 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
                   value={formData.name}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors ${
-                    errors.name
+                    fieldErrors.name
                       ? "border-red-300 dark:border-red-500"
                       : "border-gray-300 dark:border-gray-600"
                   } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   placeholder="e.g., RESIDENTIAL, COMMERCIAL"
                 />
-                {errors.name && (
+                {fieldErrors.name && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                    {errors.name}
+                    {fieldErrors.name}
                   </p>
                 )}
               </div>
@@ -257,14 +235,14 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors ${
-                      errors.order
+                      fieldErrors.order
                         ? "border-red-300 dark:border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   />
-                  {errors.order && (
+                  {fieldErrors.order && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                      {errors.order}
+                      {fieldErrors.order}
                     </p>
                   )}
                 </div>
@@ -311,8 +289,8 @@ const PropertyTypeModal: React.FC<PropertyTypeModalProps> = ({
                   {isCreating || isUpdating
                     ? "Saving..."
                     : propertyType
-                    ? "Update"
-                    : "Create"}
+                      ? "Update"
+                      : "Create"}
                 </button>
               </div>
             </div>
