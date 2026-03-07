@@ -1,6 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useEffect } from "react";
-import { X, Save, Eye, EyeOff, Loader2, MapPin, Building } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  X,
+  Save,
+  Eye,
+  EyeOff,
+  Loader2,
+  MapPin,
+  Building,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+} from "lucide-react";
 import {
   useCreateUserMutation,
   useGetUsersQuery,
@@ -15,11 +26,10 @@ import type {
   UserResponse,
   CreateUserRequest,
   UpdateUserRequest,
-  Role,
   UserStatus,
-  City,
-  Locality,
+  UserPermissionOverrides,
 } from "../../types";
+import { UserPermissionOverridesSection } from "./UserPermissionOverridesSection";
 
 interface UserFormProps {
   isOpen: boolean;
@@ -41,6 +51,7 @@ interface FormData {
   cities: string[];
   localities: string[];
   managerId?: string;
+  permissions: UserPermissionOverrides;
 }
 
 interface FormErrors {
@@ -52,6 +63,7 @@ interface FormErrors {
   confirmPassword?: string;
   roleId?: string;
   cities?: string;
+  _form?: string;
 }
 
 const STATUS_OPTIONS: { value: UserStatus; label: string }[] = [
@@ -60,6 +72,8 @@ const STATUS_OPTIONS: { value: UserStatus; label: string }[] = [
   { value: "SUSPENDED", label: "Suspended" },
   { value: "PENDING_VERIFICATION", label: "Pending Verification" },
 ];
+
+const EMPTY_OVERRIDES: UserPermissionOverrides = { grant: [], revoke: [] };
 
 export const UserForm: React.FC<UserFormProps> = ({
   isOpen,
@@ -78,6 +92,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     status: "PENDING_VERIFICATION",
     cities: [],
     localities: [],
+    permissions: EMPTY_OVERRIDES,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -85,9 +100,9 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Set<string>>(new Set());
-  const [selectedCityId, setSelectedCityId] = useState<string>("");
   const [selectedCityForLocalities, setSelectedCityForLocalities] =
     useState<string>("");
+  const [showPermissions, setShowPermissions] = useState(false);
 
   // API Hooks
   const [createUser] = useCreateUserMutation();
@@ -109,21 +124,32 @@ export const UserForm: React.FC<UserFormProps> = ({
     page: 1,
     limit: 10000,
   });
-
   const { data: localitiesData, isLoading: isLoadingLocalities } =
     useGetLocalitiesQuery(
       { cityId: selectedCityForLocalities },
       { skip: !selectedCityForLocalities },
     );
 
-  console.log("sssel city", selectedCityForLocalities, formData.cities);
+  const roles = rolesData?.roles ?? [];
+  const cities = citiesData?.data ?? [];
+  const localities = localitiesData?.data ?? [];
+  const managers = managersData?.users ?? [];
 
-  const roles = rolesData?.data || [];
-  const cities = citiesData?.data || [];
-  const localities = localitiesData?.data || [];
-  const managers = managersData?.users || [];
+  // Resolve role permissions for the currently-selected role
+  const selectedRole = useMemo(
+    () => roles.find((r) => r.id === formData.roleId),
+    [roles, formData.roleId],
+  );
+  const rolePermissions: string[] = useMemo(
+    () => (selectedRole?.permissions ?? []).map((p) => p.name),
+    [selectedRole],
+  );
+
+  // ─── Seed form on open ───────────────────────────────────────────────────────
 
   useEffect(() => {
+    if (!isOpen) return;
+
     if (user) {
       setFormData({
         firstName: user.firstName || "",
@@ -135,16 +161,15 @@ export const UserForm: React.FC<UserFormProps> = ({
         roleId: user.role?.id || "",
         status: user.status,
         avatar: user.avatar ?? undefined,
-        cities: user.cities?.map((city) => city.id) || [],
-        localities: user.localities?.map((locality) => locality.id) || [],
+        cities: user.cities?.map((c) => c.id) || [],
+        localities: user.localities?.map((l) => l.id) || [],
+        managerId: user.manager?.id,
+        permissions: user.permissions ?? EMPTY_OVERRIDES,
       });
-
-      // Set first city as selected for localities dropdown
-      if (user.cities && user.cities.length > 0) {
-        setSelectedCityId(user.cities[0].id);
+      if (user.cities?.length) {
+        setSelectedCityForLocalities(user.cities[0].id);
       }
     } else {
-      // Reset form for new user
       setFormData({
         firstName: "",
         lastName: "",
@@ -156,11 +181,13 @@ export const UserForm: React.FC<UserFormProps> = ({
         status: "PENDING_VERIFICATION",
         cities: [],
         localities: [],
+        permissions: EMPTY_OVERRIDES,
       });
-      setSelectedCityId("");
+      setSelectedCityForLocalities("");
     }
     setErrors({});
     setTouched(new Set());
+    setShowPermissions(false);
   }, [user, isOpen]);
 
   useEffect(() => {
@@ -171,113 +198,93 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   }, [formData.cities]);
 
-  // Validation functions
+  // ─── Validation ──────────────────────────────────────────────────────────────
+
   const validateField = (name: string, value: any): string | undefined => {
     switch (name) {
       case "firstName":
         if (!value.trim()) return "First name is required";
-        if (value.length < 2) return "First name must be at least 2 characters";
-        if (value.length > 50)
-          return "First name must be less than 50 characters";
+        if (value.length < 2) return "Must be at least 2 characters";
+        if (value.length > 50) return "Must be less than 50 characters";
         if (!/^[a-zA-Z\s'-]+$/.test(value))
-          return "First name can only contain letters, spaces, hyphens, and apostrophes";
+          return "Letters, spaces, hyphens and apostrophes only";
         break;
-
       case "lastName":
         if (!value.trim()) return "Last name is required";
-        if (value.length < 2) return "Last name must be at least 2 characters";
-        if (value.length > 50)
-          return "Last name must be less than 50 characters";
+        if (value.length < 2) return "Must be at least 2 characters";
+        if (value.length > 50) return "Must be less than 50 characters";
         if (!/^[a-zA-Z\s'-]+$/.test(value))
-          return "Last name can only contain letters, spaces, hyphens, and apostrophes";
+          return "Letters, spaces, hyphens and apostrophes only";
         break;
-
       case "email":
         if (!value.trim()) return "Email is required";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-          return "Please enter a valid email address";
-        if (value.length > 255) return "Email must be less than 255 characters";
+          return "Enter a valid email address";
         break;
-
       case "phone":
-        if (value && !/^\+?[\d\s\-()]{10,}$/.test(value.replace(/\s/g, ""))) {
-          return "Please enter a valid phone number";
-        }
+        if (value && !/^\+?[\d\s\-()]{10,}$/.test(value.replace(/\s/g, "")))
+          return "Enter a valid phone number";
         break;
-
       case "password":
         if (!user && !value) return "Password is required for new users";
-        if (value && value.length < 8)
-          return "Password must be at least 8 characters";
-        if (value && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
-          return "Password must contain at least one uppercase letter, one lowercase letter, and one number";
-        }
+        if (value && value.length < 8) return "At least 8 characters";
+        if (value && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value))
+          return "Must include uppercase, lowercase, and a number";
         break;
-
       case "confirmPassword":
         if (formData.password && value !== formData.password)
           return "Passwords do not match";
         break;
-
       case "roleId":
         if (!value) return "Role is required";
         break;
-
-      case "cityIds":
-        if (value.length === 0) return "At least one city must be selected";
-        break;
-
-      default:
-        return undefined;
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
     let isValid = true;
-
     Object.keys(formData).forEach((key) => {
-      if (key === "confirmPassword" && !formData.password) return; // Skip confirm password if no password set
-
-      const error = validateField(key, formData[key as keyof FormData]);
+      if (key === "confirmPassword" && !formData.password) return;
+      if (
+        ["cities", "localities", "permissions", "avatar", "managerId"].includes(
+          key,
+        )
+      )
+        return;
+      const error = validateField(key, (formData as any)[key]);
       if (error) {
-        newErrors[key as keyof FormErrors] = error;
+        (newErrors as any)[key] = error;
         isValid = false;
       }
     });
-
     setErrors(newErrors);
     return isValid;
   };
 
   const handleFieldChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
     if (touched.has(field)) {
       const error = validateField(field, value);
-      setErrors((prev) => ({
+      setErrors((prev) => ({ ...prev, [field]: error }));
+    }
+    // When role changes, clear overrides — they might reference permissions that no longer apply
+    if (field === "roleId") {
+      setFormData((prev) => ({
         ...prev,
-        [field]: error,
+        roleId: value,
+        permissions: EMPTY_OVERRIDES,
       }));
     }
-
     if (field === "cities") {
       setFormData((prev) => ({ ...prev, localities: [] }));
-      if (value.length > 0) {
-        setSelectedCityId(value[0]); // Use first selected city for localities
-      } else {
-        setSelectedCityId("");
-      }
     }
   };
 
   const handleFieldBlur = (field: string) => {
     setTouched((prev) => new Set(prev).add(field));
-    const error = validateField(field, formData[field as keyof FormData]);
-    setErrors((prev) => ({
-      ...prev,
-      [field]: error,
-    }));
+    const error = validateField(field, (formData as any)[field]);
+    setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
   const handleArrayToggle = (field: "cities" | "localities", value: string) => {
@@ -287,29 +294,37 @@ export const UserForm: React.FC<UserFormProps> = ({
         ? prev[field].filter((item) => item !== value)
         : [...prev[field], value],
     }));
-
-    if (touched.has(field)) {
-      const error = validateField(field, formData[field]);
-      setErrors((prev) => ({
-        ...prev,
-        [field]: error,
-      }));
-    }
   };
+
+  // ─── Submit ──────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Mark all fields as touched
     const allFields = Object.keys(formData);
     setTouched(new Set(allFields));
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
+    // Check for grant/revoke conflict before sending
+    const grantSet = new Set(formData.permissions.grant ?? []);
+    const conflict = (formData.permissions.revoke ?? []).filter((n) =>
+      grantSet.has(n),
+    );
+    if (conflict.length) {
+      setErrors((prev) => ({
+        ...prev,
+        _form: `Permission conflict: "${conflict[0]}" is both granted and revoked.`,
+      }));
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const permissionsPayload: UserPermissionOverrides | undefined =
+        formData.permissions.grant?.length ||
+        formData.permissions.revoke?.length
+          ? formData.permissions
+          : undefined;
+
       const submitData: any = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -319,54 +334,31 @@ export const UserForm: React.FC<UserFormProps> = ({
         status: formData.status,
         cities: formData.cities,
         localities: formData.localities,
-        managerId: formData.managerId,
+        managerId: formData.managerId || null,
+        permissions: permissionsPayload ?? null,
       };
 
-      if (formData.avatar) {
-        submitData.avatar = formData.avatar;
-      }
-
-      // Only include password for new users or when changing password
-      if (!user && formData.password) {
-        submitData.password = formData.password;
-      }
+      if (formData.avatar) submitData.avatar = formData.avatar;
+      if (!user && formData.password) submitData.password = formData.password;
 
       if (user) {
         await updateUser({
           id: user.id,
           data: submitData as UpdateUserRequest,
         }).unwrap();
-
-        // Assign cities and localities separately
-        if (formData.cities.length > 0) {
-          // You would call assignCitiesToUser mutation here
-        }
-        if (formData.localities.length > 0) {
-          // You would call assignLocalitiesToUser mutation here
-        }
       } else {
         if (onSubmit) {
           onSubmit(submitData as CreateUserRequest);
         } else {
           await createUser(submitData as CreateUserRequest).unwrap();
-
-          // Assign cities and localities separately after user creation
-          if (formData.cities.length > 0) {
-            // You would call assignCitiesToUser mutation here
-          }
-          if (formData.localities.length > 0) {
-            // You would call assignLocalitiesToUser mutation here
-          }
         }
       }
-
       onClose();
     } catch (error: any) {
-      console.error("Failed to save user:", error);
-      // Handle API errors
-      if (error.data?.error?.includes("email")) {
+      const msg = error?.data?.message ?? "";
+      if (msg.toLowerCase().includes("email")) {
         setErrors((prev) => ({ ...prev, email: "Email already exists" }));
-      } else if (error.data?.error?.includes("phone")) {
+      } else if (msg.toLowerCase().includes("phone")) {
         setErrors((prev) => ({
           ...prev,
           phone: "Phone number already exists",
@@ -374,7 +366,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       } else {
         setErrors((prev) => ({
           ...prev,
-          _form: "Failed to save user. Please try again.",
+          _form: msg || "Failed to save user. Please try again.",
         }));
       }
     } finally {
@@ -382,15 +374,15 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   };
 
-  const getFieldClassName = (fieldName: keyof FormErrors) => {
-    const baseClass =
-      "w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white";
-    return errors[fieldName]
-      ? `${baseClass} border-red-500 dark:border-red-400`
-      : `${baseClass} border-gray-300 dark:border-gray-600`;
-  };
+  const fieldClass = (fieldName: keyof FormErrors) =>
+    `w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm
+    ${errors[fieldName] ? "border-red-500 dark:border-red-400" : "border-gray-300 dark:border-gray-600"}`;
 
   if (!isOpen) return null;
+
+  const overrideCount =
+    (formData.permissions.grant?.length ?? 0) +
+    (formData.permissions.revoke?.length ?? 0);
 
   return (
     <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4 z-50">
@@ -409,7 +401,7 @@ export const UserForm: React.FC<UserFormProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Information */}
+          {/* ── Basic Information ── */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Basic Information
@@ -426,7 +418,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                     handleFieldChange("firstName", e.target.value)
                   }
                   onBlur={() => handleFieldBlur("firstName")}
-                  className={getFieldClassName("firstName")}
+                  className={fieldClass("firstName")}
                   placeholder="Enter first name"
                 />
                 {errors.firstName && (
@@ -435,7 +427,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Last Name *
@@ -447,7 +438,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                     handleFieldChange("lastName", e.target.value)
                   }
                   onBlur={() => handleFieldBlur("lastName")}
-                  className={getFieldClassName("lastName")}
+                  className={fieldClass("lastName")}
                   placeholder="Enter last name"
                 />
                 {errors.lastName && (
@@ -459,7 +450,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           </div>
 
-          {/* Contact Information */}
+          {/* ── Contact ── */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Contact Information
@@ -474,7 +465,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                   value={formData.email}
                   onChange={(e) => handleFieldChange("email", e.target.value)}
                   onBlur={() => handleFieldBlur("email")}
-                  className={getFieldClassName("email")}
+                  className={fieldClass("email")}
                   placeholder="user@example.com"
                 />
                 {errors.email && (
@@ -483,7 +474,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Phone Number
@@ -493,7 +483,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                   value={formData.phone}
                   onChange={(e) => handleFieldChange("phone", e.target.value)}
                   onBlur={() => handleFieldBlur("phone")}
-                  className={getFieldClassName("phone")}
+                  className={fieldClass("phone")}
                   placeholder="+1 (555) 123-4567"
                 />
                 {errors.phone && (
@@ -505,7 +495,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           </div>
 
-          {/* Password Section */}
+          {/* ── Password (create only) ── */}
           {!user && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -524,15 +514,15 @@ export const UserForm: React.FC<UserFormProps> = ({
                         handleFieldChange("password", e.target.value)
                       }
                       onBlur={() => handleFieldBlur("password")}
-                      className={getFieldClassName("password")}
+                      className={fieldClass("password")}
                       placeholder="Enter password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                   {errors.password && (
@@ -541,7 +531,6 @@ export const UserForm: React.FC<UserFormProps> = ({
                     </p>
                   )}
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Confirm Password *
@@ -554,7 +543,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                         handleFieldChange("confirmPassword", e.target.value)
                       }
                       onBlur={() => handleFieldBlur("confirmPassword")}
-                      className={getFieldClassName("confirmPassword")}
+                      className={fieldClass("confirmPassword")}
                       placeholder="Confirm password"
                     />
                     <button
@@ -562,12 +551,12 @@ export const UserForm: React.FC<UserFormProps> = ({
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff size={20} />
+                        <EyeOff size={18} />
                       ) : (
-                        <Eye size={20} />
+                        <Eye size={18} />
                       )}
                     </button>
                   </div>
@@ -581,7 +570,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           )}
 
-          {/* Role and Status */}
+          {/* ── Role & Status ── */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Role & Status
@@ -598,7 +587,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                       handleFieldChange("roleId", e.target.value)
                     }
                     onBlur={() => handleFieldBlur("roleId")}
-                    className={getFieldClassName("roleId")}
+                    className={fieldClass("roleId")}
                     disabled={isLoadingRoles}
                   >
                     <option value="">Select a role</option>
@@ -609,7 +598,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                     ))}
                   </select>
                   {isLoadingRoles && (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
                   )}
                 </div>
                 {errors.roleId && (
@@ -617,8 +606,13 @@ export const UserForm: React.FC<UserFormProps> = ({
                     {errors.roleId}
                   </p>
                 )}
+                {selectedRole && (
+                  <p className="mt-1 text-xs text-gray-400">
+                    This role has {rolePermissions.length} permission
+                    {rolePermissions.length !== 1 ? "s" : ""}
+                  </p>
+                )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Status
@@ -628,97 +622,138 @@ export const UserForm: React.FC<UserFormProps> = ({
                   onChange={(e) =>
                     handleFieldChange("status", e.target.value as UserStatus)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Manager
-            </label>
-            <div className="relative">
-              <select
-                value={formData.managerId || ""}
-                onChange={(e) => handleFieldChange("managerId", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                disabled={isLoadingManagers || managers.length === 0}
-              >
-                <option value="">Select a manager</option>
-                {managers.map((manager) => (
-                  <option key={manager.id} value={manager.id}>
-                    {manager.firstName} {manager.lastName} ({manager.email})
-                  </option>
-                ))}
-              </select>
-              {isLoadingManagers && (
-                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
-              )}
+
+            {/* Manager */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Manager
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.managerId || ""}
+                  onChange={(e) =>
+                    handleFieldChange("managerId", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  disabled={isLoadingManagers || managers.length === 0}
+                >
+                  <option value="">No manager</option>
+                  {managers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.firstName} {m.lastName} ({m.email})
+                    </option>
+                  ))}
+                </select>
+                {isLoadingManagers && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Access Control */}
+          {/* ── Permission Overrides (collapsible) ── */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowPermissions((v) => !v)}
+              className="w-full flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-indigo-500" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Permission Overrides
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {overrideCount > 0
+                      ? `${formData.permissions.grant?.length ?? 0} granted, ${formData.permissions.revoke?.length ?? 0} revoked`
+                      : "No overrides — user will rely on role permissions only"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {overrideCount > 0 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 font-medium">
+                    {overrideCount} override{overrideCount !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {showPermissions ? (
+                  <ChevronUp className="w-4 h-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                )}
+              </div>
+            </button>
+
+            {showPermissions && (
+              <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700">
+                <UserPermissionOverridesSection
+                  value={formData.permissions}
+                  onChange={(overrides) =>
+                    handleFieldChange("permissions", overrides)
+                  }
+                  roleName={selectedRole?.name}
+                  rolePermissions={rolePermissions}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ── Access Control ── */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Access Control
             </h3>
-
             <div className="space-y-6">
-              {/* Cities Selection */}
+              {/* Cities */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Allowed Cities *
+                  Allowed Cities
                 </label>
                 {isLoadingCities ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-600 mr-2" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      Loading cities...
-                    </span>
+                  <div className="flex items-center gap-2 py-4 text-sm text-gray-500">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading
+                    cities...
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
                     {cities.map((city) => (
                       <label
                         key={city.id}
-                        className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md cursor-pointer"
                       >
                         <input
                           type="checkbox"
                           checked={formData.cities.includes(city.id)}
                           onChange={() => handleArrayToggle("cities", city.id)}
-                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                          className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
-                            <MapPin className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                             {city.name}
                           </div>
                           {(city.state || city.country) && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p className="text-xs text-gray-500 mt-0.5">
                               {city.state && `${city.state}, `}
                               {city.country}
                             </p>
                           )}
-                          {city._count && (
-                            <div className="flex items-center mt-1 text-xs text-gray-400">
-                              <span className="bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded">
-                                {city._count.properties || 0} properties
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </label>
                     ))}
-
                     {cities.length === 0 && (
-                      <div className="col-span-full text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="col-span-full text-center py-4 text-sm text-gray-500">
                         No cities available
                       </div>
                     )}
@@ -731,47 +766,26 @@ export const UserForm: React.FC<UserFormProps> = ({
                 )}
               </div>
 
-              {/* Localities Selection */}
+              {/* Localities */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Allowed Localities
                 </label>
-
                 {formData.cities.length === 0 ? (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Select City for Localities
-                    </label>
-                    <select
-                      value={selectedCityForLocalities}
-                      onChange={(e) =>
-                        setSelectedCityForLocalities(e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">Select a city to view localities</option>
-                      {cities
-                        .filter((city) => formData.cities.includes(city.id))
-                        .map((city) => (
-                          <option key={city.id} value={city.id}>
-                            {city.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
+                  <p className="text-sm text-gray-400 italic py-2">
+                    Select at least one city to browse localities
+                  </p>
                 ) : isLoadingLocalities ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-600 mr-2" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      Loading localities...
-                    </span>
+                  <div className="flex items-center gap-2 py-4 text-sm text-gray-500">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading
+                    localities...
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-600 rounded-lg">
                     {localities.map((locality) => (
                       <label
                         key={locality.id}
-                        className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -779,30 +793,22 @@ export const UserForm: React.FC<UserFormProps> = ({
                           onChange={() =>
                             handleArrayToggle("localities", locality.id)
                           }
-                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                          className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
-                            <Building className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white">
+                            <Building className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                             {locality.name}
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {locality.city.name}
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {locality.city?.name}
                           </p>
-                          {locality._count && (
-                            <div className="flex items-center mt-1 text-xs text-gray-400">
-                              <span className="bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded">
-                                {locality._count.users || 0} users
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </label>
                     ))}
-
                     {localities.length === 0 && (
-                      <div className="col-span-full text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-                        No localities available for selected cities
+                      <div className="col-span-full text-center py-4 text-sm text-gray-500">
+                        No localities for selected cities
                       </div>
                     )}
                   </div>
@@ -811,20 +817,27 @@ export const UserForm: React.FC<UserFormProps> = ({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+          {/* ── Form-level error ── */}
+          {errors._form && (
+            <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
+              {errors._form}
+            </div>
+          )}
+
+          {/* ── Actions ── */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               disabled={isSubmitting}
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
             >
               {isSubmitting ? (
                 <>
@@ -833,7 +846,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                 </>
               ) : (
                 <>
-                  <Save size={20} />
+                  <Save size={18} />
                   {user ? "Update User" : "Create User"}
                 </>
               )}

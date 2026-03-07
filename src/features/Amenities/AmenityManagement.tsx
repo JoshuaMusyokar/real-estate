@@ -13,7 +13,8 @@ import { EditModal } from "./components/EditModal";
 import { DeleteModal } from "./components/DeleteModal";
 import { BulkImportModal } from "./components/BulkImport";
 import type { Amenity, ViewMode } from "../../types";
-import { Package, Plus } from "lucide-react";
+import { Package, Plus, ShieldOff } from "lucide-react";
+import { usePermissions } from "../../hooks/usePermissions";
 
 export const AmenitiesManagement = () => {
   const { user } = useAuth();
@@ -32,6 +33,14 @@ export const AmenitiesManagement = () => {
     delete: false,
     bulk: false,
   });
+  const { can } = usePermissions();
+
+  const canAdd = can("amenity.add");
+  const canEdit = can("amenity.edit");
+  const canDelete = can("amenity.delete");
+  const canToggle = can("amenity.toggle_status");
+  const canReorder = can("amenity.reorder");
+  const isReadOnly = !canAdd && !canEdit && !canDelete && !canToggle;
 
   const openModal = (modal: keyof typeof modalState) =>
     setModalState((prev) => ({ ...prev, [modal]: true }));
@@ -72,6 +81,8 @@ export const AmenitiesManagement = () => {
 
   return (
     <>
+      {/* Read-only notice */}
+      {isReadOnly && <ReadOnlyBanner />}
       <Header
         user={user!}
         onAddAmenity={() => openModal("create")}
@@ -125,12 +136,14 @@ export const AmenitiesManagement = () => {
       </div>
 
       {/* Modals */}
-      <CreateModal
-        isOpen={modalState.create}
-        onClose={() => closeModal("create")}
-        categories={categories}
-        onSuccess={handleCreateSuccess}
-      />
+      {canAdd && (
+        <CreateModal
+          isOpen={modalState.create}
+          onClose={() => closeModal("create")}
+          categories={categories}
+          onSuccess={handleCreateSuccess}
+        />
+      )}
 
       <EditModal
         isOpen={modalState.edit}
@@ -178,5 +191,15 @@ const EmptyState = ({ onAddAmenity }: { onAddAmenity: () => void }) => (
       <Plus className="w-5 h-5" />
       Add Amenity
     </button>
+  </div>
+);
+
+const ReadOnlyBanner: React.FC = () => (
+  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm">
+    <ShieldOff className="w-4 h-4 flex-shrink-0" />
+    <span>
+      You have read-only access to amenities. Contact an admin to request
+      changes.
+    </span>
   </div>
 );

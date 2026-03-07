@@ -1,6 +1,6 @@
 import type { AgentPerformance } from "./analytics";
 import type { ResCity, ResLocality } from "./location";
-import type { Permission, ResRole, Role } from "./rbac";
+import type { ResRole, Role, UserPermissionOverrides } from "./rbac";
 
 // export type Role =
 //   | "SUPER_ADMIN"
@@ -42,7 +42,7 @@ export interface User {
   reraNumber: string | null;
   gstNumber: string | null;
   avatar: string | null;
-  permissions: Permission | null;
+  permissions: UserPermissionOverrides | null;
   allowedCities: string[];
   allowedLocalities: string[];
   twoFactorEnabled: boolean;
@@ -63,7 +63,8 @@ export interface CreateUserRequest {
   roleId: string;
   status?: UserStatus;
   avatar?: string;
-  permissions?: Permission;
+  permissions?: UserPermissionOverrides;
+
   cities: string[] | null;
   localities?: string[];
 }
@@ -79,7 +80,7 @@ export interface UpdateUserRequest {
   roleId?: string;
   status?: UserStatus;
   avatar?: string;
-  permissions?: Permission;
+  permissions?: UserPermissionOverrides | null; // null = clear all overrides
   cities: string[] | null;
   localities?: string[];
 }
@@ -122,7 +123,7 @@ export interface UserCreateInput {
   role: Role | null;
   status: UserStatus | null;
   avatar: string | null;
-  permissions?: Permission;
+  permissions?: UserPermissionOverrides;
   allowedCities: string[] | null;
   allowedLocalities?: string[];
 }
@@ -139,7 +140,7 @@ export interface UserUpdateInput {
   role?: Role;
   status?: UserStatus;
   avatar?: string;
-  permissions?: Permission;
+  permissions?: UserPermissionOverrides | null; // null = clear all overrides
   allowedCities?: string[];
   allowedLocalities?: string[];
   lastLoginAt?: Date;
@@ -161,7 +162,7 @@ export interface UserResponse {
   managerId: string | null;
   manager?: Manager;
   avatar: string | null;
-  permissions?: Permission;
+  permissions: UserPermissionOverrides | null;
   cities: ResCity[];
   localities: ResLocality[];
   twoFactorEnabled: boolean;
@@ -191,41 +192,6 @@ export interface UserResponse {
 //   updatedAt: Date;
 // }
 
-export interface UserCreateInput {
-  email: string;
-  phone?: string | null;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: Role | null;
-  companyName: string | null;
-  reraNumber: string | null;
-  gstNumber: string | null;
-  managerId: string | null;
-  status: UserStatus | null;
-  avatar: string | null;
-  permissions?: Permission;
-  allowedCities: string[] | null;
-  allowedLocalities?: string[];
-}
-
-export interface UserUpdateInput {
-  email?: string;
-  phone?: string;
-  firstName?: string;
-  lastName?: string;
-  managerId: string | null;
-  companyName: string | null;
-  reraNumber: string | null;
-  gstNumber: string | null;
-  role?: Role;
-  status?: UserStatus;
-  avatar?: string;
-  permissions?: Permission;
-  allowedCities?: string[];
-  allowedLocalities?: string[];
-  lastLoginAt?: Date;
-}
 // Add these to your existing types
 
 export interface UserStats {
@@ -376,6 +342,8 @@ export type UserProfileResponse = {
     roleId: string | null;
     status: string;
   }[];
+
+  permissions: UserPermissionOverrides | null;
 
   // Metadata
   twoFactorEnabled: boolean;

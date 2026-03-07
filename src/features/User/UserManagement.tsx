@@ -43,7 +43,7 @@ export const UserManagement: React.FC = () => {
     page: 1,
     limit: 100,
   });
-  const roles = rolesData?.data || [];
+  const roles = rolesData?.roles || [];
 
   const limit = 10;
 
@@ -90,7 +90,7 @@ export const UserManagement: React.FC = () => {
     setSelectedUsers((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
+        : [...prev, userId],
     );
   };
 
@@ -118,7 +118,7 @@ export const UserManagement: React.FC = () => {
   };
 
   const handleBulkAction = async (
-    operation: "activate" | "deactivate" | "delete"
+    operation: "activate" | "deactivate" | "delete",
   ) => {
     if (selectedUsers.length === 0) return;
 
