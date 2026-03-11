@@ -22,6 +22,7 @@ import {
 import { KanbanLeadCard } from "./components/KanbanLeadCard";
 import Button from "../../components/ui/button/Button";
 import { Card, CardContent } from "../../components/ui/Card";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const PRIORITIES: LeadPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
@@ -38,6 +39,10 @@ export const PipelineView: React.FC = () => {
   );
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canEdit = can("lead.edit"); // drag-and-drop stage change is an edit
+
   const { data, isLoading, refetch } = useGetLeadsQuery({
     search: searchTerm || undefined,
     priority: selectedPriority || undefined,
@@ -49,17 +54,16 @@ export const PipelineView: React.FC = () => {
 
   const filteredLeads = useMemo(() => {
     let filtered = leads;
-
     if (selectedPriority) {
       filtered = filtered.filter((lead) => lead.priority === selectedPriority);
     }
-
     return filtered;
   }, [leads, selectedPriority]);
 
-  const getLeadsByStage = (stage: LeadStage): LeadResponse[] => {
-    return filteredLeads.filter((lead) => lead.stage === stage);
-  };
+  const getLeadsByStage = (stage: LeadStage): LeadResponse[] =>
+    filteredLeads.filter((lead) => lead.stage === stage);
+
+  // ── Drag handlers — only wired up when canEdit ────────────────────────────
 
   const handleDragStart = (e: React.DragEvent, lead: LeadResponse): void => {
     setDraggedLead(lead);
@@ -78,9 +82,7 @@ export const PipelineView: React.FC = () => {
     setDragOverStage(stage);
   };
 
-  const handleDragLeave = (): void => {
-    setDragOverStage(null);
-  };
+  const handleDragLeave = (): void => setDragOverStage(null);
 
   const handleDrop = async (
     e: React.DragEvent,
@@ -137,27 +139,24 @@ export const PipelineView: React.FC = () => {
     won: getLeadsByStage("DEAL_CLOSED_WON").length,
   };
 
-  // Mobile stage navigation
   const nextStage = () => {
-    if (currentStageIndex < STAGES.length - 1) {
+    if (currentStageIndex < STAGES.length - 1)
       setCurrentStageIndex(currentStageIndex + 1);
-    }
   };
-
   const prevStage = () => {
-    if (currentStageIndex > 0) {
-      setCurrentStageIndex(currentStageIndex - 1);
-    }
+    if (currentStageIndex > 0) setCurrentStageIndex(currentStageIndex - 1);
   };
 
   return (
     <>
       <div className="max-w-full mx-auto">
-        {/* Header Section */}
+        {/* Header */}
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              Drag cards to update stages
+              {canEdit
+                ? "Drag cards to update stages"
+                : "Click a card to view details"}
             </p>
 
             <Button
@@ -178,13 +177,13 @@ export const PipelineView: React.FC = () => {
             </Button>
           </div>
 
-          {/* Stats Cards */}
+          {/* Stats cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
             <Card>
               <CardContent className="p-2.5 sm:p-3 md:p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-blue-600" />
+                    <Users className="w-4 h-4 text-blue-600" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
@@ -197,12 +196,11 @@ export const PipelineView: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-2.5 sm:p-3 md:p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-green-600" />
+                    <TrendingUp className="w-4 h-4 text-green-600" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
@@ -215,12 +213,11 @@ export const PipelineView: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-2.5 sm:p-3 md:p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <ArrowRight className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-purple-600" />
+                    <ArrowRight className="w-4 h-4 text-purple-600" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
@@ -233,12 +230,11 @@ export const PipelineView: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-2.5 sm:p-3 md:p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-orange-600" />
+                    <TrendingUp className="w-4 h-4 text-orange-600" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
@@ -251,12 +247,11 @@ export const PipelineView: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-2.5 sm:p-3 md:p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-emerald-600" />
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
@@ -269,13 +264,12 @@ export const PipelineView: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
             {totalValue > 0 && (
               <Card>
                 <CardContent className="p-2.5 sm:p-3 md:p-4">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <DollarSign className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-amber-600" />
+                      <DollarSign className="w-4 h-4 text-amber-600" />
                     </div>
                     <div className="min-w-0">
                       <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
@@ -291,7 +285,7 @@ export const PipelineView: React.FC = () => {
             )}
           </div>
 
-          {/* Search and Filters */}
+          {/* Search + filters */}
           <div className="space-y-3 sm:space-y-4">
             <Card>
               <CardContent className="p-3 sm:p-4">
@@ -333,7 +327,6 @@ export const PipelineView: React.FC = () => {
                       Clear All
                     </button>
                   </div>
-
                   <div>
                     <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                       Priority
@@ -347,11 +340,7 @@ export const PipelineView: React.FC = () => {
                               selectedPriority === priority ? "" : priority,
                             )
                           }
-                          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all ${
-                            selectedPriority === priority
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-medium text-xs sm:text-sm transition-all ${selectedPriority === priority ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                         >
                           {priority}
                         </button>
@@ -364,7 +353,7 @@ export const PipelineView: React.FC = () => {
           </div>
         </div>
 
-        {/* Pipeline Board */}
+        {/* Pipeline board */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20 sm:py-24 md:py-32">
             <div className="text-center">
@@ -376,7 +365,7 @@ export const PipelineView: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Desktop View - Horizontal Scroll */}
+            {/* ── Desktop view ───────────────────────────────────────────────── */}
             <div className="hidden md:block overflow-x-auto pb-6 md:pb-8">
               <div className="flex gap-3 md:gap-4 min-w-max">
                 {STAGES.map((stage) => {
@@ -391,18 +380,12 @@ export const PipelineView: React.FC = () => {
                   return (
                     <div
                       key={stage.value}
-                      className={`flex-shrink-0 transition-all ${
-                        isCollapsed ? "w-16" : "w-72 lg:w-80"
-                      }`}
+                      className={`flex-shrink-0 transition-all ${isCollapsed ? "w-16" : "w-72 lg:w-80"}`}
                     >
                       <Card
-                        className={`overflow-hidden transition-all h-full ${
-                          isDragOver
-                            ? "border-blue-500 shadow-lg scale-105"
-                            : ""
-                        }`}
+                        className={`overflow-hidden transition-all h-full ${isDragOver ? "border-blue-500 shadow-lg scale-105" : ""}`}
                       >
-                        {/* Stage Header */}
+                        {/* Stage header */}
                         <div
                           className={`bg-gradient-to-r ${stage.color} p-3 md:p-4`}
                         >
@@ -448,15 +431,21 @@ export const PipelineView: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Stage Content */}
+                        {/* Stage content — drag handlers only wired when canEdit */}
                         {!isCollapsed && (
                           <div
-                            onDrop={(e) => handleDrop(e, stage.value)}
-                            onDragOver={(e) => handleDragOver(e, stage.value)}
-                            onDragLeave={handleDragLeave}
-                            className={`p-2 sm:p-3 space-y-2 sm:space-y-3 min-h-[400px] md:min-h-[500px] lg:min-h-[600px] max-h-[calc(100vh-400px)] overflow-y-auto transition-colors ${
-                              isDragOver ? "bg-blue-50" : "bg-gray-50"
-                            }`}
+                            onDrop={
+                              canEdit
+                                ? (e) => handleDrop(e, stage.value)
+                                : undefined
+                            }
+                            onDragOver={
+                              canEdit
+                                ? (e) => handleDragOver(e, stage.value)
+                                : undefined
+                            }
+                            onDragLeave={canEdit ? handleDragLeave : undefined}
+                            className={`p-2 sm:p-3 space-y-2 sm:space-y-3 min-h-[400px] md:min-h-[500px] lg:min-h-[600px] max-h-[calc(100vh-400px)] overflow-y-auto transition-colors ${isDragOver ? "bg-blue-50" : "bg-gray-50"}`}
                             style={{
                               scrollbarWidth: "thin",
                               scrollbarColor: "#cbd5e1 transparent",
@@ -480,12 +469,24 @@ export const PipelineView: React.FC = () => {
                               </div>
                             ) : (
                               stageLeads.map((lead) => (
+                                // draggable and drag handlers only attached when canEdit
                                 <div
                                   key={lead.id}
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, lead)}
-                                  onDragEnd={handleDragEnd}
+                                  draggable={canEdit}
+                                  onDragStart={
+                                    canEdit
+                                      ? (e) => handleDragStart(e, lead)
+                                      : undefined
+                                  }
+                                  onDragEnd={
+                                    canEdit ? handleDragEnd : undefined
+                                  }
                                   onClick={() => handleLeadClick(lead)}
+                                  className={
+                                    canEdit
+                                      ? "cursor-grab active:cursor-grabbing"
+                                      : "cursor-pointer"
+                                  }
                                 >
                                   <KanbanLeadCard lead={lead} />
                                 </div>
@@ -500,7 +501,7 @@ export const PipelineView: React.FC = () => {
               </div>
             </div>
 
-            {/* Mobile View - Single Stage with Navigation */}
+            {/* ── Mobile view ────────────────────────────────────────────────── */}
             <div className="md:hidden">
               <div className="flex items-center justify-between mb-3">
                 <button
@@ -510,11 +511,9 @@ export const PipelineView: React.FC = () => {
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-
                 <span className="text-sm font-medium text-gray-600">
                   {currentStageIndex + 1} / {STAGES.length}
                 </span>
-
                 <button
                   onClick={nextStage}
                   disabled={currentStageIndex === STAGES.length - 1}
@@ -534,7 +533,6 @@ export const PipelineView: React.FC = () => {
 
                 return (
                   <Card className="overflow-hidden">
-                    {/* Stage Header */}
                     <div className={`bg-gradient-to-r ${stage.color} p-3`}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -555,7 +553,6 @@ export const PipelineView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Stage Content */}
                     <div className="p-3 space-y-3 bg-gray-50 min-h-[400px]">
                       {stageLeads.length === 0 ? (
                         <div className="text-center py-12">
@@ -570,9 +567,11 @@ export const PipelineView: React.FC = () => {
                         </div>
                       ) : (
                         stageLeads.map((lead) => (
+                          // Mobile cards are never draggable (touch drag is a separate UX concern)
                           <div
                             key={lead.id}
                             onClick={() => handleLeadClick(lead)}
+                            className="cursor-pointer"
                           >
                             <KanbanLeadCard lead={lead} />
                           </div>
@@ -588,20 +587,10 @@ export const PipelineView: React.FC = () => {
       </div>
 
       <style>{`
-        /* Custom scrollbar for stage columns */
-        .overflow-y-auto::-webkit-scrollbar {
-          width: 6px;
-        }
-        .overflow-y-auto::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 3px;
-        }
-        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
+        .overflow-y-auto::-webkit-scrollbar { width: 6px; }
+        .overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
+        .overflow-y-auto::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
     </>
   );

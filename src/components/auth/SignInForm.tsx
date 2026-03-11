@@ -1,296 +1,210 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
-import Label from "../form/Label";
-import Input from "../form/input/InputField";
-import Checkbox from "../form/input/Checkbox";
-import Button from "../ui/button/Button";
-import { useAuth } from "../../hooks/useAuth";
-import type { LoginRequest } from "../../types";
+// SignInForm.tsx
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, Loader2, LogIn } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { useLoginMutation } from "../../services/authApi";
+import { setCredentials } from "../../store/slices/authSlice";
 
 export default function SignInForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const location = useLocation();
-  const [formData, setFormData] = useState<LoginRequest>({
-    email: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState<Partial<LoginRequest>>({});
-
-  const { login, isLoading, error } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [login, { isLoading }] = useLoginMutation();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // Clear error when user starts typing
-    if (errors[name as keyof LoginRequest]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<LoginRequest> = {};
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const from = location.state?.from || "/";
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    setError(null);
     try {
-      const result = await login(formData);
-
-      // if (result.success) {
-      // Store "keep me logged in" preference
-      if (isChecked) {
-        localStorage.setItem("keepLoggedIn", "true");
-      }
-      if (result.user.role.name === "BUYER") {
-        navigate(from, { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
-    } catch (err) {
-      // Error is handled by the useAuth hook and will be displayed
-      console.error("Login failed:", err);
+      const result = await login({ email, password }).unwrap();
+      dispatch(setCredentials(result));
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(
+        err?.data?.message ?? "Invalid email or password. Please try again.",
+      );
     }
-  };
-
-  // Get error message from RTK Query error
-  const getErrorMessage = () => {
-    if (error) {
-      if (error && typeof error === "object" && "data" in error) {
-        return typeof (error.data as { error?: string })?.error === "string"
-          ? (error.data as { error: string }).error
-          : "Login failed";
-      }
-      return "Login failed. Please try again.";
-    }
-    return null;
   };
 
   return (
-    <div className="flex flex-col flex-1">
-      <div className="w-full max-w-md pt-10 mx-auto">
-        <Link
-          to="/"
-          className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          <ChevronLeftIcon className="size-5" />
-          Back to home
-        </Link>
+    <div className="w-full">
+      {/* Heading */}
+      <div className="mb-8">
+        <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mb-1">
+          Welcome back
+        </h2>
+        <p className="text-sm text-gray-500">
+          Sign in to your Property4India account
+        </p>
       </div>
-      <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
-        <div>
-          <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign In
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign in!
-            </p>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-5 flex items-start gap-2.5 px-3.5 py-3 bg-red-50 border border-red-200 rounded-xl">
+          <div className="w-4 h-4 rounded-full bg-red-500 flex-shrink-0 mt-0.5 flex items-center justify-center">
+            <span className="text-white text-[9px] font-black">!</span>
           </div>
+          <p className="text-xs text-red-700 font-medium leading-snug">
+            {error}
+          </p>
+        </div>
+      )}
 
-          {/* Display API error */}
-          {getErrorMessage() && (
-            <div className="p-3 mb-4 text-sm text-red-800 bg-red-100 border border-red-200 rounded-lg dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
-              {getErrorMessage()}
-            </div>
-          )}
-
-          <div>
-            {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-              <button
-                type="button"
-                className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M10.1788 18.75C12.5895 18.75 14.6133 17.9722 16.0915 16.6305L13.274 14.4916C12.5201 15.0068 11.5081 15.3666 10.1788 15.3666C7.81773 15.3666 5.81379 13.8402 5.09944 11.7305L4.99473 11.7392L2.23868 13.8295L2.20264 13.9277C3.67087 16.786 6.68674 18.75 10.1788 18.75Z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.10014 11.7305C4.91165 11.186 4.80257 10.6027 4.80257 9.99992C4.80257 9.3971 4.91165 8.81379 5.09022 8.26935L5.08523 8.1534L2.29464 6.02954L2.20333 6.0721C1.5982 7.25823 1.25098 8.5902 1.25098 9.99992C1.25098 11.4096 1.5982 12.7415 2.20333 13.9277L5.10014 11.7305Z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M10.1789 4.63331C11.8554 4.63331 12.9864 5.34303 13.6312 5.93612L16.1511 3.525C14.6035 2.11528 12.5895 1.25 10.1789 1.25C6.68676 1.25 3.67088 3.21387 2.20264 6.07218L5.08953 8.26943C5.81381 6.15972 7.81776 4.63331 10.1789 4.63331Z"
-                    fill="#EB4335"
-                  />
-                </svg>
-                Sign in with Google
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10"
-              >
-                <svg
-                  width="21"
-                  className="fill-current"
-                  height="20"
-                  viewBox="0 0 21 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z" />
-                </svg>
-                Sign in with X
-              </button>
-            </div> */}
-            <div className="relative py-3 sm:py-5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="p-2 text-gray-400 bg-white dark:bg-gray-900 sm:px-5 sm:py-2">
-                  Or
-                </span>
-              </div>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="email">
-                    Email <span className="text-error-500">*</span>{" "}
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="info@gmail.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    error={!!errors.email}
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-error-500">
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="password">
-                    Password <span className="text-error-500">*</span>{" "}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      error={!!errors.password}
-                    />
-                    <span
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-                    >
-                      {showPassword ? (
-                        <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                      ) : (
-                        <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                      )}
-                    </span>
-                  </div>
-                  {errors.password && (
-                    <p className="mt-1 text-sm text-error-500">
-                      {errors.password}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="remember"
-                      checked={isChecked}
-                      onChange={setIsChecked}
-                    />
-                    <label
-                      htmlFor="remember"
-                      className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400 cursor-pointer"
-                    >
-                      Keep me logged in
-                    </label>
-                  </div>
-                  <Link
-                    to="/reset-password"
-                    className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div>
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Signing in...
-                      </div>
-                    ) : (
-                      "Sign in"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </form>
-
-            <div className="mt-5">
-              <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                Don&apos;t have an account? {""}
-                <Link
-                  to="/signup"
-                  className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                >
-                  Sign Up
-                </Link>
-              </p>
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email */}
+        <div>
+          <label className="block text-xs font-bold text-gray-700 mb-1.5">
+            Email address
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 pointer-events-none" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              autoComplete="email"
+              className="
+                w-full pl-9 pr-4 py-3
+                bg-blue-50/60 border border-blue-100
+                rounded-xl text-sm text-gray-800 placeholder-gray-400
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                transition-all duration-200
+              "
+            />
           </div>
         </div>
+
+        {/* Password */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-gray-700">
+              Password
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 pointer-events-none" />
+            <input
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              autoComplete="current-password"
+              className="
+                w-full pl-9 pr-10 py-3
+                bg-blue-50/60 border border-blue-100
+                rounded-xl text-sm text-gray-800 placeholder-gray-400
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                transition-all duration-200
+              "
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors"
+              tabIndex={-1}
+            >
+              {showPass ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="
+            w-full flex items-center justify-center gap-2
+            py-3 px-4 mt-2
+            bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400
+            text-white text-sm font-bold
+            rounded-xl shadow-md shadow-blue-200
+            transition-all duration-200
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+          "
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Signing in…
+            </>
+          ) : (
+            <>
+              <LogIn className="w-4 h-4" />
+              Sign In
+            </>
+          )}
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-gray-100" />
+        <span className="text-[11px] text-gray-400 font-medium">
+          or continue with
+        </span>
+        <div className="flex-1 h-px bg-gray-100" />
       </div>
+
+      {/* Google SSO placeholder */}
+      <button
+        type="button"
+        className="
+          w-full flex items-center justify-center gap-2.5
+          py-3 px-4
+          bg-white border border-gray-200 hover:border-blue-200 hover:bg-blue-50/30
+          text-gray-700 text-sm font-semibold
+          rounded-xl shadow-sm
+          transition-all duration-200
+        "
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <path
+            fill="#4285F4"
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+          />
+          <path
+            fill="#34A853"
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+          />
+          <path
+            fill="#EA4335"
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+          />
+        </svg>
+        Continue with Google
+      </button>
+
+      {/* Sign up link */}
+      <p className="text-center text-xs text-gray-500 mt-6">
+        Don't have an account?{" "}
+        <Link
+          to="/signup"
+          className="text-blue-600 hover:text-blue-700 font-bold transition-colors"
+        >
+          Create one free
+        </Link>
+      </p>
     </div>
   );
 }

@@ -200,35 +200,47 @@ export const UserForm: React.FC<UserFormProps> = ({
 
   // ─── Validation ──────────────────────────────────────────────────────────────
 
-  const validateField = (name: string, value: any): string | undefined => {
+  const validateField = (name: string, value: unknown): string | undefined => {
     switch (name) {
       case "firstName":
-        if (!value.trim()) return "First name is required";
+        if (typeof value !== "string" || !value.trim())
+          return "First name is required";
         if (value.length < 2) return "Must be at least 2 characters";
         if (value.length > 50) return "Must be less than 50 characters";
         if (!/^[a-zA-Z\s'-]+$/.test(value))
           return "Letters, spaces, hyphens and apostrophes only";
         break;
       case "lastName":
-        if (!value.trim()) return "Last name is required";
+        if (typeof value !== "string" || !value.trim())
+          return "Last name is required";
         if (value.length < 2) return "Must be at least 2 characters";
         if (value.length > 50) return "Must be less than 50 characters";
         if (!/^[a-zA-Z\s'-]+$/.test(value))
           return "Letters, spaces, hyphens and apostrophes only";
         break;
       case "email":
-        if (!value.trim()) return "Email is required";
+        if (typeof value !== "string" || !value.trim())
+          return "Email is required";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
           return "Enter a valid email address";
         break;
       case "phone":
-        if (value && !/^\+?[\d\s\-()]{10,}$/.test(value.replace(/\s/g, "")))
+        if (
+          typeof value === "string" &&
+          value &&
+          !/^\+?[\d\s\-()]{10,}$/.test(value.replace(/\s/g, ""))
+        )
           return "Enter a valid phone number";
         break;
       case "password":
         if (!user && !value) return "Password is required for new users";
-        if (value && value.length < 8) return "At least 8 characters";
-        if (value && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value))
+        if (typeof value === "string" && value && value.length < 8)
+          return "At least 8 characters";
+        if (
+          typeof value === "string" &&
+          value &&
+          !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)
+        )
           return "Must include uppercase, lowercase, and a number";
         break;
       case "confirmPassword":
@@ -245,16 +257,17 @@ export const UserForm: React.FC<UserFormProps> = ({
     const newErrors: FormErrors = {};
     let isValid = true;
     Object.keys(formData).forEach((key) => {
-      if (key === "confirmPassword" && !formData.password) return;
+      const formKey = key as keyof FormData;
+      if (formKey === "confirmPassword" && !formData.password) return;
       if (
         ["cities", "localities", "permissions", "avatar", "managerId"].includes(
           key,
         )
       )
         return;
-      const error = validateField(key, (formData as any)[key]);
+      const error = validateField(key, formData[formKey]);
       if (error) {
-        (newErrors as any)[key] = error;
+        (newErrors as FormErrors)[key as keyof FormErrors] = error;
         isValid = false;
       }
     });
@@ -262,7 +275,10 @@ export const UserForm: React.FC<UserFormProps> = ({
     return isValid;
   };
 
-  const handleFieldChange = (field: keyof FormData, value: any) => {
+  const handleFieldChange = (
+    field: keyof FormData,
+    value: FormData[keyof FormData],
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (touched.has(field)) {
       const error = validateField(field, value);
@@ -272,7 +288,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     if (field === "roleId") {
       setFormData((prev) => ({
         ...prev,
-        roleId: value,
+        roleId: value as string,
         permissions: EMPTY_OVERRIDES,
       }));
     }
@@ -283,7 +299,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
   const handleFieldBlur = (field: string) => {
     setTouched((prev) => new Set(prev).add(field));
-    const error = validateField(field, (formData as any)[field]);
+    const error = validateField(field, formData[field as keyof FormData]);
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
@@ -300,15 +316,18 @@ export const UserForm: React.FC<UserFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const allFields = Object.keys(formData);
     setTouched(new Set(allFields));
+
     if (!validateForm()) return;
 
-    // Check for grant/revoke conflict before sending
+    // Check grant/revoke conflict
     const grantSet = new Set(formData.permissions.grant ?? []);
     const conflict = (formData.permissions.revoke ?? []).filter((n) =>
       grantSet.has(n),
     );
+
     if (conflict.length) {
       setErrors((prev) => ({
         ...prev,
@@ -318,6 +337,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
 
     setIsSubmitting(true);
+
     try {
       const permissionsPayload: UserPermissionOverrides | undefined =
         formData.permissions.grant?.length ||
@@ -325,7 +345,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           ? formData.permissions
           : undefined;
 
-      const submitData: any = {
+      const basePayload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -335,27 +355,38 @@ export const UserForm: React.FC<UserFormProps> = ({
         cities: formData.cities,
         localities: formData.localities,
         managerId: formData.managerId || null,
-        permissions: permissionsPayload ?? null,
+        permissions: permissionsPayload,
       };
 
-      if (formData.avatar) submitData.avatar = formData.avatar;
-      if (!user && formData.password) submitData.password = formData.password;
-
       if (user) {
+        const updatePayload: UpdateUserRequest = {
+          ...basePayload,
+          ...(formData.avatar && { avatar: formData.avatar }),
+        };
+
         await updateUser({
           id: user.id,
-          data: submitData as UpdateUserRequest,
+          data: updatePayload,
         }).unwrap();
       } else {
+        const createPayload: CreateUserRequest = {
+          ...basePayload,
+          password: formData.password,
+          ...(formData.avatar && { avatar: formData.avatar }),
+        };
+
         if (onSubmit) {
-          onSubmit(submitData as CreateUserRequest);
+          onSubmit(createPayload);
         } else {
-          await createUser(submitData as CreateUserRequest).unwrap();
+          await createUser(createPayload).unwrap();
         }
       }
+
       onClose();
-    } catch (error: any) {
-      const msg = error?.data?.message ?? "";
+    } catch (error) {
+      const err = error as { data?: { message?: string } };
+      const msg = err?.data?.message ?? "";
+
       if (msg.toLowerCase().includes("email")) {
         setErrors((prev) => ({ ...prev, email: "Email already exists" }));
       } else if (msg.toLowerCase().includes("phone")) {

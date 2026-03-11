@@ -1,5 +1,4 @@
 import { Search, X, ChevronDown, UserPlus, Trash2 } from "lucide-react";
-
 import { useState } from "react";
 import type { LeadPriority, LeadSource, LeadStage } from "../../../types";
 import { Card, CardContent } from "../../../components/ui/Card";
@@ -18,8 +17,8 @@ interface LeadsFiltersProps {
   selectedPriority: LeadPriority | "";
   setSelectedPriority: (value: LeadPriority | "") => void;
   selectedLeads: Set<string>;
-  onBulkDelete: () => void;
-  onAssignAgent: () => void;
+  onBulkDelete?: () => void;
+  onAssignAgent?: () => void;
 }
 
 export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
@@ -40,6 +39,10 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
 
   const hasActiveFilters = selectedSource || selectedStage || selectedPriority;
+  // Only show the bulk action bar if there are selections AND at least one
+  // action is available to the current user.
+  const showBulkBar =
+    selectedLeads.size > 0 && (!!onBulkDelete || !!onAssignAgent);
 
   const clearAllFilters = () => {
     setSelectedSource("");
@@ -71,9 +74,9 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
             )}
           </div>
 
-          {/* Filter Dropdowns - Desktop */}
+          {/* Filter Dropdowns — Desktop */}
           <div className="hidden md:grid md:grid-cols-3 gap-3 sm:gap-4">
-            {/* Source Filter */}
+            {/* Source */}
             <div className="relative">
               <button
                 onClick={() => setShowSourceDropdown(!showSourceDropdown)}
@@ -125,7 +128,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
               </Dropdown>
             </div>
 
-            {/* Stage Filter */}
+            {/* Stage */}
             <div className="relative">
               <button
                 onClick={() => setShowStageDropdown(!showStageDropdown)}
@@ -177,7 +180,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
               </Dropdown>
             </div>
 
-            {/* Priority Filter */}
+            {/* Priority */}
             <div className="relative">
               <button
                 onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
@@ -228,7 +231,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
             </div>
           </div>
 
-          {/* Mobile Filter Chips */}
+          {/* Filter Chips — Mobile */}
           <div className="md:hidden flex flex-wrap gap-2">
             {/* Source Chip */}
             <div className="relative">
@@ -382,7 +385,6 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
               </Dropdown>
             </div>
 
-            {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
@@ -395,8 +397,8 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
           </div>
         </div>
 
-        {/* Selected Leads Actions */}
-        {selectedLeads.size > 0 && (
+        {/* Bulk action bar — only shown when selections exist AND user has at least one bulk action */}
+        {showBulkBar && (
           <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <span className="text-blue-700 font-semibold text-sm sm:text-base">
@@ -404,7 +406,8 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 selected
               </span>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                {selectedLeads.size === 1 && (
+                {/* Assign — only when handler provided (lead.assign) and exactly 1 selected */}
+                {onAssignAgent && selectedLeads.size === 1 && (
                   <Button
                     variant="primary"
                     size="sm"
@@ -416,16 +419,20 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                     <span className="sm:hidden">Assign</span>
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onBulkDelete}
-                  startIcon={<Trash2 className="w-4 h-4" />}
-                  className="flex-1 sm:flex-initial text-red-600 border-red-200 hover:bg-red-50"
-                >
-                  <span className="hidden sm:inline">Delete Selected</span>
-                  <span className="sm:hidden">Delete</span>
-                </Button>
+
+                {/* Delete — only when handler provided (lead.delete) */}
+                {onBulkDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onBulkDelete}
+                    startIcon={<Trash2 className="w-4 h-4" />}
+                    className="flex-1 sm:flex-initial text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    <span className="hidden sm:inline">Delete Selected</span>
+                    <span className="sm:hidden">Delete</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

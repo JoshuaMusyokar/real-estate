@@ -6,7 +6,6 @@ import {
   useDeletePropertySubTypeMutation,
 } from "../../services/propertyApi";
 import type { PropertyType, PropertySubType } from "../../types";
-
 import {
   Edit,
   Trash2,
@@ -16,12 +15,12 @@ import {
   Search,
   Filter,
 } from "lucide-react";
-
 import PropertyTypeModal from "./components/PropertyTypeModal";
 import PropertySubTypeModal from "./components/PropertySubTypeModal";
 import ConfirmDialog from "../../components/ui/ConfirmDialogue";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { useToast } from "../../hooks/useToast";
+import { usePermissions } from "../../hooks/usePermissions";
 
 const PropertyTypesManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,14 +29,23 @@ const PropertyTypesManagement: React.FC = () => {
   const [showSubTypeModal, setShowSubTypeModal] = useState(false);
   const [editingType, setEditingType] = useState<PropertyType | null>(null);
   const [editingSubType, setEditingSubType] = useState<PropertySubType | null>(
-    null
+    null,
   );
   const [typeToDelete, setTypeToDelete] = useState<string | null>(null);
   const [subTypeToDelete, setSubTypeToDelete] = useState<string | null>(null);
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
   const { success, error: showError } = useToast();
 
-  // Fetch data
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAddType = can("property.add_type");
+  const canEditType = can("property.edit_type");
+  const canDeleteType = can("property.delete_type");
+  const canAddSubType = can("property.add_type"); // reuses same permission family
+  const canEditSubType = can("property.edit_type");
+  const canDeleteSubType = can("property.delete_type");
+
+  // ── Data ────────────────────────────────────────────────────────────────────
   const {
     data: propertyTypesData,
     isLoading: loadingTypes,
@@ -56,14 +64,12 @@ const PropertyTypesManagement: React.FC = () => {
   const propertyTypes = propertyTypesData?.data || [];
   const propertySubTypes = propertySubTypesData?.data || [];
 
-  // Filter types based on search
   const filteredTypes = propertyTypes.filter(
     (type) =>
       type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      type.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      type.description?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // Filter subtypes based on search
   const filteredSubTypes = propertySubTypes.filter(
     (subType) =>
       subType.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,9 +77,10 @@ const PropertyTypesManagement: React.FC = () => {
       propertyTypes
         .find((t) => t.id === subType.propertyTypeId)
         ?.name.toLowerCase()
-        .includes(searchTerm.toLowerCase())
+        .includes(searchTerm.toLowerCase()),
   );
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleEditType = (type: PropertyType) => {
     setEditingType(type);
     setShowTypeModal(true);
@@ -86,35 +93,33 @@ const PropertyTypesManagement: React.FC = () => {
 
   const handleDeleteType = async () => {
     if (!typeToDelete) return;
-
     try {
       await deletePropertyType(typeToDelete).unwrap();
       success("Property type deleted successfully");
       refetchTypes();
       setTypeToDelete(null);
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        showError(error.message || "Failed to delete property type");
-      } else {
-        showError("Failed to create property type");
-      }
+      showError(
+        error instanceof Error
+          ? error.message || "Failed to delete property type"
+          : "Failed to delete property type",
+      );
     }
   };
 
   const handleDeleteSubType = async () => {
     if (!subTypeToDelete) return;
-
     try {
       await deletePropertySubType(subTypeToDelete).unwrap();
       success("Property subtype deleted successfully");
       refetchSubTypes();
       setSubTypeToDelete(null);
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        showError(error.message || "Failed to delete property subtype");
-      } else {
-        showError("Failed to create property subtype");
-      }
+      showError(
+        error instanceof Error
+          ? error.message || "Failed to delete property subtype"
+          : "Failed to delete property subtype",
+      );
     }
   };
 
@@ -135,7 +140,6 @@ const PropertyTypesManagement: React.FC = () => {
       </div>
     );
   }
-
   if (loadingSubTypes && activeTab === "subtypes") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -143,6 +147,9 @@ const PropertyTypesManagement: React.FC = () => {
       </div>
     );
   }
+
+  // Whether the Create button should appear on the current tab
+  const canCreateCurrent = activeTab === "types" ? canAddType : canAddSubType;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -162,21 +169,13 @@ const PropertyTypesManagement: React.FC = () => {
           <div className="flex space-x-4">
             <button
               onClick={() => setActiveTab("types")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === "types"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "types" ? "bg-blue-600 text-white" : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"}`}
             >
               Property Types
             </button>
             <button
               onClick={() => setActiveTab("subtypes")}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === "subtypes"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === "subtypes" ? "bg-blue-600 text-white" : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"}`}
             >
               Property Subtypes
             </button>
@@ -197,22 +196,24 @@ const PropertyTypesManagement: React.FC = () => {
               />
             </div>
 
-            {/* Create Button */}
-            <button
-              onClick={() => {
-                if (activeTab === "types") {
-                  setEditingType(null);
-                  setShowTypeModal(true);
-                } else {
-                  setEditingSubType(null);
-                  setShowSubTypeModal(true);
-                }
-              }}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Create {activeTab === "types" ? "Type" : "SubType"}
-            </button>
+            {/* Create button — hidden when user lacks the permission for the current tab */}
+            {canCreateCurrent && (
+              <button
+                onClick={() => {
+                  if (activeTab === "types") {
+                    setEditingType(null);
+                    setShowTypeModal(true);
+                  } else {
+                    setEditingSubType(null);
+                    setShowSubTypeModal(true);
+                  }
+                }}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                Create {activeTab === "types" ? "Type" : "SubType"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -235,9 +236,12 @@ const PropertyTypesManagement: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {/* Actions column only rendered when user has at least one action */}
+                    {(canEditType || canDeleteType) && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -287,11 +291,7 @@ const PropertyTypesManagement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                              type.isActive
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                            }`}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${type.isActive ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}
                           >
                             {type.isActive ? "Active" : "Inactive"}
                           </span>
@@ -299,30 +299,41 @@ const PropertyTypesManagement: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {new Date(type.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-3">
-                            <button
-                              onClick={() => handleEditType(type)}
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => setTypeToDelete(type.id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </td>
+                        {(canEditType || canDeleteType) && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-3">
+                              {canEditType && (
+                                <button
+                                  onClick={() => handleEditType(type)}
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit className="h-5 w-5" />
+                                </button>
+                              )}
+                              {canDeleteType && (
+                                <button
+                                  onClick={() => setTypeToDelete(type.id)}
+                                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
+
+                      {/* Expanded subtypes row */}
                       {expandedTypes.has(type.id) &&
                         type.subTypes &&
                         type.subTypes.length > 0 && (
                           <tr className="bg-gray-50 dark:bg-gray-900">
-                            <td colSpan={5} className="px-6 py-4">
+                            <td
+                              colSpan={canEditType || canDeleteType ? 5 : 4}
+                              className="px-6 py-4"
+                            >
                               <div className="pl-12">
                                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                   Subtypes
@@ -345,11 +356,7 @@ const PropertyTypesManagement: React.FC = () => {
                                           )}
                                         </div>
                                         <span
-                                          className={`text-xs px-2 py-1 rounded-full ${
-                                            subType.isActive
-                                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                          }`}
+                                          className={`text-xs px-2 py-1 rounded-full ${subType.isActive ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}
                                         >
                                           {subType.isActive
                                             ? "Active"
@@ -400,98 +407,95 @@ const PropertyTypesManagement: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Created
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {(canEditSubType || canDeleteSubType) && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredSubTypes.map((subType) => (
-                    <tr
-                      key={subType.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          {subType.icon && (
-                            <span className="text-xl">{subType.icon}</span>
-                          )}
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                              {subType.name}
-                            </h3>
-                            {subType.description && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {subType.description}
-                              </p>
+                  {filteredSubTypes.map((subType) => {
+                    const parentType = propertyTypes.find(
+                      (t) => t.id === subType.propertyTypeId,
+                    );
+                    return (
+                      <tr
+                        key={subType.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-3">
+                            {subType.icon && (
+                              <span className="text-xl">{subType.icon}</span>
                             )}
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                                {subType.name}
+                              </h3>
+                              {subType.description && (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  {subType.description}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {propertyTypes.find(
-                          (t) => t.id === subType.propertyTypeId
-                        ) ? (
-                          <div className="flex items-center space-x-2">
-                            {propertyTypes.find(
-                              (t) => t.id === subType.propertyTypeId
-                            )?.icon && (
-                              <span className="text-lg">
-                                {
-                                  propertyTypes.find(
-                                    (t) => t.id === subType.propertyTypeId
-                                  )?.icon
-                                }
+                        </td>
+                        <td className="px-6 py-4">
+                          {parentType ? (
+                            <div className="flex items-center space-x-2">
+                              {parentType.icon && (
+                                <span className="text-lg">
+                                  {parentType.icon}
+                                </span>
+                              )}
+                              <span className="text-sm text-gray-900 dark:text-white">
+                                {parentType.name}
                               </span>
-                            )}
-                            <span className="text-sm text-gray-900 dark:text-white">
-                              {
-                                propertyTypes.find(
-                                  (t) => t.id === subType.propertyTypeId
-                                )?.name
-                              }
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                              Unknown Type
                             </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500 dark:text-gray-400 italic">
-                            Unknown Type
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${subType.isActive ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"}`}
+                          >
+                            {subType.isActive ? "Active" : "Inactive"}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(subType.createdAt).toLocaleDateString()}
+                        </td>
+                        {(canEditSubType || canDeleteSubType) && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-3">
+                              {canEditSubType && (
+                                <button
+                                  onClick={() => handleEditSubType(subType)}
+                                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit className="h-5 w-5" />
+                                </button>
+                              )}
+                              {canDeleteSubType && (
+                                <button
+                                  onClick={() => setSubTypeToDelete(subType.id)}
+                                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                            subType.isActive
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                          }`}
-                        >
-                          {subType.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(subType.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => handleEditSubType(subType)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                            title="Edit"
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => setSubTypeToDelete(subType.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {filteredSubTypes.length === 0 && (
@@ -513,7 +517,7 @@ const PropertyTypesManagement: React.FC = () => {
           )}
         </div>
 
-        {/* Stats */}
+        {/* Stats — read-only, no gating needed */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
@@ -532,7 +536,6 @@ const PropertyTypesManagement: React.FC = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -550,7 +553,6 @@ const PropertyTypesManagement: React.FC = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -573,56 +575,64 @@ const PropertyTypesManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Modals */}
-        <PropertyTypeModal
-          isOpen={showTypeModal}
-          onClose={() => {
-            setShowTypeModal(false);
-            setEditingType(null);
-          }}
-          propertyType={editingType}
-          onSuccess={() => {
-            refetchTypes();
-            setShowTypeModal(false);
-            setEditingType(null);
-          }}
-        />
+        {/* Modals — only mounted when user can create/edit */}
+        {(canAddType || canEditType) && (
+          <PropertyTypeModal
+            isOpen={showTypeModal}
+            onClose={() => {
+              setShowTypeModal(false);
+              setEditingType(null);
+            }}
+            propertyType={editingType}
+            onSuccess={() => {
+              refetchTypes();
+              setShowTypeModal(false);
+              setEditingType(null);
+            }}
+          />
+        )}
 
-        <PropertySubTypeModal
-          isOpen={showSubTypeModal}
-          onClose={() => {
-            setShowSubTypeModal(false);
-            setEditingSubType(null);
-          }}
-          propertySubType={editingSubType}
-          onSuccess={() => {
-            refetchTypes();
-            refetchSubTypes();
-            setShowSubTypeModal(false);
-            setEditingSubType(null);
-          }}
-        />
+        {(canAddSubType || canEditSubType) && (
+          <PropertySubTypeModal
+            isOpen={showSubTypeModal}
+            onClose={() => {
+              setShowSubTypeModal(false);
+              setEditingSubType(null);
+            }}
+            propertySubType={editingSubType}
+            onSuccess={() => {
+              refetchTypes();
+              refetchSubTypes();
+              setShowSubTypeModal(false);
+              setEditingSubType(null);
+            }}
+          />
+        )}
 
-        {/* Confirm Dialogs */}
-        <ConfirmDialog
-          isOpen={!!typeToDelete}
-          onClose={() => setTypeToDelete(null)}
-          onConfirm={handleDeleteType}
-          title="Delete Property Type"
-          message="Are you sure you want to delete this property type? This action cannot be undone."
-          confirmText="Delete"
-          cancelText="Cancel"
-        />
+        {/* Confirm dialogs — only mounted when user can delete */}
+        {canDeleteType && (
+          <ConfirmDialog
+            isOpen={!!typeToDelete}
+            onClose={() => setTypeToDelete(null)}
+            onConfirm={handleDeleteType}
+            title="Delete Property Type"
+            message="Are you sure you want to delete this property type? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+          />
+        )}
 
-        <ConfirmDialog
-          isOpen={!!subTypeToDelete}
-          onClose={() => setSubTypeToDelete(null)}
-          onConfirm={handleDeleteSubType}
-          title="Delete Property SubType"
-          message="Are you sure you want to delete this property subtype? This action cannot be undone."
-          confirmText="Delete"
-          cancelText="Cancel"
-        />
+        {canDeleteSubType && (
+          <ConfirmDialog
+            isOpen={!!subTypeToDelete}
+            onClose={() => setSubTypeToDelete(null)}
+            onConfirm={handleDeleteSubType}
+            title="Delete Property SubType"
+            message="Are you sure you want to delete this property subtype? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+          />
+        )}
       </div>
     </div>
   );

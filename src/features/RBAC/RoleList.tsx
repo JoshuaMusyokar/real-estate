@@ -6,19 +6,22 @@ import type { Role } from "../../types";
 interface RoleListProps {
   roles: Role[];
   isLoading: boolean;
-  onCreateRole: () => void;
-  onEditRole: (role: Role) => void;
-  onManagePermissions: (role: Role) => void;
   onToast: (message: string, type: "success" | "error") => void;
+  // Optional — parent passes undefined when user lacks the permission
+  onCreateRole?: () => void;
+  onEditRole?: (role: Role) => void;
+  onManagePermissions?: (role: Role) => void;
+  canDelete?: boolean;
 }
 
 export const RoleList: React.FC<RoleListProps> = ({
   roles,
   isLoading,
+  onToast,
   onCreateRole,
   onEditRole,
   onManagePermissions,
-  onToast,
+  canDelete = false,
 }) => {
   const [deleteRole, { isLoading: deleteLoading }] = useDeleteRoleMutation();
 
@@ -35,10 +38,13 @@ export const RoleList: React.FC<RoleListProps> = ({
     try {
       await deleteRole(role.id).unwrap();
       onToast("Role deleted", "success");
-    } catch (err: any) {
-      onToast(err?.data?.message ?? "Failed to delete role", "error");
+    } catch {
+      onToast("Failed to delete role", "error");
     }
   };
+
+  // Only render the action column when at least one action is available
+  const hasAnyRowAction = !!onEditRole || !!onManagePermissions || canDelete;
 
   if (isLoading) {
     return (
@@ -58,12 +64,15 @@ export const RoleList: React.FC<RoleListProps> = ({
       <div className="flex flex-col items-center justify-center py-16 text-slate-400">
         <ShieldCheck className="w-12 h-12 mb-3 opacity-30" />
         <p className="text-sm">No roles yet.</p>
-        <button
-          onClick={onCreateRole}
-          className="mt-4 text-sm text-indigo-500 hover:text-indigo-400 underline underline-offset-2"
-        >
-          Create the first role
-        </button>
+        {/* Empty-state CTA — only when user can create */}
+        {onCreateRole && (
+          <button
+            onClick={onCreateRole}
+            className="mt-4 text-sm text-indigo-500 hover:text-indigo-400 underline underline-offset-2"
+          >
+            Create the first role
+          </button>
+        )}
       </div>
     );
   }
@@ -106,14 +115,20 @@ export const RoleList: React.FC<RoleListProps> = ({
                     {perm.name}
                   </span>
                 ))}
-                {role.permissions.length > 5 && (
-                  <button
-                    onClick={() => onManagePermissions(role)}
-                    className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 transition-colors"
-                  >
-                    +{role.permissions.length - 5} more
-                  </button>
-                )}
+                {/* "+N more" — clickable only when user can manage permissions */}
+                {role.permissions.length > 5 &&
+                  (onManagePermissions ? (
+                    <button
+                      onClick={() => onManagePermissions(role)}
+                      className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 transition-colors"
+                    >
+                      +{role.permissions.length - 5} more
+                    </button>
+                  ) : (
+                    <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                      +{role.permissions.length - 5} more
+                    </span>
+                  ))}
                 {role.permissions.length === 0 && (
                   <span className="text-xs text-slate-400 italic">
                     No permissions assigned
@@ -122,31 +137,42 @@ export const RoleList: React.FC<RoleListProps> = ({
               </div>
             </div>
 
-            {/* Right — action buttons (always visible on mobile, hover on desktop) */}
-            <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => onManagePermissions(role)}
-                title="Manage permissions"
-                className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 transition-colors"
-              >
-                <ShieldCheck className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onEditRole(role)}
-                title="Edit role"
-                className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(role)}
-                disabled={deleteLoading}
-                title="Delete role"
-                className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors disabled:opacity-40"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Right — only rendered when at least one action exists */}
+            {hasAnyRowAction && (
+              <div className="flex items-center gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                {/* Manage permissions — hidden without role.assign_permissions */}
+                {onManagePermissions && (
+                  <button
+                    onClick={() => onManagePermissions(role)}
+                    title="Manage permissions"
+                    className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                  </button>
+                )}
+                {/* Edit — hidden without role.edit */}
+                {onEditRole && (
+                  <button
+                    onClick={() => onEditRole(role)}
+                    title="Edit role"
+                    className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {/* Delete — hidden without role.delete */}
+                {canDelete && (
+                  <button
+                    onClick={() => handleDelete(role)}
+                    disabled={deleteLoading}
+                    title="Delete role"
+                    className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       ))}

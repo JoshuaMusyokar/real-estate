@@ -1,13 +1,10 @@
+// PropertyList.tsx
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// components/PropertyList.tsx
 import React from "react";
 import { Home } from "lucide-react";
 import type { PropertySearchFilters, Property } from "../../types";
 import { PropertyCard } from "./PropertyResultCard";
 import { AdCard } from "./AdCard";
-import { zeroBrokerageData } from "../../constants";
-import { ZeroBrokerageCard } from "./ZeroBrokarageCard";
-import { FeaturedPropertiesCarousel } from "./FeaturedProperty";
 
 interface PropertyListProps {
   filters: PropertySearchFilters;
@@ -23,14 +20,6 @@ interface PropertyListProps {
   onPageChange: (page: number) => void;
 }
 
-const sortOptions = [
-  { value: "featured-desc", label: "Relevance" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "createdAt-desc", label: "Newest First" },
-  { value: "viewCount-desc", label: "Most Popular" },
-];
-
 export const PropertyList: React.FC<PropertyListProps> = ({
   filters,
   setFilters,
@@ -44,113 +33,58 @@ export const PropertyList: React.FC<PropertyListProps> = ({
   onToggleFavorite,
   onPageChange,
 }) => {
-  const featuredProperties = properties.filter((p) => p.featured === true);
+  const totalLabel = isLoading
+    ? "Loading…"
+    : `${totalCount} result${totalCount !== 1 ? "s" : ""}`;
+
   return (
     <div className="w-full">
-      {/* Results Header */}
-      <div className="w-full bg-white border-b border-gray-200 sticky top-[120px] z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                {filters.purpose === "SALE"
-                  ? "Flats for Sale"
-                  : filters.purpose === "RENT"
-                  ? "Flats for Rent"
-                  : "Properties"}
-                {searchInput && ` in ${searchInput}`}
-              </h1>
-              <p className="text-gray-600">
-                Showing{" "}
-                {isLoading
-                  ? "..."
-                  : `${(currentPage - 1) * 30 + 1} - ${Math.min(
-                      currentPage * 30,
-                      totalCount
-                    )}`}{" "}
-                of {totalCount}
-              </p>
-            </div>
+      {/* ── Main content ───────────────────────────────────────────────── */}
+      <div className="max-w-full mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+          {/* Left — property list */}
+          <div className="flex-1 lg:w-[70%] min-w-0">
+            {/* Result count */}
+            <p className="text-[10px] sm:text-xs text-gray-400 font-medium mb-2 sm:mb-3">
+              {totalLabel}
+            </p>
 
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">Sort by:</span>
-              <select
-                value={`${filters.sortBy}-${filters.sortOrder}`}
-                onChange={(e) => {
-                  const [sortBy, sortOrder] = e.target.value.split("-");
-                  setFilters((prev) => ({
-                    ...prev,
-                    sortBy,
-                    sortOrder: sortOrder as "asc" | "desc",
-                  }));
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area with 2 Columns */}
-      <div className="max-w-full mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Column - Properties List */}
-          <div className="flex-1 lg:w-[70%]">
-            {/* ⭐️ NEW: Zero Brokerage Section */}
-            {/* {zeroBrokerageData.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-extrabold text-gray-900 mb-4">
-                  Zero Commission Projects around {searchInput || "your area"}
-                </h2>
-                <div className="flex overflow-x-scroll gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  {zeroBrokerageData.map((property) => (
-                    <ZeroBrokerageCard key={property.id} property={property} />
-                  ))}
-                </div>
-              </div>
-            )} */}
-            {/* {featuredProperties.length > 0 && (
-              <div className="mb-8">
-                <div className="flex overflow-x-scroll gap-4 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  <FeaturedPropertiesCarousel
-                    properties={featuredProperties}
-                    title="Featured Properties"
-                  />
-                </div>
-              </div>
-            )} */}
+            {/* Loading skeletons */}
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
-                    className="bg-white border border-gray-200 rounded-lg overflow-hidden animate-pulse"
+                    className="bg-white border border-blue-100 rounded-xl sm:rounded-2xl overflow-hidden animate-pulse"
                   >
                     <div className="flex">
-                      <div className="w-64 h-48 bg-gray-200 flex-shrink-0" />
-                      <div className="flex-1 p-4 space-y-3">
-                        <div className="h-6 bg-gray-200 rounded w-1/4" />
-                        <div className="h-4 bg-gray-200 rounded w-3/4" />
-                        <div className="h-4 bg-gray-200 rounded w-1/2" />
+                      <div className="w-24 sm:w-56 lg:w-64 h-32 sm:h-48 bg-blue-50 flex-shrink-0" />
+                      <div className="flex-1 p-3 sm:p-4 space-y-2 sm:space-y-3">
+                        <div className="h-4 sm:h-5 bg-blue-100 rounded w-1/4" />
+                        <div className="h-3 sm:h-4 bg-blue-50 rounded w-3/4" />
+                        <div className="h-3 bg-blue-50 rounded w-1/2" />
+                        <div className="flex gap-2 mt-2">
+                          {[1, 2, 3].map((j) => (
+                            <div
+                              key={j}
+                              className="w-14 h-5 bg-blue-50 rounded-md"
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : properties.length > 0 ? (
-              <div className="space-y-4">
+            ) : /* Properties */
+            properties.length > 0 ? (
+              <div className="space-y-3 sm:space-y-4">
                 {properties.map((property, index) => (
                   <div
                     key={property.id}
                     className="animate-fadeIn"
                     style={{
-                      animationDelay: `${index * 50}ms`,
+                      animationDelay: `${index * 40}ms`,
                       animationFillMode: "backwards",
                     }}
                   >
@@ -163,12 +97,15 @@ export const PropertyList: React.FC<PropertyListProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-white rounded-lg border border-gray-200">
-                <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              /* Empty state */
+              <div className="text-center py-16 sm:py-24 bg-white rounded-xl sm:rounded-2xl border border-blue-100">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Home className="w-7 h-7 sm:w-10 sm:h-10 text-blue-300" />
+                </div>
+                <h3 className="text-base sm:text-xl font-black text-gray-900 mb-2">
                   No Properties Found
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-xs sm:text-sm text-gray-400 mb-5 sm:mb-6">
                   Try adjusting your filters to see more results
                 </p>
                 <button
@@ -179,7 +116,7 @@ export const PropertyList: React.FC<PropertyListProps> = ({
                       sortOrder: "desc",
                     })
                   }
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all transform hover:scale-105"
+                  className="px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl transition-colors"
                 >
                   Reset All Filters
                 </button>
@@ -188,38 +125,36 @@ export const PropertyList: React.FC<PropertyListProps> = ({
 
             {/* Pagination */}
             {properties.length > 0 && totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
+              <div className="flex justify-center items-center gap-1.5 sm:gap-2 mt-6 sm:mt-8">
                 <button
                   onClick={() => onPageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-md"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold"
                 >
-                  Previous
+                  ← Prev
                 </button>
 
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-
+                  let p: number;
+                  if (totalPages <= 5) p = i + 1;
+                  else if (currentPage <= 3) p = i + 1;
+                  else if (currentPage >= totalPages - 2)
+                    p = totalPages - 4 + i;
+                  else p = currentPage - 2 + i;
                   return (
                     <button
-                      key={pageNum}
-                      onClick={() => onPageChange(pageNum)}
-                      className={`px-4 py-2 rounded-lg transition-all hover:shadow-md transform hover:scale-105 ${
-                        pageNum === currentPage
-                          ? "bg-purple-600 text-white shadow-lg"
-                          : "border border-gray-300 hover:bg-gray-50"
-                      }`}
+                      key={p}
+                      onClick={() => onPageChange(p)}
+                      className={`
+                        w-8 h-8 sm:w-9 sm:h-9 rounded-lg text-xs sm:text-sm font-bold transition-colors
+                        ${
+                          p === currentPage
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                            : "border border-blue-200 text-blue-600 hover:bg-blue-50"
+                        }
+                      `}
                     >
-                      {pageNum}
+                      {p}
                     </button>
                   );
                 })}
@@ -227,44 +162,34 @@ export const PropertyList: React.FC<PropertyListProps> = ({
                 <button
                   onClick={() => onPageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-md"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold"
                 >
-                  Next
+                  Next →
                 </button>
               </div>
             )}
           </div>
 
-          {/* Right Column - Sticky Ad Section */}
-          <div className="lg:w-[30%] hidden lg:block">
-            <div className="sticky top-[180px] space-y-6">
-              {/* Main Ad Card */}
-              <div className="animate-slideInRight">
-                <AdCard position={0} />
-              </div>
+          {/* Right — sticky sidebar */}
+          <div className="lg:w-[30%] hidden lg:block flex-shrink-0">
+            <div className="sticky top-4 md:top-[160px] space-y-4">
+              <AdCard position={0} />
 
-              {/* Secondary Ad Card with delay */}
-              <div
-                className="animate-slideInRight"
-                style={{
-                  animationDelay: "200ms",
-                  animationFillMode: "backwards",
-                }}
-              >
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
-                  <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Home className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-900 mb-2">
-                    Find Your Dream Home
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Get personalized property recommendations
-                  </p>
-                  <button className="w-full px-6 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-all transform hover:scale-105 shadow-md">
-                    Get Started
-                  </button>
+              {/* Secondary promo card */}
+              <div className="rounded-2xl bg-white border border-blue-100 p-5 shadow-sm">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mb-3">
+                  <Home className="w-5 h-5 text-white" />
                 </div>
+                <h3 className="font-black text-gray-900 text-sm mb-1">
+                  Get Personalised Picks
+                </h3>
+                <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                  Tell us what you're looking for and we'll send matching
+                  properties straight to you.
+                </p>
+                <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors">
+                  Find My Match
+                </button>
               </div>
             </div>
           </div>
@@ -273,50 +198,10 @@ export const PropertyList: React.FC<PropertyListProps> = ({
 
       <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0);    }
         }
-
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out;
-        }
-
-        .animate-slideInRight {
-          animation: slideInRight 0.6s ease-out;
-        }
-        .scrollbar-thin {
-          scrollbar-width: thin;
-          scrollbar-color: #d1d5db #f3f4f6;
-        }
-        .scrollbar-thin::-webkit-scrollbar {
-          height: 8px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: #f3f4f6;
-          border-radius: 10px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background-color: #d1d5db;
-          border-radius: 10px;
-          border: 2px solid #f3f4f6;
-        }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
       `}</style>
     </div>
   );

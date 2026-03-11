@@ -1,9 +1,8 @@
 import { AmenityCard } from "./AmenityCard";
-import type { Amenity, User } from "../../../types";
+import type { Amenity } from "../../../types";
 
 interface AmenityGridProps {
   amenities: Amenity[];
-  user: Omit<User, "password" | "twoFactorSecret">;
   onEdit: (amenity: Amenity) => void;
   onDelete: (amenity: Amenity) => void;
   activeDropdown: string | null;
@@ -12,7 +11,6 @@ interface AmenityGridProps {
 
 export const AmenityGrid = ({
   amenities,
-  user,
   onEdit,
   onDelete,
   activeDropdown,
@@ -24,7 +22,6 @@ export const AmenityGrid = ({
         <AmenityCard
           key={amenity.id}
           amenity={amenity}
-          user={user}
           onEdit={onEdit}
           onDelete={onDelete}
           activeDropdown={activeDropdown}

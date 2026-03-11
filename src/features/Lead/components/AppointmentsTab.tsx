@@ -32,6 +32,7 @@ import type {
   AppointmentType,
   AppointmentStatus,
 } from "../../../types";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 interface AppointmentsTabProps {
   leadId: string;
@@ -74,6 +75,10 @@ const getStatusIcon = (status: AppointmentStatus) => {
   return icons[status] || Clock;
 };
 
+// ─── CreateAppointmentModal ───────────────────────────────────────────────────
+// Pure form modal — only mounted when canAdd is true (enforced by parent).
+// No internal permission checks needed.
+
 interface CreateAppointmentModalProps {
   leadId: string;
   isOpen: boolean;
@@ -109,12 +114,11 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
   const handleSubmit = async (): Promise<void> => {
     try {
       const scheduledAt = new Date(
-        `${formData.scheduledDate}T${formData.scheduledTime}`
+        `${formData.scheduledDate}T${formData.scheduledTime}`,
       );
-
       await createAppointment({
         leadId,
-        agentId: null, // Will be set by backend based on current user
+        agentId: null,
         type: formData.type,
         title:
           formData.title || `${formData.type.replace(/_/g, " ")} Appointment`,
@@ -123,7 +127,6 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
         duration: formData.duration,
         location: formData.location,
       } as AppointmentCreateRequest).unwrap();
-
       onSuccess();
       onClose();
       resetForm();
@@ -194,11 +197,7 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
                     }`}
                   >
                     <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        formData.type === type.value
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
+                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${formData.type === type.value ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"}`}
                     >
                       <Icon className="w-5 h-5" />
                     </div>
@@ -327,13 +326,11 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Creating...
+                <Loader2 className="w-5 h-5 animate-spin" /> Creating...
               </>
             ) : (
               <>
-                <Calendar className="w-5 h-5" />
-                Create Appointment
+                <Calendar className="w-5 h-5" /> Create Appointment
               </>
             )}
           </button>
@@ -343,25 +340,33 @@ const CreateAppointmentModal: React.FC<CreateAppointmentModalProps> = ({
   );
 };
 
+// ─── AppointmentCard ──────────────────────────────────────────────────────────
+// Receives permission flags from parent — avoids calling usePermissions()
+// on every card in the list.
+
 interface AppointmentCardProps {
   appointment: AppointmentResponse;
+  canComplete: boolean;
+  canCancel: boolean;
   onComplete: (id: string) => void;
   onCancel: (id: string) => void;
 }
 
 const AppointmentCard: React.FC<AppointmentCardProps> = ({
   appointment,
+  canComplete: canCompletePermission,
+  canCancel: canCancelPermission,
   onComplete,
   onCancel,
 }) => {
   const appointmentType = APPOINTMENT_TYPES.find(
-    (t) => t.value === appointment.type
+    (t) => t.value === appointment.type,
   );
   const Icon = appointmentType?.icon || Calendar;
   const StatusIcon = getStatusIcon(appointment.status as AppointmentStatus);
 
   const formatDateTime = (
-    dateString: string
+    dateString: string,
   ): { date: string; time: string } => {
     const date = new Date(dateString);
     return {
@@ -379,11 +384,15 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   };
 
   const { date, time } = formatDateTime(appointment.scheduledAt);
-  const isUpcoming = new Date(appointment.scheduledAt) > new Date();
-  const canComplete =
+
+  // Status-based eligibility (business rules) combined with permission checks
+  const statusAllowsComplete =
     appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED";
-  const canCancel =
+  const statusAllowsCancel =
     appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED";
+
+  const showComplete = canCompletePermission && statusAllowsComplete;
+  const showCancel = canCancelPermission && statusAllowsCancel;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
@@ -399,17 +408,16 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 {appointment.title}
               </h4>
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${getStatusColor(
-                  appointment.status as AppointmentStatus
-                )}`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${getStatusColor(appointment.status as AppointmentStatus)}`}
               >
                 <StatusIcon className="w-3.5 h-3.5" />
                 {appointment.status.replace(/_/g, " ")}
               </span>
             </div>
-            {canComplete || canCancel ? (
+
+            {(showComplete || showCancel) && (
               <div className="flex gap-2">
-                {canComplete && (
+                {showComplete && (
                   <button
                     onClick={() => onComplete(appointment.id)}
                     className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -418,7 +426,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
                     <CheckCircle2 className="w-5 h-5" />
                   </button>
                 )}
-                {canCancel && (
+                {showCancel && (
                   <button
                     onClick={() => onCancel(appointment.id)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -428,7 +436,7 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
                   </button>
                 )}
               </div>
-            ) : null}
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -488,15 +496,22 @@ const AppointmentCard: React.FC<AppointmentCardProps> = ({
   );
 };
 
+// ─── AppointmentsTab ──────────────────────────────────────────────────────────
+
 export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("appointment.add");
+  const canComplete = can("appointment.complete");
+  const canCancel = can("appointment.cancel");
 
   const { data, isLoading, refetch } = useGetAppointmentsQuery({
     leadId,
     limit: 100,
   });
-
   const [completeAppointment] = useCompleteAppointmentMutation();
   const [cancelAppointment] = useCancelAppointmentMutation();
 
@@ -524,7 +539,6 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
 
   const handleCancel = async (id: string): Promise<void> => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
-
     try {
       await cancelAppointment({ id }).unwrap();
       refetch();
@@ -543,6 +557,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h3 className="text-xl font-bold text-gray-900">Appointments</h3>
@@ -550,15 +565,20 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
             Manage all scheduled appointments for this lead
           </p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg"
-        >
-          <Plus className="w-5 h-5" />
-          Schedule Appointment
-        </button>
+
+        {/* Schedule button — hidden without appointment.add */}
+        {canAdd && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Schedule Appointment
+          </button>
+        )}
       </div>
 
+      {/* Filter chips */}
       <div className="flex items-center gap-3 flex-wrap">
         {["all", "upcoming", "scheduled", "completed", "cancelled"].map(
           (status) => (
@@ -573,7 +593,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </button>
-          )
+          ),
         )}
       </div>
 
@@ -585,16 +605,21 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
           </h4>
           <p className="text-gray-600 mb-6">
             {filterStatus === "all"
-              ? "Schedule your first appointment with this lead"
+              ? canAdd
+                ? "Schedule your first appointment with this lead"
+                : "No appointments have been scheduled for this lead yet"
               : `No ${filterStatus} appointments`}
           </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Schedule Appointment
-          </button>
+          {/* Empty-state CTA only for users who can schedule */}
+          {canAdd && filterStatus === "all" && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Schedule Appointment
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -602,6 +627,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
+              canComplete={canComplete}
+              canCancel={canCancel}
               onComplete={handleComplete}
               onCancel={handleCancel}
             />
@@ -609,12 +636,15 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ leadId }) => {
         </div>
       )}
 
-      <CreateAppointmentModal
-        leadId={leadId}
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={() => refetch()}
-      />
+      {/* Modal — only mounted when canAdd */}
+      {canAdd && (
+        <CreateAppointmentModal
+          leadId={leadId}
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 };

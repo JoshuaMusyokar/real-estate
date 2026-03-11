@@ -11,12 +11,18 @@ interface PermissionListProps {
   permissions: Permission[];
   isLoading: boolean;
   onToast: (message: string, type: "success" | "error") => void;
+  // Optional — parent passes false/undefined when user lacks the permission
+  canAdd?: boolean;
+  canEdit?: boolean; // reserved for future inline-edit UI
+  canDelete?: boolean;
 }
 
 export const PermissionList: React.FC<PermissionListProps> = ({
   permissions,
   isLoading,
   onToast,
+  canAdd = false,
+  canDelete = false,
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -35,14 +41,17 @@ export const PermissionList: React.FC<PermissionListProps> = ({
       (p.description ?? "").toLowerCase().includes(search.toLowerCase()),
   );
 
-  // Group by prefix
+  // Group by prefix (dot → primary separator to match "user.add" style,
+  // fall back to colon then underscore for legacy names)
   const grouped = filtered.reduce(
     (acc, p) => {
-      const prefix = p.name.includes(":")
-        ? p.name.split(":")[0]
-        : p.name.includes("_")
-          ? p.name.split("_")[0]
-          : "other";
+      const prefix = p.name.includes(".")
+        ? p.name.split(".")[0]
+        : p.name.includes(":")
+          ? p.name.split(":")[0]
+          : p.name.includes("_")
+            ? p.name.split("_")[0]
+            : "other";
       if (!acc[prefix]) acc[prefix] = [];
       acc[prefix].push(p);
       return acc;
@@ -59,14 +68,15 @@ export const PermissionList: React.FC<PermissionListProps> = ({
       setName("");
       setDescription("");
       setShowForm(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       const parsed = parseApiError(err);
       if (parsed.fieldErrors) {
-        const fieldErrorMap = parsed.fieldErrors.reduce(
-          (acc, err) => ({ ...acc, [err.field]: err.message }),
-          {} as Record<string, string>,
+        setFieldErrors(
+          parsed.fieldErrors.reduce(
+            (acc, e) => ({ ...acc, [e.field]: e.message }),
+            {} as Record<string, string>,
+          ),
         );
-        setFieldErrors(fieldErrorMap);
       } else {
         onToast(parsed.detail ?? "Failed to create permission", "error");
       }
@@ -83,8 +93,8 @@ export const PermissionList: React.FC<PermissionListProps> = ({
     try {
       await deletePermission(perm.id).unwrap();
       onToast("Permission deleted", "success");
-    } catch (err: any) {
-      onToast(err?.data?.message ?? "Failed to delete permission", "error");
+    } catch {
+      onToast("Failed to delete permission", "error");
     }
   };
 
@@ -114,17 +124,20 @@ export const PermissionList: React.FC<PermissionListProps> = ({
             className="w-full pl-3 pr-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex-shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          New Permission
-        </button>
+        {/* New Permission button — hidden without permission.add */}
+        {canAdd && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            New Permission
+          </button>
+        )}
       </div>
 
-      {/* Inline create form */}
-      {showForm && (
+      {/* Inline create form — only mounted when canAdd */}
+      {canAdd && showForm && (
         <div className="mb-5 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/20">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
@@ -150,15 +163,18 @@ export const PermissionList: React.FC<PermissionListProps> = ({
                   setName(e.target.value);
                   setFieldErrors((p) => ({ ...p, name: "" }));
                 }}
-                placeholder="e.g. users:create or delete_property"
-                className={`w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono
-                  ${fieldErrors.name ? "border-red-400" : "border-slate-300 dark:border-slate-600"}`}
+                placeholder="e.g. user.create or property.approve"
+                className={`w-full px-3 py-2 text-sm rounded-lg border bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono ${
+                  fieldErrors.name
+                    ? "border-red-400"
+                    : "border-slate-300 dark:border-slate-600"
+                }`}
               />
               {fieldErrors.name && (
                 <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>
               )}
               <p className="mt-1 text-xs text-slate-400">
-                Lowercase letters, underscores, or colons only.
+                Lowercase letters, dots, underscores, or colons only.
               </p>
             </div>
             <input
@@ -190,7 +206,7 @@ export const PermissionList: React.FC<PermissionListProps> = ({
       )}
 
       {/* Empty state */}
-      {filtered.length === 0 && !isLoading && (
+      {filtered.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-slate-400">
           <Lock className="w-10 h-10 mb-3 opacity-30" />
           <p className="text-sm">No permissions found.</p>
@@ -225,14 +241,17 @@ export const PermissionList: React.FC<PermissionListProps> = ({
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDelete(perm)}
-                    disabled={deleting}
-                    className="ml-3 p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30"
-                    title="Delete permission"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Delete button — hidden without permission.delete */}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(perm)}
+                      disabled={deleting}
+                      className="ml-3 p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-30"
+                      title="Delete permission"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
-import { Plus, Search, Download, Upload } from "lucide-react";
+import { Plus, Search, Download } from "lucide-react";
 import {
   useGetUsersQuery,
   useDeleteUserMutation,
@@ -12,7 +12,6 @@ import {
 import type {
   UserResponse,
   UserFilter,
-  Role,
   UserStatus,
   CreateUserRequest,
 } from "../../types";
@@ -20,14 +19,14 @@ import { UserForm } from "./UserForm";
 import { UserDetailsModal } from "./UserDetailModal";
 import { BulkActions } from "./BulkAction";
 import { ExportModal } from "./ExportModal";
-// import { ImportModal } from "../components/users/ImportModal";
 import { StatsGrid } from "./StatGrid";
 import { FilterDropdown } from "./FilterDropdown";
 import { UserTable } from "./UserTable";
 import { UserTableSkeleton } from "./UserTableSkeleton";
 import { Pagination } from "./Pagination";
-import { roles, userStatuses } from "../../utils/user-utils";
+import { userStatuses } from "../../utils/user-utils";
 import { useGetRolesQuery } from "../../services/rbacApi";
+import { usePermissions } from "../../hooks/usePermissions";
 
 export const UserManagement: React.FC = () => {
   const [filters, setFilters] = useState<UserFilter>({});
@@ -38,16 +37,20 @@ export const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [viewingUser, setViewingUser] = useState<UserResponse | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const { data: rolesData } = useGetRolesQuery({
-    page: 1,
-    limit: 100,
-  });
-  const roles = rolesData?.roles || [];
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("user.add");
+  const canEdit = can("user.edit");
+  const canDelete = can("user.delete");
+  const canExport = can("user.export");
+  const canBulk = can("user.bulk_action");
+
+  // ── Data ────────────────────────────────────────────────────────────────────
+  const { data: rolesData } = useGetRolesQuery({ page: 1, limit: 100 });
+  const roles = rolesData?.roles || [];
   const limit = 10;
 
-  // RTK Queries
   const {
     data: usersData,
     isLoading,
@@ -67,15 +70,12 @@ export const UserManagement: React.FC = () => {
   const [createUser] = useCreateUserMutation();
 
   const users = usersData?.users || [];
-  const totalUsers = usersData?.total || 0;
   const totalPages = usersData?.totalPages || 1;
-
-  // Memoized computed values
   const stats = useMemo(() => statsData?.data, [statsData]);
   const isAllSelected =
     selectedUsers.length === users.length && users.length > 0;
 
-  // Handlers
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setPage(1);
@@ -95,7 +95,7 @@ export const UserManagement: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    setSelectedUsers(isAllSelected ? [] : users.map((user) => user.id));
+    setSelectedUsers(isAllSelected ? [] : users.map((u) => u.id));
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -120,13 +120,9 @@ export const UserManagement: React.FC = () => {
   const handleBulkAction = async (
     operation: "activate" | "deactivate" | "delete",
   ) => {
-    if (selectedUsers.length === 0) return;
-
+    if (!selectedUsers.length) return;
     try {
-      await bulkOperation({
-        userIds: selectedUsers,
-        operation,
-      }).unwrap();
+      await bulkOperation({ userIds: selectedUsers, operation }).unwrap();
       setSelectedUsers([]);
     } catch (error) {
       console.error("Bulk operation failed:", error);
@@ -175,57 +171,55 @@ export const UserManagement: React.FC = () => {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 rounded-xl px-2 mb-2">
         <div className="max-w-full mx-auto">
-          {/* <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8"> */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-6">
             <div className="flex items-center justify-between sm:block">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                  User Management
-                </h1>
-              </div>
-              <button
-                onClick={() => setIsUserFormOpen(true)}
-                className="sm:hidden bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus size={20} />
-              </button>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                User Management
+              </h1>
+              {/* Mobile Add button — hidden without user.add */}
+              {canAdd && (
+                <button
+                  onClick={() => setIsUserFormOpen(true)}
+                  className="sm:hidden bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus size={20} />
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-3 mt-4 sm:mt-0">
-              {/* <button
-                onClick={() => setIsImportModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Upload size={20} />
-                <span className="hidden sm:block">Import</span>
-              </button> */}
-              <button
-                onClick={() => setIsExportModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Download size={20} />
-                <span className="hidden sm:block">Export</span>
-              </button>
-              <button
-                onClick={() => setIsUserFormOpen(true)}
-                className="hidden sm:flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus size={20} />
-                Add User
-              </button>
+              {/* Export — hidden without user.export */}
+              {canExport && (
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Download size={20} />
+                  <span className="hidden sm:block">Export</span>
+                </button>
+              )}
+              {/* Desktop Add button — hidden without user.add */}
+              {canAdd && (
+                <button
+                  onClick={() => setIsUserFormOpen(true)}
+                  className="hidden sm:flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus size={20} />
+                  Add User
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-full mx-auto">
-        {/* Stats Grid */}
+        {/* Stats — read-only */}
         {stats && <StatsGrid stats={stats} />}
 
         {/* Filters and Search */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-            {/* Search */}
             <div className="relative flex-1 max-w-md w-full">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -239,8 +233,6 @@ export const UserManagement: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
-
-            {/* Filters */}
             <div className="flex flex-wrap gap-3">
               <FilterDropdown
                 label="Role"
@@ -275,8 +267,8 @@ export const UserManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Bulk Actions */}
-        {selectedUsers.length > 0 && (
+        {/* Bulk Actions — only when canBulk AND rows selected */}
+        {canBulk && selectedUsers.length > 0 && (
           <BulkActions
             selectedCount={selectedUsers.length}
             onBulkAction={handleBulkAction}
@@ -292,18 +284,17 @@ export const UserManagement: React.FC = () => {
             <UserTable
               users={users}
               selectedUsers={selectedUsers}
-              onSelectUser={handleSelectUser}
-              onSelectAll={handleSelectAll}
               isAllSelected={isAllSelected}
               onViewUser={setViewingUser}
-              onEditUser={handleEditUser}
-              onDeleteUser={handleDeleteUser}
-              onStatusUpdate={handleStatusUpdate}
+              onSelectUser={canBulk || canDelete ? handleSelectUser : undefined}
+              onSelectAll={canBulk || canDelete ? handleSelectAll : undefined}
+              onEditUser={canEdit ? handleEditUser : undefined}
+              onDeleteUser={canDelete ? handleDeleteUser : undefined}
+              onStatusUpdate={canEdit ? handleStatusUpdate : undefined}
             />
           )}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <Pagination
             currentPage={page}
@@ -313,37 +304,35 @@ export const UserManagement: React.FC = () => {
         )}
       </div>
 
-      {/* Modals */}
-      <UserForm
-        isOpen={isUserFormOpen}
-        onClose={() => {
-          setIsUserFormOpen(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-        onSubmit={handleCreateUser}
-      />
+      {/* Modals — conditionally mounted */}
+      {(canAdd || canEdit) && (
+        <UserForm
+          isOpen={isUserFormOpen}
+          onClose={() => {
+            setIsUserFormOpen(false);
+            setEditingUser(null);
+          }}
+          user={editingUser}
+          onSubmit={handleCreateUser}
+        />
+      )}
 
       {viewingUser && (
         <UserDetailsModal
           user={viewingUser}
           isOpen={!!viewingUser}
           onClose={() => setViewingUser(null)}
-          onEdit={handleEditUser}
+          onEdit={canEdit ? handleEditUser : undefined}
         />
       )}
 
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        filters={filters}
-      />
-
-      {/* <ImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onSuccess={refetch}
-      /> */}
+      {canExport && (
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          filters={filters}
+        />
+      )}
     </div>
   );
 };

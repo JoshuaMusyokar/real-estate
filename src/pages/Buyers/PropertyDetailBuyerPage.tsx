@@ -119,17 +119,15 @@ const PropertyDetailBuyerPage: FC = () => {
         description="View detailed information and analytics for a selected property."
       />
 
-      <div className="mx-auto px-4 py-6">
-        <PublicHeader
-          onShowFavorites={handleShowFavorites}
-          onShowAppointments={handleShowAppointments}
-          displaySearchBar={true}
-          onLocalityChange={handleLocalityChange}
-          onCityChange={handleCityChange}
-        />
-        <PropertyDetailBuyer id={id} />
-        <Footer />
-      </div>
+      <PublicHeader
+        onShowFavorites={handleShowFavorites}
+        onShowAppointments={handleShowAppointments}
+        displaySearchBar={true}
+        onLocalityChange={handleLocalityChange}
+        onCityChange={handleCityChange}
+      />
+      <PropertyDetailBuyer id={id} />
+      <Footer />
     </>
   );
 };

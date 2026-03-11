@@ -1,17 +1,16 @@
-import { Edit2, Trash2, Eye, EyeOff, Check, X, Lock } from "lucide-react";
-import type { Amenity, User } from "../../../types";
+import { Edit2, Trash2, Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
+import type { Amenity } from "../../../types";
 import { useToggleAmenityStatusMutation } from "../../../services/AmenityApi";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 interface AmenityTableProps {
   amenities: Amenity[];
-  user: Omit<User, "password" | "twoFactorSecret">;
   onEdit: (amenity: Amenity) => void;
   onDelete: (amenity: Amenity) => void;
 }
 
 export const AmenityTable = ({
   amenities,
-  user,
   onEdit,
   onDelete,
 }: AmenityTableProps) => {
@@ -45,7 +44,6 @@ export const AmenityTable = ({
             <TableRow
               key={amenity.id}
               amenity={amenity}
-              user={user}
               onEdit={onEdit}
               onDelete={onDelete}
             />
@@ -56,36 +54,33 @@ export const AmenityTable = ({
   );
 };
 
+// ─── Row ──────────────────────────────────────────────────────────────────────
+
 const TableRow = ({
   amenity,
-  user,
   onEdit,
   onDelete,
 }: {
   amenity: Amenity;
-  user: Omit<User, "password" | "twoFactorSecret">;
   onEdit: (amenity: Amenity) => void;
   onDelete: (amenity: Amenity) => void;
 }) => (
   <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
     <td className="px-6 py-4">
       <div className="flex items-center gap-3">
-        {amenity.icon && (
-          <>
-            {amenity.icon.startsWith("/") || amenity.icon.startsWith("http") ? (
-              <img
-                src={amenity.icon}
-                alt={amenity.name}
-                className="w-6 h-6 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <span className="text-2xl">{amenity.icon}</span>
-            )}
-          </>
-        )}
+        {amenity.icon &&
+          (amenity.icon.startsWith("/") || amenity.icon.startsWith("http") ? (
+            <img
+              src={amenity.icon}
+              alt={amenity.name}
+              className="w-6 h-6 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <span className="text-2xl">{amenity.icon}</span>
+          ))}
         <span className="font-medium text-gray-900 dark:text-white">
           {amenity.name}
         </span>
@@ -110,15 +105,12 @@ const TableRow = ({
       {new Date(amenity.createdAt).toLocaleDateString()}
     </td>
     <td className="px-6 py-4 text-right">
-      <TableActions
-        amenity={amenity}
-        user={user}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
+      <TableActions amenity={amenity} onEdit={onEdit} onDelete={onDelete} />
     </td>
   </tr>
 );
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
 
 const StatusBadge = ({ isActive }: { isActive: boolean }) => (
   <span
@@ -130,75 +122,76 @@ const StatusBadge = ({ isActive }: { isActive: boolean }) => (
   >
     {isActive ? (
       <>
-        <Check className="w-3 h-3" />
-        Active
+        <Check className="w-3 h-3" /> Active
       </>
     ) : (
       <>
-        <X className="w-3 h-3" />
-        Inactive
+        <X className="w-3 h-3" /> Inactive
       </>
     )}
   </span>
 );
 
+// ─── Row actions ──────────────────────────────────────────────────────────────
+
 const TableActions = ({
   amenity,
-  user,
   onEdit,
   onDelete,
 }: {
   amenity: Amenity;
-  user: Omit<User, "password" | "twoFactorSecret">;
   onEdit: (amenity: Amenity) => void;
   onDelete: (amenity: Amenity) => void;
 }) => {
-  const [toggleStatus, { isLoading }] = useToggleAmenityStatusMutation();
+  const [toggleStatus, { isLoading: isToggling }] =
+    useToggleAmenityStatusMutation();
+  const { can } = usePermissions();
 
-  const handleToggleStatus = async () => {
-    await toggleStatus(amenity.id).unwrap();
-  };
-  if (!["ADMIN", "SUPER_ADMIN"].includes(user!.role.name)) {
-    return (
-      <button
-        disabled={true}
-        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-        title="Locked"
-      >
-        <Lock className="w-4 h-4" />
-      </button>
-    );
-  }
+  const canEdit = can("amenity.edit");
+  const canDelete = can("amenity.delete");
+  const canToggle = can("amenity.toggle_status");
+
+  // Nothing to show — render nothing rather than a decorative lock icon
+  if (!canEdit && !canDelete && !canToggle) return null;
 
   return (
     <div className="flex items-center justify-end gap-2">
-      <button
-        onClick={() => onEdit(amenity)}
-        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-        title="Edit"
-      >
-        <Edit2 className="w-4 h-4" />
-      </button>
-      <button
-        onClick={handleToggleStatus}
-        className={`p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors ${
-          isLoading ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-        title={amenity.isActive ? "Deactivate" : "Activate"}
-      >
-        {amenity.isActive ? (
-          <EyeOff className="w-4 h-4" />
-        ) : (
-          <Eye className="w-4 h-4" />
-        )}
-      </button>
-      <button
-        onClick={() => onDelete(amenity)}
-        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-        title="Delete"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => onEdit(amenity)}
+          title="Edit"
+          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+      )}
+
+      {canToggle && (
+        <button
+          onClick={() => toggleStatus(amenity.id)}
+          disabled={isToggling}
+          title={amenity.isActive ? "Deactivate" : "Activate"}
+          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isToggling ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : amenity.isActive ? (
+            <EyeOff className="w-4 h-4" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
+        </button>
+      )}
+
+      {canDelete && (
+        <button
+          onClick={() => onDelete(amenity)}
+          title="Delete"
+          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };

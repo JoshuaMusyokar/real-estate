@@ -1,7 +1,5 @@
-// components/LocalitySearch.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { Search, MapPin, X, AlertTriangle, ChevronRight } from "lucide-react";
-import { useGetCitiesQuery } from "../../services/locationApi";
 
 interface LocalitySearchProps {
   currentCityId: string;
@@ -9,7 +7,7 @@ interface LocalitySearchProps {
   onLocalitySelect: (
     locality: string,
     cityId: string,
-    cityName: string
+    cityName: string,
   ) => void;
   onSearchChange?: (searchTerm: string) => void;
   placeholder?: string;
@@ -34,7 +32,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
     cityId: string;
     cityName: string;
   } | null>(null);
-  const [localities, setLocalities] = useState<string[]>([]);
+  // const [localities, setLocalities] = useState<string[]>([]);
   const [matchedCities, setMatchedCities] = useState<
     Array<{
       cityId: string;
@@ -46,10 +44,10 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: citiesData } = useGetCitiesQuery({
-    page: 1,
-    limit: 100,
-  });
+  // const { data: citiesData } = useGetCitiesQuery({
+  //   page: 1,
+  //   limit: 100,
+  // });
 
   // Fetch localities when search term changes
   useEffect(() => {
@@ -57,7 +55,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
       searchLocalities(searchTerm);
       setShowDropdown(true);
     } else {
-      setLocalities([]);
+      // setLocalities([]);
       setMatchedCities([]);
       setShowDropdown(false);
     }
@@ -99,7 +97,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
     ];
 
     const filtered = allLocalities.filter((locality) =>
-      locality.name.toLowerCase().includes(term.toLowerCase())
+      locality.name.toLowerCase().includes(term.toLowerCase()),
     );
 
     // Group by city
@@ -116,7 +114,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
         cityId,
         cityName: localities[0].cityName,
         localities: localities.map((l) => l.name),
-      })
+      }),
     );
 
     setMatchedCities(cities);
@@ -125,7 +123,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
   const handleLocalitySelect = (
     localityName: string,
     cityId: string,
-    cityName: string
+    cityName: string,
   ) => {
     if (cityId !== currentCityId) {
       // Show confirmation modal if city changes
@@ -145,7 +143,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
       onLocalitySelect(
         selectedLocality.name,
         selectedLocality.cityId,
-        selectedLocality.cityName
+        selectedLocality.cityName,
       );
       setSearchTerm(selectedLocality.name);
       setSelectedLocality(null);
@@ -246,7 +244,7 @@ export const LocalitySearch: React.FC<LocalitySearchProps> = ({
                             handleLocalitySelect(
                               locality,
                               cityGroup.cityId,
-                              cityGroup.cityName
+                              cityGroup.cityName,
                             )
                           }
                           className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 rounded flex items-center justify-between group"

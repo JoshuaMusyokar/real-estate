@@ -24,7 +24,8 @@ interface UserDetailsModalProps {
   user: UserResponse;
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (user: UserResponse) => void;
+  // Optional — parent passes undefined when user lacks user.edit
+  onEdit?: (user: UserResponse) => void;
 }
 
 // ─── Permission section ───────────────────────────────────────────────────────
@@ -36,18 +37,14 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
   const [expanded, setExpanded] = useState(false);
   const { data: effective, isLoading } = useGetUserEffectivePermissionsQuery(
     userId,
-    {
-      skip: !expanded,
-    },
+    { skip: !expanded },
   );
-
   const hasOverrides =
     (effective?.granted.length ?? 0) > 0 ||
     (effective?.revoked.length ?? 0) > 0;
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-      {/* Toggle header */}
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
@@ -69,7 +66,6 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Show override badges even when collapsed, if we already loaded */}
           {effective && hasOverrides && (
             <div className="flex gap-1.5">
               {effective.granted.length > 0 && (
@@ -94,7 +90,6 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
         </div>
       </button>
 
-      {/* Expanded content */}
       {expanded && (
         <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
           {isLoading ? (
@@ -103,7 +98,6 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
             </div>
           ) : effective ? (
             <>
-              {/* Summary row */}
               <div className="flex flex-wrap gap-3 pb-3 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-1.5 text-sm">
                   <ShieldCheck className="w-4 h-4 text-indigo-500" />
@@ -147,7 +141,6 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
                 )}
               </div>
 
-              {/* Extra granted (only if any) */}
               {effective.granted.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
@@ -166,7 +159,6 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
                 </div>
               )}
 
-              {/* Revoked (only if any) */}
               {effective.revoked.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 mb-2 flex items-center gap-1.5">
@@ -185,7 +177,6 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
                 </div>
               )}
 
-              {/* All effective */}
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" /> All Effective
@@ -205,12 +196,11 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
                               ? "Extra permission (not from role)"
                               : "From role"
                           }
-                          className={`text-xs px-2 py-0.5 rounded-md font-mono border
-                            ${
-                              isGranted
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700"
-                                : "bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600"
-                            }`}
+                          className={`text-xs px-2 py-0.5 rounded-md font-mono border ${
+                            isGranted
+                              ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700"
+                              : "bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600"
+                          }`}
                         >
                           {name}
                         </span>
@@ -233,19 +223,17 @@ const PermissionsSection: React.FC<{ userId: string; roleName?: string }> = ({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getStatusColor = (status: UserStatus) => {
-  const colors: Record<UserStatus, string> = {
+const getStatusColor = (status: UserStatus) =>
+  ({
     ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     INACTIVE: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
     SUSPENDED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     PENDING_VERIFICATION:
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  };
-  return colors[status];
-};
+  })[status];
 
-const getRoleColor = (roleName: string) => {
-  const colors: Record<string, string> = {
+const getRoleColor = (roleName: string) =>
+  ({
     SUPER_ADMIN:
       "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
     ADMIN: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -261,9 +249,7 @@ const getRoleColor = (roleName: string) => {
     BUILDER: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
     AGENT_EXTERNAL:
       "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  };
-  return colors[roleName] || "bg-gray-100 text-gray-800";
-};
+  })[roleName] || "bg-gray-100 text-gray-800";
 
 const formatDate = (date: Date | string | undefined) => {
   if (!date) return "Never";
@@ -310,16 +296,19 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                onEdit(user);
-                onClose();
-              }}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Edit User"
-            >
-              <Edit size={20} />
-            </button>
+            {/* Edit icon — only when user has user.edit */}
+            {onEdit && (
+              <button
+                onClick={() => {
+                  onEdit(user);
+                  onClose();
+                }}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title="Edit User"
+              >
+                <Edit size={20} />
+              </button>
+            )}
             <button
               onClick={onClose}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -330,7 +319,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Status + role badges */}
+          {/* Badges */}
           <div className="flex flex-wrap gap-3">
             <span
               className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(user.status)}`}
@@ -356,7 +345,6 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 2FA Enabled
               </span>
             )}
-            {/* Overrides indicator */}
             {user.permissions &&
               ((user.permissions.grant?.length ?? 0) > 0 ||
                 (user.permissions.revoke?.length ?? 0) > 0) && (
@@ -472,7 +460,6 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             </div>
           )}
 
-          {/* ── Permissions (collapsible, lazy-loaded) ── */}
           <PermissionsSection userId={user.id} roleName={roleName} />
 
           {/* Activity */}
@@ -538,38 +525,44 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 Performance Metrics
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {user.agentPerformance.totalLeadsClosed}
-                  </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Deals Closed
-                  </p>
-                </div>
-                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {user.agentPerformance.conversionRate}%
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    Conversion
-                  </p>
-                </div>
-                <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    ${user.agentPerformance.totalRevenue.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-purple-700 dark:text-purple-300">
-                    Revenue
-                  </p>
-                </div>
-                <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {user.agentPerformance.appointmentsCompleted}
-                  </p>
-                  <p className="text-sm text-orange-700 dark:text-orange-300">
-                    Appointments
-                  </p>
-                </div>
+                {[
+                  {
+                    value: user.agentPerformance.totalLeadsClosed,
+                    label: "Deals Closed",
+                    color: "blue",
+                  },
+                  {
+                    value: `${user.agentPerformance.conversionRate}%`,
+                    label: "Conversion",
+                    color: "green",
+                  },
+                  {
+                    value: `$${user.agentPerformance.totalRevenue.toLocaleString()}`,
+                    label: "Revenue",
+                    color: "purple",
+                  },
+                  {
+                    value: user.agentPerformance.appointmentsCompleted,
+                    label: "Appointments",
+                    color: "orange",
+                  },
+                ].map(({ value, label, color }) => (
+                  <div
+                    key={label}
+                    className={`text-center p-3 bg-${color}-50 dark:bg-${color}-900/20 rounded-lg`}
+                  >
+                    <p
+                      className={`text-2xl font-bold text-${color}-600 dark:text-${color}-400`}
+                    >
+                      {value}
+                    </p>
+                    <p
+                      className={`text-sm text-${color}-700 dark:text-${color}-300`}
+                    >
+                      {label}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -579,20 +572,23 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         <div className="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className={`px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${onEdit ? "flex-1" : "w-full"}`}
           >
             Close
           </button>
-          <button
-            onClick={() => {
-              onEdit(user);
-              onClose();
-            }}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-          >
-            <Edit size={18} />
-            Edit User
-          </button>
+          {/* Edit User footer button — only when user has user.edit */}
+          {onEdit && (
+            <button
+              onClick={() => {
+                onEdit(user);
+                onClose();
+              }}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <Edit size={18} />
+              Edit User
+            </button>
+          )}
         </div>
       </div>
     </div>

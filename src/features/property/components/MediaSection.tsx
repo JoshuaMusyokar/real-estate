@@ -13,79 +13,67 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
   virtualTourUrl,
   images,
 }) => {
-  const [activeTab, setActiveTab] = useState<"images" | "tour" | "video">(
-    "images"
-  );
+  type Tab = "images" | "tour" | "video";
+  const [activeTab, setActiveTab] = useState<Tab>("images");
 
   const hasVirtualTour = !!virtualTourUrl;
   const hasVideo = !!youtubeUrl;
 
-  const getYouTubeEmbedUrl = (url: string) => {
-    const videoId = url.match(
-      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/
+  const getEmbedUrl = (url: string) => {
+    const id = url.match(
+      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/,
     );
-    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : url;
+    return id ? `https://www.youtube.com/embed/${id[1]}` : url;
   };
 
+  const tabs: {
+    id: Tab;
+    label: string;
+    icon: React.ElementType;
+    show: boolean;
+  }[] = [
+    {
+      id: "images" as Tab,
+      label: `Images (${images.length})`,
+      icon: Grid3X3,
+      show: true,
+    },
+    { id: "tour" as Tab, label: "3D Tour", icon: Video, show: hasVirtualTour },
+    { id: "video" as Tab, label: "Video", icon: Youtube, show: hasVideo },
+  ].filter((t) => t.show);
+
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex overflow-x-auto">
+    <div className="bg-white border border-blue-100 rounded-xl overflow-hidden">
+      {/* Tab bar */}
+      <div className="flex border-b border-blue-50 overflow-x-auto">
+        {tabs.map(({ id, label, icon: Icon }) => (
           <button
-            onClick={() => setActiveTab("images")}
-            className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-colors ${
-              activeTab === "images"
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            }`}
+            key={id}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-1.5 px-4 py-3 border-b-2 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors
+              ${
+                activeTab === id
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-400 hover:text-gray-700 hover:bg-blue-50/40"
+              }`}
           >
-            <Grid3X3 className="w-4 h-4" />
-            Images ({images.length})
+            <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {label}
           </button>
-
-          {hasVirtualTour && (
-            <button
-              onClick={() => setActiveTab("tour")}
-              className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-colors ${
-                activeTab === "tour"
-                  ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
-            >
-              <Video className="w-4 h-4" />
-              3D Tour
-            </button>
-          )}
-
-          {hasVideo && (
-            <button
-              onClick={() => setActiveTab("video")}
-              className={`flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-colors ${
-                activeTab === "video"
-                  ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              }`}
-            >
-              <Youtube className="w-4 h-4" />
-              Video
-            </button>
-          )}
-        </nav>
+        ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="p-6">
+      {/* Content */}
+      <div className="p-3 sm:p-4">
         {activeTab === "images" && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {images.map((image, index) => (
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-1.5 sm:gap-2">
+            {images.map((img, i) => (
               <div
-                key={image.id}
-                className="aspect-square rounded-lg overflow-hidden group cursor-pointer bg-gray-100 dark:bg-gray-700"
+                key={img.id}
+                className="aspect-square rounded-lg overflow-hidden group cursor-pointer bg-blue-50"
               >
                 <img
-                  src={image.viewableUrl}
-                  alt={image.caption || `Property image ${index + 1}`}
+                  src={img.viewableUrl}
+                  alt={img.caption || `Property image ${i + 1}`}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
@@ -94,9 +82,9 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
         )}
 
         {activeTab === "tour" && hasVirtualTour && (
-          <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+          <div className="aspect-video bg-blue-50 rounded-xl overflow-hidden border border-blue-100">
             <iframe
-              src={virtualTourUrl}
+              src={virtualTourUrl!}
               className="w-full h-full border-0"
               allowFullScreen
               title="Virtual Tour"
@@ -105,9 +93,9 @@ export const MediaSection: React.FC<MediaSectionProps> = ({
         )}
 
         {activeTab === "video" && hasVideo && (
-          <div className="aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+          <div className="aspect-video bg-blue-50 rounded-xl overflow-hidden border border-blue-100">
             <iframe
-              src={getYouTubeEmbedUrl(youtubeUrl!)}
+              src={getEmbedUrl(youtubeUrl!)}
               className="w-full h-full border-0"
               allowFullScreen
               title="Property Video"

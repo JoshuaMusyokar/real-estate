@@ -21,6 +21,7 @@ import {
   useCreateActivityMutation,
   useGetLeadActivitiesQuery,
 } from "../../../services/activityApi";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 interface ActivitiesTabProps {
   leadId: string;
@@ -73,6 +74,8 @@ const getActivityColor = (type: ActivityType): string => {
   };
   return colors[type] || "bg-gray-100 text-gray-600";
 };
+
+// ─── ActivityCard (read-only — no actions) ────────────────────────────────────
 
 interface ActivityCardProps {
   activity: ActivityResponse;
@@ -165,6 +168,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ activity }) => {
   );
 };
 
+// ─── ActivitiesTab ────────────────────────────────────────────────────────────
+
 export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
   const {
     data: activities,
@@ -181,9 +186,12 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
     description: "",
   });
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAddActivity = can("lead.add_activity");
+
   const handleSubmit = async (): Promise<void> => {
     if (!formData.title.trim()) return;
-
     try {
       await createActivity({
         leadId,
@@ -191,7 +199,6 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
         title: formData.title,
         description: formData.description || undefined,
       }).unwrap();
-
       setShowForm(false);
       setFormData({ type: "CALL", title: "", description: "" });
       refetch();
@@ -236,6 +243,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h3 className="text-xl font-bold text-gray-900">Activity Timeline</h3>
@@ -243,16 +251,21 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
             Track all interactions and communications with this lead
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg"
-        >
-          <Plus className="w-5 h-5" />
-          Log Activity
-        </button>
+
+        {/* Log Activity button — hidden without lead.add_activity */}
+        {canAddActivity && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg"
+          >
+            <Plus className="w-5 h-5" />
+            Log Activity
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {/* Inline form — only rendered when canAddActivity and user toggled it open */}
+      {canAddActivity && showForm && (
         <div className="bg-white border-2 border-blue-200 rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between mb-5">
             <h4 className="font-bold text-gray-900 text-lg">
@@ -333,8 +346,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
               >
                 {isCreating ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Saving...
+                    <Loader2 className="w-5 h-5 animate-spin" /> Saving...
                   </>
                 ) : (
                   "Save Activity"
@@ -345,6 +357,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
         </div>
       )}
 
+      {/* Activity list */}
       <div className="space-y-4">
         {!activities || activities.length === 0 ? (
           <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl">
@@ -353,15 +366,20 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ leadId }) => {
               No activities yet
             </h4>
             <p className="text-gray-600 mb-6">
-              Start logging interactions with this lead
+              {canAddActivity
+                ? "Start logging interactions with this lead"
+                : "No interactions have been logged for this lead yet"}
             </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-            >
-              <Plus className="w-5 h-5" />
-              Log First Activity
-            </button>
+            {/* Empty-state CTA only shown if user can actually log */}
+            {canAddActivity && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Log First Activity
+              </button>
+            )}
           </div>
         ) : (
           activities.map((activity) => (

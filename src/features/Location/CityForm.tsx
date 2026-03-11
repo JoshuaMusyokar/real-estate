@@ -89,7 +89,7 @@ export function CityForm({ city, onClose, onSuccess }: CityFormProps) {
     e.preventDefault();
     if (formData.latitude === undefined || formData.longitude === undefined) {
       showError(
-        "Please search for and select a city location to populate coordinates."
+        "Please search for and select a city location to populate coordinates.",
       );
       return;
     }
@@ -117,8 +117,8 @@ export function CityForm({ city, onClose, onSuccess }: CityFormProps) {
         error instanceof Error
           ? error.message
           : city
-          ? "Failed to update city"
-          : "Failed to create city";
+            ? "Failed to update city"
+            : "Failed to create city";
       showError(errorMessage);
     } finally {
       setIsSubmitting(false);

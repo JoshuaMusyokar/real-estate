@@ -1,4 +1,3 @@
-// components/leads/AllLeads.tsx
 import {
   AlertCircle,
   ChevronLeft,
@@ -17,7 +16,6 @@ import {
 import { CreateLeadModal } from "./components/CreateLeadModal";
 import { AssignLeadModal } from "./components/AssignAgentModal";
 import { UpdateLeadModal } from "./components/LeadUpdateModal";
-
 import { getPriorityColor, getStageColor } from "../../utils";
 import type {
   LeadPriority,
@@ -43,6 +41,7 @@ import {
 } from "../../components/ui/table";
 import { Dropdown } from "../../components/ui/dropdown/Dropdown";
 import { DropdownItem } from "../../components/ui/dropdown/DropdownItem";
+import { usePermissions } from "../../hooks/usePermissions";
 
 export const AllLeads: React.FC = () => {
   const [page, setPage] = useState(1);
@@ -60,6 +59,17 @@ export const AllLeads: React.FC = () => {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("lead.add");
+  const canEdit = can("lead.edit");
+  const canDelete = can("lead.delete");
+  const canAssign = can("lead.assign");
+
+  // At least one mutable action — determines whether checkboxes / bulk toolbar show
+  const hasAnyAction = canEdit || canDelete || canAssign;
+
+  // ── Data ────────────────────────────────────────────────────────────────────
   const { data, isLoading, refetch } = useGetLeadsQuery({
     search: searchTerm || undefined,
     source: selectedSource || undefined,
@@ -72,6 +82,7 @@ export const AllLeads: React.FC = () => {
   const leads = data?.data || [];
   const totalPages = data?.pagination?.total || 1;
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSelectAll = (): void => {
     if (selectedLeads.size === leads.length) {
       setSelectedLeads(new Set());
@@ -92,7 +103,6 @@ export const AllLeads: React.FC = () => {
 
   const handleBulkDelete = async (): Promise<void> => {
     if (!confirm(`Delete ${selectedLeads.size} leads?`)) return;
-
     try {
       await Promise.all(
         Array.from(selectedLeads).map((id) => deleteLead(id).unwrap()),
@@ -106,7 +116,6 @@ export const AllLeads: React.FC = () => {
 
   const handleDelete = async (leadId: string): Promise<void> => {
     if (!confirm("Delete this lead?")) return;
-
     try {
       await deleteLead(leadId).unwrap();
       refetch();
@@ -124,18 +133,16 @@ export const AllLeads: React.FC = () => {
     }
   };
 
-  const formatDate = (date: string | Date): string => {
-    return new Date(date).toLocaleDateString("en-US", {
+  const formatDate = (date: string | Date): string =>
+    new Date(date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-  };
 
-  const goToLeadDetails = (leadId: string) => {
-    navigate(`/crm/leads/${leadId}`);
-  };
+  const goToLeadDetails = (leadId: string) => navigate(`/crm/leads/${leadId}`);
 
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <>
       <div className="max-w-full mx-auto">
@@ -151,16 +158,19 @@ export const AllLeads: React.FC = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition flex-shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Lead</span>
-            </button>
+            {/* New Lead button — hidden without lead.add */}
+            {canAdd && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 bg-blue-600 dark:bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">New Lead</span>
+              </button>
+            )}
           </div>
 
-          {/* Filters */}
+          {/* Filters — bulk delete / assign only passed when user can act */}
           <LeadsFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -171,8 +181,8 @@ export const AllLeads: React.FC = () => {
             selectedPriority={selectedPriority}
             setSelectedPriority={setSelectedPriority}
             selectedLeads={selectedLeads}
-            onBulkDelete={handleBulkDelete}
-            onAssignAgent={handleAssignAgent}
+            onBulkDelete={canDelete ? handleBulkDelete : undefined}
+            onAssignAgent={canAssign ? handleAssignAgent : undefined}
           />
         </div>
 
@@ -194,19 +204,22 @@ export const AllLeads: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Desktop Table */}
+              {/* ── Desktop table ──────────────────────────────────────────── */}
               <div className="hidden lg:block overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-gray-50 border-b border-gray-200">
                     <TableRow>
-                      <TableHead className="w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedLeads.size === leads.length}
-                          onChange={handleSelectAll}
-                          className="w-4 h-4 rounded border-gray-300"
-                        />
-                      </TableHead>
+                      {/* Checkbox column — only when user can act on leads */}
+                      {hasAnyAction && (
+                        <TableHead className="w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.size === leads.length}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>Name</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Source</TableHead>
@@ -223,14 +236,16 @@ export const AllLeads: React.FC = () => {
                         key={lead.id}
                         className="hover:bg-gray-50 transition-colors"
                       >
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selectedLeads.has(lead.id)}
-                            onChange={() => handleSelectLead(lead.id)}
-                            className="w-4 h-4 rounded border-gray-300"
-                          />
-                        </TableCell>
+                        {hasAnyAction && (
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={selectedLeads.has(lead.id)}
+                              onChange={() => handleSelectLead(lead.id)}
+                              className="w-4 h-4 rounded border-gray-300"
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="font-semibold text-gray-900">
                             {lead.firstName} {lead.lastName}
@@ -260,18 +275,14 @@ export const AllLeads: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`inline-flex px-3 py-1 rounded-lg text-xs font-semibold ${getStageColor(
-                              lead.stage,
-                            )}`}
+                            className={`inline-flex px-3 py-1 rounded-lg text-xs font-semibold ${getStageColor(lead.stage)}`}
                           >
                             {lead.stage.replace(/_/g, " ")}
                           </span>
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`inline-flex px-3 py-1 rounded-lg text-xs font-semibold ${getPriorityColor(
-                              lead.priority,
-                            )}`}
+                            className={`inline-flex px-3 py-1 rounded-lg text-xs font-semibold ${getPriorityColor(lead.priority)}`}
                           >
                             {lead.priority}
                           </span>
@@ -289,6 +300,7 @@ export const AllLeads: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2">
+                            {/* View — always visible */}
                             <button
                               onClick={() => goToLeadDetails(lead.id)}
                               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -296,33 +308,42 @@ export const AllLeads: React.FC = () => {
                             >
                               <Eye className="w-4 h-4 text-gray-600" />
                             </button>
-                            <button
-                              onClick={() => {
-                                setSelectedLead(lead);
-                                setShowUpdateModal(true);
-                              }}
-                              className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Edit lead"
-                            >
-                              <Edit className="w-4 h-4 text-blue-600" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedLead(lead);
-                                setShowAssignModal(true);
-                              }}
-                              className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
-                              title="Assign to agent"
-                            >
-                              <UserPlus className="w-4 h-4 text-purple-600" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(lead.id)}
-                              className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                              title="Delete lead"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
+
+                            {canEdit && (
+                              <button
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setShowUpdateModal(true);
+                                }}
+                                className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit lead"
+                              >
+                                <Edit className="w-4 h-4 text-blue-600" />
+                              </button>
+                            )}
+
+                            {canAssign && (
+                              <button
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setShowAssignModal(true);
+                                }}
+                                className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                                title="Assign to agent"
+                              >
+                                <UserPlus className="w-4 h-4 text-purple-600" />
+                              </button>
+                            )}
+
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDelete(lead.id)}
+                                className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete lead"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -331,7 +352,7 @@ export const AllLeads: React.FC = () => {
                 </Table>
               </div>
 
-              {/* Mobile Card List */}
+              {/* ── Mobile card list ───────────────────────────────────────── */}
               <div className="lg:hidden divide-y divide-gray-200">
                 {leads.map((lead) => (
                   <div
@@ -339,12 +360,14 @@ export const AllLeads: React.FC = () => {
                     className="p-3 sm:p-4 hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.has(lead.id)}
-                        onChange={() => handleSelectLead(lead.id)}
-                        className="w-4 h-4 rounded border-gray-300 mt-1 flex-shrink-0"
-                      />
+                      {hasAnyAction && (
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.has(lead.id)}
+                          onChange={() => handleSelectLead(lead.id)}
+                          className="w-4 h-4 rounded border-gray-300 mt-1 flex-shrink-0"
+                        />
+                      )}
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
@@ -362,67 +385,80 @@ export const AllLeads: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="relative flex-shrink-0">
-                            <button
-                              onClick={() =>
-                                setOpenMenuId(
-                                  openMenuId === lead.id ? null : lead.id,
-                                )
-                              }
-                              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                              <MoreVertical className="w-4 h-4 text-gray-600" />
-                            </button>
-                            <Dropdown
-                              isOpen={openMenuId === lead.id}
-                              onClose={() => setOpenMenuId(null)}
-                              className="w-44"
-                            >
-                              <div className="py-1">
-                                <DropdownItem
-                                  onClick={() => {
-                                    goToLeadDetails(lead.id);
-                                    setOpenMenuId(null);
-                                  }}
-                                >
-                                  <Eye className="w-4 h-4 inline mr-2" />
-                                  View
-                                </DropdownItem>
-                                <DropdownItem
-                                  onClick={() => {
-                                    setSelectedLead(lead);
-                                    setShowUpdateModal(true);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="text-blue-600 hover:bg-blue-50"
-                                >
-                                  <Edit className="w-4 h-4 inline mr-2" />
-                                  Edit
-                                </DropdownItem>
-                                <DropdownItem
-                                  onClick={() => {
-                                    setSelectedLead(lead);
-                                    setShowAssignModal(true);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="text-purple-600 hover:bg-purple-50"
-                                >
-                                  <UserPlus className="w-4 h-4 inline mr-2" />
-                                  Assign
-                                </DropdownItem>
-                                <DropdownItem
-                                  onClick={() => {
-                                    handleDelete(lead.id);
-                                    setOpenMenuId(null);
-                                  }}
-                                  className="text-red-600 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4 inline mr-2" />
-                                  Delete
-                                </DropdownItem>
-                              </div>
-                            </Dropdown>
-                          </div>
+                          {/* Mobile three-dot menu — only if user has any action */}
+                          {hasAnyAction && (
+                            <div className="relative flex-shrink-0">
+                              <button
+                                onClick={() =>
+                                  setOpenMenuId(
+                                    openMenuId === lead.id ? null : lead.id,
+                                  )
+                                }
+                                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                              >
+                                <MoreVertical className="w-4 h-4 text-gray-600" />
+                              </button>
+                              <Dropdown
+                                isOpen={openMenuId === lead.id}
+                                onClose={() => setOpenMenuId(null)}
+                                className="w-44"
+                              >
+                                <div className="py-1">
+                                  {/* View — always shown in mobile menu */}
+                                  <DropdownItem
+                                    onClick={() => {
+                                      goToLeadDetails(lead.id);
+                                      setOpenMenuId(null);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4 inline mr-2" />
+                                    View
+                                  </DropdownItem>
+
+                                  {canEdit && (
+                                    <DropdownItem
+                                      onClick={() => {
+                                        setSelectedLead(lead);
+                                        setShowUpdateModal(true);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="text-blue-600 hover:bg-blue-50"
+                                    >
+                                      <Edit className="w-4 h-4 inline mr-2" />
+                                      Edit
+                                    </DropdownItem>
+                                  )}
+
+                                  {canAssign && (
+                                    <DropdownItem
+                                      onClick={() => {
+                                        setSelectedLead(lead);
+                                        setShowAssignModal(true);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="text-purple-600 hover:bg-purple-50"
+                                    >
+                                      <UserPlus className="w-4 h-4 inline mr-2" />
+                                      Assign
+                                    </DropdownItem>
+                                  )}
+
+                                  {canDelete && (
+                                    <DropdownItem
+                                      onClick={() => {
+                                        handleDelete(lead.id);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="text-red-600 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4 inline mr-2" />
+                                      Delete
+                                    </DropdownItem>
+                                  )}
+                                </div>
+                              </Dropdown>
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-1.5 mb-2">
@@ -438,16 +474,12 @@ export const AllLeads: React.FC = () => {
 
                         <div className="flex flex-wrap items-center gap-2">
                           <span
-                            className={`inline-flex px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold ${getStageColor(
-                              lead.stage,
-                            )}`}
+                            className={`inline-flex px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold ${getStageColor(lead.stage)}`}
                           >
                             {lead.stage.replace(/_/g, " ")}
                           </span>
                           <span
-                            className={`inline-flex px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold ${getPriorityColor(
-                              lead.priority,
-                            )}`}
+                            className={`inline-flex px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold ${getPriorityColor(lead.priority)}`}
                           >
                             {lead.priority}
                           </span>
@@ -494,35 +526,42 @@ export const AllLeads: React.FC = () => {
         </Card>
       </div>
 
-      <CreateLeadModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={() => refetch()}
-      />
+      {/* Modals — only reachable via gated buttons */}
+      {canAdd && (
+        <CreateLeadModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => refetch()}
+        />
+      )}
 
       {selectedLead && (
         <>
-          <UpdateLeadModal
-            isOpen={showUpdateModal}
-            onClose={() => {
-              setShowUpdateModal(false);
-              setSelectedLead(null);
-            }}
-            lead={selectedLead}
-            onSuccess={() => refetch()}
-          />
-          <AssignLeadModal
-            isOpen={showAssignModal}
-            onClose={() => {
-              setShowAssignModal(false);
-              setSelectedLead(null);
-            }}
-            lead={selectedLead}
-            onSuccess={() => {
-              refetch();
-              setSelectedLeads(new Set());
-            }}
-          />
+          {canEdit && (
+            <UpdateLeadModal
+              isOpen={showUpdateModal}
+              onClose={() => {
+                setShowUpdateModal(false);
+                setSelectedLead(null);
+              }}
+              lead={selectedLead}
+              onSuccess={() => refetch()}
+            />
+          )}
+          {canAssign && (
+            <AssignLeadModal
+              isOpen={showAssignModal}
+              onClose={() => {
+                setShowAssignModal(false);
+                setSelectedLead(null);
+              }}
+              lead={selectedLead}
+              onSuccess={() => {
+                refetch();
+                setSelectedLeads(new Set());
+              }}
+            />
+          )}
         </>
       )}
     </>

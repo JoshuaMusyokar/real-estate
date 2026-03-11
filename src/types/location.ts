@@ -8,13 +8,14 @@ export interface City {
   createdAt: Date;
   updatedAt: Date;
   localities?: Locality[];
-  _count?: {
-    properties: number;
-    users: number;
-    localities: number;
-    leads: number;
-  };
+  _count?: CityCount;
 }
+export type CityCount = {
+  properties: number;
+  users: number;
+  leads: number;
+  localities: number;
+};
 export interface ResCity {
   id: string;
   name: string;

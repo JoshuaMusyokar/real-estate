@@ -7,10 +7,11 @@ import {
   Square,
   ParkingCircle,
   User,
-  MoveVertical,
   CalendarDays,
+  Eye,
 } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
+
 interface StandardPropertyCardProps {
   property: CategorizedProperty;
   index: number;
@@ -20,153 +21,146 @@ interface StandardPropertyCardProps {
 export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
   property,
   index,
-  color = "from-blue-500 to-purple-500",
+  color = "from-blue-500 to-indigo-600",
 }) => {
   const [isFavorited, setIsFavorited] = React.useState(false);
 
   const formatPrice = (price: number) => {
-    if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
-    if (price >= 100000) return `₹${(price / 100000).toFixed(2)} L`;
+    if (price >= 10_000_000) return `₹${(price / 10_000_000).toFixed(2)} Cr`;
+    if (price >= 100_000) return `₹${(price / 100_000).toFixed(2)} L`;
     return `₹${price.toLocaleString()}`;
   };
 
+  const formattedDate = new Date(property.postedDate).toLocaleDateString(
+    "en-IN",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    },
+  );
+
   return (
     <div
-      className="group relative bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-500 flex-shrink-0 w-[300px] border border-gray-200 hover:border-transparent"
-      style={{ animationDelay: `${index * 100}ms` }}
+      className="
+        group relative bg-white flex-shrink-0
+        w-[230px] sm:w-[270px] lg:w-[300px]
+        rounded-xl sm:rounded-2xl
+        border border-blue-100 hover:border-blue-300
+        shadow-sm hover:shadow-xl
+        overflow-hidden
+        transition-all duration-300
+      "
+      style={{ animationDelay: `${index * 80}ms` }}
     >
-      {/* Favorite Button */}
-      <button
-        onClick={() => setIsFavorited(!isFavorited)}
-        className={`absolute top-3 right-3 z-20 p-2 rounded-xl backdrop-blur-sm transition-all duration-300 ${
-          isFavorited
-            ? "bg-red-500 text-white"
-            : "bg-white/90 text-gray-600 hover:bg-white hover:text-red-500"
-        }`}
-      >
-        <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
-      </button>
-
-      {/* Image */}
-      <div className="relative h-48 overflow-hidden">
+      {/* ── Image ──────────────────────────────────────────────────────── */}
+      <div className="relative h-36 sm:h-44 overflow-hidden bg-blue-50">
         <img
           src={property.viewableCoverImage}
           alt={property.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+        {/* Favourite button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFavorited((f) => !f);
+          }}
+          className={`absolute top-2 right-2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-sm transition-all duration-200 ${
+            isFavorited
+              ? "bg-red-500 text-white shadow-lg"
+              : "bg-white/90 text-gray-500 hover:text-red-500 hover:bg-white"
+          }`}
+        >
+          <Heart
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? "fill-current" : ""}`}
+          />
+        </button>
+
+        {/* Price badge pinned to bottom-left of image */}
+        <div className="absolute bottom-2 left-2">
+          <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-white/95 backdrop-blur-sm rounded-lg text-xs sm:text-sm font-black text-blue-700 shadow-sm">
+            {formatPrice(property.price)}
+          </span>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        {/* Price */}
-        <div
-          className={`text-2xl font-black bg-gradient-to-r ${color} bg-clip-text text-transparent mb-2`}
-        >
-          {formatPrice(property.price)}
-        </div>
-
+      {/* ── Body ────────────────────────────────────────────────────────── */}
+      <div className="p-3 sm:p-4">
         {/* Title */}
-        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 text-sm leading-tight">
+        <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-snug line-clamp-2 mb-2">
           {property.title}
         </h3>
 
         {/* Location */}
-        <div className="flex items-center gap-1 text-gray-600 mb-3">
-          <MapPin className="w-4 h-4" />
-          <span className="text-xs font-medium truncate">
+        <div className="flex items-center gap-1 text-gray-500 mb-2.5 sm:mb-3">
+          <MapPin className="w-3 h-3 flex-shrink-0 text-blue-400" />
+          <span className="text-[10px] sm:text-xs font-medium truncate">
             {property.locality}, {property.city.name}
           </span>
         </div>
 
-        {/* Features */}
-        <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
-          <div className="flex items-center gap-1">
-            <Bed className="w-3 h-3" />
-            <span>{property.bedrooms}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Bath className="w-3 h-3" />
-            <span>{property.bathrooms}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Square className="w-3 h-3" />
-            <span>{property.squareFeet}</span>
-          </div>
-          {property.passengerLifts ? (
-            <div className="flex items-center gap-1">
-              <MoveVertical className="w-3 h-3" />
-              <span>{property.passengerLifts} Passenger</span>
-            </div>
-          ) : null}
-
-          {/* Service Lift */}
-          {property.serviceLifts ? (
-            <div className="flex items-center gap-1">
-              <MoveVertical className="w-3 h-3 text-gray-500" />
-              <span>{property.serviceLifts} Service</span>
-            </div>
-          ) : null}
-        </div>
-        {/* Parking + Posted By + Date Section */}
-        <div className="mt-2 space-y-2 text-xs text-gray-700">
-          {/* Parking */}
-          <div className="flex items-center gap-3">
-            {property.coveredParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.coveredParking} Covered</span>
-              </div>
-            ) : null}
-
-            {property.openParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.openParking} Open</span>
-              </div>
-            ) : null}
-
-            {property.publicParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.publicParking} Public</span>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Posted By */}
-          <div className="flex items-center gap-1 text-gray-600">
-            <User className="w-3 h-3" />
-            <span>{property.postedBy}</span>
-            {property.advertiserName && (
-              <span className="font-semibold ml-1">
-                • {property.advertiserName}
-              </span>
-            )}
-          </div>
-
-          {/* Posted Date */}
-          <div className="flex items-center gap-1 text-gray-600">
-            <CalendarDays className="w-3 h-3" />
-            <span>
-              {new Date(property.postedDate).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
+        {/* Feature pills */}
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-2.5 sm:mb-3 flex-wrap">
+          {[
+            { icon: Bed, value: `${property.bedrooms} Bed` },
+            { icon: Bath, value: `${property.bathrooms} Bath` },
+            { icon: Square, value: `${property.squareFeet} ft²` },
+          ].map(({ icon: Icon, value }) => (
+            <span
+              key={value}
+              className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-md text-[10px] sm:text-xs font-semibold text-blue-700"
+            >
+              <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              {value}
             </span>
+          ))}
+        </div>
+
+        {/* Parking row (only if any parking exists) */}
+        {(property.coveredParking ||
+          property.openParking ||
+          property.publicParking) && (
+          <div className="flex items-center gap-2 mb-2 text-[10px] sm:text-xs text-gray-500">
+            <ParkingCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-400 flex-shrink-0" />
+            {property.coveredParking ? (
+              <span>{property.coveredParking} Covered</span>
+            ) : null}
+            {property.openParking ? (
+              <span>{property.openParking} Open</span>
+            ) : null}
+            {property.publicParking ? (
+              <span>{property.publicParking} Public</span>
+            ) : null}
+          </div>
+        )}
+
+        {/* Posted by + date — single compact row */}
+        <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-400 mb-3">
+          <div className="flex items-center gap-1 min-w-0">
+            <User className="w-2.5 h-2.5 flex-shrink-0" />
+            <span className="truncate">
+              {property.postedBy}
+              {property.advertiserName ? ` · ${property.advertiserName}` : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <CalendarDays className="w-2.5 h-2.5" />
+            <span>{formattedDate}</span>
           </div>
         </div>
 
         {/* CTA */}
         <button
-          className={`w-full bg-gradient-to-r ${color} text-white py-2 rounded-xl font-bold text-xs hover:shadow-lg transition-all`}
-          onClick={() => {
-            window.open(`/property-detail/${property.id}`, "_blank");
-
-            // navigate(`/property-detail/${property.id}`);
-          }}
+          onClick={() =>
+            window.open(`/property-detail/${property.id}`, "_blank")
+          }
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold rounded-lg sm:rounded-xl transition-colors"
         >
+          <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           View Details
         </button>
       </div>

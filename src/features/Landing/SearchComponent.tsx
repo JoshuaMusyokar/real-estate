@@ -1,87 +1,33 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// SearchComponent.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Building2, Home, X, ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Search, X, ChevronRight } from "lucide-react";
 import {
   useGetCitiesQuery,
   useGetLocalitiesQuery,
 } from "../../services/locationApi";
+import { useGetPropertyTypesQuery } from "../../services/propertyApi";
+import { useAppDispatch } from "../../hooks";
+import { setFilters } from "../../store/slices/filterSlice";
+import { encodeFilters } from "../../utils/filterEncoder";
 import type {
   City,
   Locality,
   PropertyPurpose,
   PropertySearchFilters,
-  PropertyType,
 } from "../../types";
-import { Dropdown } from "../../components/ui/dropdown/Dropdown";
-import { DropdownItem } from "../../components/ui/dropdown/DropdownItem";
-import { useAppDispatch } from "../../hooks";
-import { setFilters } from "../../store/slices/filterSlice";
-import { encodeFilters } from "../../utils/filterEncoder";
-import { useGetPropertyTypesQuery } from "../../services/propertyApi";
 
-interface SearchComponentProps {
-  variant?: "default" | "compact";
-  onSearch?: (params: SearchParams) => void;
-  initialCity?: string;
-  onPurposeChange?: (purpose: PropertyPurpose) => void;
-  initialPurpose?: PropertyPurpose;
-  onPropertyTypeChange?: (propertyType: string) => void;
-  onPropertyPurposeChange?: (propertyPurpose: PropertyPurpose) => void;
-}
-
-interface SearchParams {
-  cityId?: string;
-  cityName?: string;
-  localityId?: string | string[];
-  localityName?: string | string[];
-  searchText?: string;
-  propertyType?: string;
-  propertyPurpose?: string;
-}
-
-interface SuggestionItem {
-  id: string;
-  type: "city" | "locality" | "project" | "builder" | "landmark" | "popular";
-  name: string;
-  displayName: string;
-  cityId?: string;
-  cityName?: string;
-}
-
-const PURPOSE_OPTIONS = [
-  { value: "buy", label: "BUY", icon: Home, propertyType: "RESIDENTIAL" },
-  { value: "rent", label: "RENT", icon: Home, propertyType: "RESIDENTIAL" },
-  {
-    value: "commercial",
-    label: "COMMERCIAL",
-    icon: Building2,
-    propertyType: "COMMERCIAL",
-  },
-  {
-    value: "pg",
-    label: "PG/CO-LIVING",
-    icon: Home,
-    propertyType: "RESIDENTIAL",
-  },
-  { value: "plots", label: "PLOTS", icon: MapPin, propertyType: "LAND" },
-];
-
-const COMMERCIAL_SUB_PURPOSES = [
-  { value: "buy", label: "BUY" },
-  { value: "lease", label: "LEASE" },
-];
-
-const POPULAR_SEARCHES = [
-  "Apartments",
-  "Villas",
-  "Builder Floors",
-  "Studio Apartments",
-  "Premium Apartments",
-  "Ready to Move",
-  "New Launch",
-  "Under Construction",
-];
+import { CitySelector } from "./CitySelector";
+import { SuggestionsDropdown } from "./components/SuggestionDropdown";
+import {
+  PURPOSE_OPTIONS,
+  COMMERCIAL_SUB_PURPOSES,
+  POPULAR_SEARCHES,
+  getPropertyTypeFromPurpose,
+  getPropertyPurposeFromPurpose,
+  type SearchComponentProps,
+  type SuggestionItem,
+} from "../../types/search";
 
 export const SearchComponent: React.FC<SearchComponentProps> = ({
   variant = "default",
@@ -91,247 +37,151 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
   initialPurpose = "buy",
   onPropertyPurposeChange,
   onPropertyTypeChange,
+  onCityChange: onCityChangeProp,
 }) => {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+
+  // ── State ──────────────────────────────────────────────────────────────────
   const [purpose, setPurpose] = useState<string>(initialPurpose);
-  const [commercialSubPurpose, setCommercialSubPurpose] =
-    useState<string>("buy");
-  const [selectedCityId, setSelectedCityId] = useState<string>("");
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-  const cityModalRef = useRef<HTMLDivElement>(null);
-  const [selectedCityName, setSelectedCityName] = useState<string>("");
-  const [searchInput, setSearchInput] = useState<string>("");
+  const [commercialSub, setCommercialSub] = useState("buy");
+  const [selectedCityId, setSelectedCityId] = useState("");
+  const [selectedCityName, setSelectedCityName] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [selectedLocalities, setSelectedLocalities] = useState<
     SuggestionItem[]
   >([]);
-  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
-  const [showCityDropdown, setShowCityDropdown] = useState<boolean>(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [popularLocalities, setPopularLocalities] = useState<SuggestionItem[]>(
     [],
   );
-  const [searchCityInput, setSearchCityInput] = useState<string>("");
+  const [citiesSearch, setCitiesSearch] = useState("");
 
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const cityDropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Fetch cities
+  // ── Data ───────────────────────────────────────────────────────────────────
   const { data: citiesData } = useGetCitiesQuery({
-    search: searchCityInput,
+    search: citiesSearch,
     limit: 1000,
   });
   const { data: propertyTypesData } = useGetPropertyTypesQuery({
     isActive: true,
     includeSubTypes: false,
   });
-
-  const propertyTypes = propertyTypesData?.data || [];
   const cities: City[] = citiesData?.data || [];
+  const propertyTypes = propertyTypesData?.data || [];
 
-  // Fetch localities for the selected city
   const { data: localitiesData } = useGetLocalitiesQuery(
-    {
-      cityId: selectedCityId,
-      limit: 200,
-    },
-    {
-      skip: !selectedCityId,
-    },
+    { cityId: selectedCityId, limit: 200 },
+    { skip: !selectedCityId },
   );
 
-  // Fetch localities for search suggestions
   const { data: searchLocalitiesData } = useGetLocalitiesQuery(
-    {
-      search: searchInput,
-      cityId: selectedCityId,
-      limit: 100,
-    },
-    {
-      skip: !selectedCityId || searchInput.length < 1,
-    },
+    { search: searchInput, cityId: selectedCityId, limit: 100 },
+    { skip: !selectedCityId || searchInput.length < 1 },
   );
 
-  // Initialize city
+  // ── Init city ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (initialCity && cities.length > 0) {
-      const city = cities.find(
+    if (!cities.length) return;
+    if (initialCity) {
+      const found = cities.find(
         (c) => c.name.toLowerCase() === initialCity.toLowerCase(),
       );
-      if (city) {
-        setSelectedCityId(city.id);
-        setSelectedCityName(city.name);
-      }
-    } else if (cities.length > 0) {
-      // Default to Delhi if available
-      const delhi = cities.find((c) => c.name.toLowerCase().includes("delhi"));
-      if (delhi) {
-        setSelectedCityId(delhi.id);
-        setSelectedCityName(delhi.name);
-      } else {
-        setSelectedCityId(cities[0].id);
-        setSelectedCityName(cities[0].name);
+      if (found) {
+        setSelectedCityId(found.id);
+        setSelectedCityName(found.name);
+        return;
       }
     }
+    const delhi = cities.find((c) => c.name.toLowerCase().includes("delhi"));
+    const first = delhi || cities[0];
+    setSelectedCityId(first.id);
+    setSelectedCityName(first.name);
   }, [cities, initialCity]);
+
+  // Propagate initial type/purpose once
   useEffect(() => {
-    // Propagate initial property type and purpose when component mounts
-    const initialPropertyType = getPropertyTypeFromPurpose(initialPurpose);
-    const initialPropertyPurpose =
-      getPropertyPurposeFromPurpose(initialPurpose);
+    onPropertyTypeChange?.(getPropertyTypeFromPurpose(initialPurpose));
+    onPropertyPurposeChange?.(getPropertyPurposeFromPurpose(initialPurpose));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    if (onPropertyTypeChange) {
-      onPropertyTypeChange(initialPropertyType);
-    }
-
-    if (onPropertyPurposeChange) {
-      onPropertyPurposeChange(initialPropertyPurpose);
-    }
-  }, []); // Empty dependency array - runs once on mount
-  // useEffect hook for click outside detection
+  // ── Popular localities ─────────────────────────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      // Close suggestions dropdown if clicked outside
-      if (
-        showSuggestions &&
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false);
-      }
-
-      // Close city dropdown if clicked outside
-      if (
-        showCityDropdown &&
-        cityModalRef.current &&
-        !cityModalRef.current.contains(event.target as Node) &&
-        cityDropdownRef.current &&
-        !cityDropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowCityDropdown(false);
-        setSearchCityInput("");
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showSuggestions, showCityDropdown]);
-  // Generate popular localities when city changes
-  useEffect(() => {
-    if (selectedCityId && localitiesData?.data) {
-      const popularLocalitiesList = localitiesData.data
-        .slice(0, 8)
-        .map((locality: Locality) => ({
-          id: locality.id,
-          type: "locality" as const,
-          name: locality.name,
-          displayName: `${locality.name}, ${selectedCityName}`,
-          cityId: selectedCityId,
-          cityName: selectedCityName,
-        }));
-      setPopularLocalities(popularLocalitiesList);
-    }
+    if (!selectedCityId || !localitiesData?.data) return;
+    setPopularLocalities(
+      localitiesData.data.slice(0, 8).map((loc: Locality) => ({
+        id: loc.id,
+        type: "locality" as const,
+        name: loc.name,
+        displayName: `${loc.name}, ${selectedCityName}`,
+        cityId: selectedCityId,
+        cityName: selectedCityName,
+      })),
+    );
   }, [selectedCityId, selectedCityName, localitiesData]);
 
-  // Generate suggestions
+  // ── Build suggestions ──────────────────────────────────────────────────────
   useEffect(() => {
-    const newSuggestions: SuggestionItem[] = [];
+    const items: SuggestionItem[] = [];
 
-    // Add city suggestions if searching for cities
     if (searchInput.length >= 2) {
-      const cityMatches = cities
+      cities
         .filter(
-          (city) =>
-            city.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-            city.state?.toLowerCase().includes(searchInput.toLowerCase()),
+          (c) =>
+            c.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+            (c.state ?? "").toLowerCase().includes(searchInput.toLowerCase()),
         )
         .slice(0, 3)
-        .map((city) => ({
-          id: city.id,
-          type: "city" as const,
-          name: city.name,
-          displayName: `${city.name}${city.state ? `, ${city.state}` : ""}`,
-          cityId: city.id,
-          cityName: city.name,
-        }));
-
-      newSuggestions.push(...cityMatches);
+        .forEach((c) =>
+          items.push({
+            id: c.id,
+            type: "city",
+            name: c.name,
+            displayName: c.state ? `${c.name}, ${c.state}` : c.name,
+            cityId: c.id,
+            cityName: c.name,
+          }),
+        );
     }
 
-    // Add locality suggestions from search
     if (
       selectedCityId &&
       searchLocalitiesData?.data &&
       searchInput.length >= 1
     ) {
-      const localityMatches = searchLocalitiesData.data
-        .slice(0, 5)
-        .map((locality: Locality) => ({
-          id: locality.id,
-          type: "locality" as const,
-          name: locality.name,
-          displayName: `${locality.name}, ${selectedCityName}`,
+      searchLocalitiesData.data.slice(0, 5).forEach((loc: Locality) =>
+        items.push({
+          id: loc.id,
+          type: "locality",
+          name: loc.name,
+          displayName: `${loc.name}, ${selectedCityName}`,
           cityId: selectedCityId,
           cityName: selectedCityName,
-        }));
-
-      newSuggestions.push(...localityMatches);
-    }
-
-    // Add generic suggestions for projects/builders/landmarks
-    if (searchInput.length >= 3) {
-      newSuggestions.push(
-        {
-          id: `project-${searchInput}`,
-          type: "project",
-          name: `${searchInput} Project`,
-          displayName: `${searchInput} Project`,
-          cityId: selectedCityId,
-          cityName: selectedCityName,
-        },
-        {
-          id: `builder-${searchInput}`,
-          type: "builder",
-          name: `${searchInput} Builder`,
-          displayName: `${searchInput} Builder Projects`,
-          cityId: selectedCityId,
-          cityName: selectedCityName,
-        },
-        {
-          id: `landmark-${searchInput}`,
-          type: "landmark",
-          name: `${searchInput}`,
-          displayName: `${searchInput} (Landmark)`,
-          cityId: selectedCityId,
-          cityName: selectedCityName,
-        },
+        }),
       );
     }
 
-    // Add popular searches matching input
     if (searchInput.length >= 2) {
-      const popularMatches = POPULAR_SEARCHES.filter((term) =>
-        term.toLowerCase().includes(searchInput.toLowerCase()),
+      POPULAR_SEARCHES.filter((t) =>
+        t.toLowerCase().includes(searchInput.toLowerCase()),
       )
         .slice(0, 3)
-        .map((term) => ({
-          id: `popular-${term}`,
-          type: "popular" as const,
-          name: term,
-          displayName: `${term} in ${selectedCityName}`,
-          cityId: selectedCityId,
-          cityName: selectedCityName,
-        }));
-
-      newSuggestions.push(...popularMatches);
+        .forEach((t) =>
+          items.push({
+            id: `popular-${t}`,
+            type: "popular",
+            name: t,
+            displayName: `${t} in ${selectedCityName}`,
+            cityId: selectedCityId,
+            cityName: selectedCityName,
+          }),
+        );
     }
 
-    setSuggestions(newSuggestions);
+    setSuggestions(items);
   }, [
     searchInput,
     selectedCityId,
@@ -340,84 +190,86 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     searchLocalitiesData,
   ]);
 
-  const handleCityChange = (cityId: string) => {
-    const city = cities.find((c) => c.id === cityId);
-    if (city) {
-      setSelectedCityId(cityId);
-      setSelectedCityName(city.name);
-      setSearchInput("");
-      setShowCityDropdown(false);
-      setShowSuggestions(false);
-      setSearchCityInput("");
-      if (inputRef.current) {
-        inputRef.current.focus();
+  // ── Click outside ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
       }
-    }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleCityChange = (id: string, name: string) => {
+    setSelectedCityId(id);
+    setSelectedCityName(name);
+    setSearchInput("");
+    setShowSuggestions(false);
+    // Bubble up so PublicHeader (and any other consumer) stays in sync
+    onCityChangeProp?.(id, name);
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const getPropertyTypeFromPurpose = (purpose: string): string => {
-    switch (purpose) {
-      case "commercial":
-        return "COMMERCIAL";
-      case "plots":
-        return "LAND";
-      case "pg":
-        return "RESIDENTIAL"; // PG is also residential
-      default:
-        return "RESIDENTIAL";
-    }
-  };
-  const getPropertyTypeIdFromPurpose = (
-    purpose: string,
-  ): string | undefined => {
-    const propertyTypeName = getPropertyTypeFromPurpose(purpose);
+  const handlePurposeChange = (next: string) => {
+    const prev = purpose;
+    setPurpose(next);
+    if (next === "commercial") setCommercialSub("buy");
 
-    // Try to find the property type by matching the category/name
-    const propertyType = propertyTypes.find(
-      (type) =>
-        type.description?.toUpperCase() === propertyTypeName.toUpperCase() ||
-        type.name.toUpperCase() === propertyTypeName.toUpperCase(),
+    const nextType = getPropertyTypeFromPurpose(next);
+    const prevType = getPropertyTypeFromPurpose(prev);
+    const nextPurpose = getPropertyPurposeFromPurpose(
+      next,
+      next === "commercial" ? "buy" : undefined,
+    );
+    const prevPurpose = getPropertyPurposeFromPurpose(
+      prev,
+      prev === "commercial" ? commercialSub : undefined,
     );
 
-    return propertyType?.id;
+    if (onPropertyTypeChange && nextType !== prevType)
+      onPropertyTypeChange(nextType);
+    if (onPropertyPurposeChange && nextPurpose !== prevPurpose)
+      onPropertyPurposeChange(nextPurpose);
   };
-  const getPropertyPurposeFromPurpose = (
-    purpose: string,
-    commercialSubPurpose?: string,
-  ): PropertyPurpose => {
-    if (purpose === "commercial") {
-      return commercialSubPurpose === "lease"
-        ? "LEASE"
-        : ("SALE" as PropertyPurpose);
-    } else if (purpose === "buy" || purpose === "plots") {
-      return "SALE" as PropertyPurpose;
-    } else if (purpose === "rent" || purpose === "pg") {
-      return "RENT" as PropertyPurpose;
-    }
-    return "SALE" as PropertyPurpose; // default
-  };
-  const handleSuggestionSelect = (suggestion: SuggestionItem) => {
-    if (suggestion.type === "locality") {
-      setSelectedLocalities((prev) => {
-        const isAlreadySelected = prev.some((loc) => loc.id === suggestion.id);
-        if (isAlreadySelected) return prev;
-        return [...prev, suggestion];
-      });
 
+  const handleCommercialSubChange = (sub: string) => {
+    setCommercialSub(sub);
+    if (purpose === "commercial") {
+      onPropertyPurposeChange?.(
+        getPropertyPurposeFromPurpose("commercial", sub),
+      );
+    }
+  };
+
+  const handleSuggestionSelect = (item: SuggestionItem) => {
+    if (item.type === "locality") {
+      setSelectedLocalities((prev) =>
+        prev.some((l) => l.id === item.id) ? prev : [...prev, item],
+      );
       setSearchInput("");
       setShowSuggestions(false);
       return;
     }
-
-    // For non-locality suggestions, navigate with filters
     navigateToSearch({
-      cityId: suggestion.cityId,
-      cityName: suggestion.cityName,
-      searchText: suggestion.name,
+      cityId: item.cityId,
+      cityName: item.cityName,
+      searchText: item.name,
     });
-
     setShowSuggestions(false);
-    setSearchInput(suggestion.displayName);
+  };
+
+  const getPropertyTypeIdFromPurpose = (p: string): string | undefined => {
+    const name = getPropertyTypeFromPurpose(p);
+    return propertyTypes.find(
+      (t) =>
+        (t.description ?? "").toUpperCase() === name ||
+        t.name.toUpperCase() === name,
+    )?.id;
   };
 
   const navigateToSearch = (params: {
@@ -426,841 +278,386 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     searchText?: string;
     localities?: SuggestionItem[];
   }) => {
-    const finalPropertyPurpose = getPropertyPurposeFromPurpose(
-      purpose,
-      commercialSubPurpose,
-    );
-    const finalPropertyType = getPropertyTypeFromPurpose(purpose);
+    const fp = getPropertyPurposeFromPurpose(purpose, commercialSub);
+    const ft = getPropertyTypeFromPurpose(purpose);
+    const fid = getPropertyTypeIdFromPurpose(purpose);
+    const locs = params.localities ?? selectedLocalities;
 
-    const propertyTypeId = getPropertyTypeIdFromPurpose(purpose);
-
-    // Build filters object
     const filters: PropertySearchFilters = {
       page: 1,
       limit: 20,
       status: "AVAILABLE",
       sortBy: "createdAt",
       sortOrder: "desc",
-      purpose: finalPropertyPurpose,
-      propertyType: finalPropertyType,
+      purpose: fp,
+      propertyType: fid ?? ft,
+      ...(params.cityId && { cityId: params.cityId }),
+      ...(params.cityName && { city: [params.cityName] }),
+      ...(locs.length > 0 && {
+        locality: locs.map((l) => l.name),
+        localityId: locs.map((l) => l.id).join(","),
+      }),
+      ...(params.searchText?.trim() && { search: params.searchText.trim() }),
     };
 
-    if (propertyTypeId) {
-      filters.propertyType = propertyTypeId;
-    }
-
-    if (params.cityId) {
-      filters.cityId = params.cityId;
-    }
-    if (params.cityName) {
-      filters.city = [params.cityName];
-    }
-
-    // Add localities
-    const localitiesToUse = params.localities || selectedLocalities;
-    if (localitiesToUse.length > 0) {
-      filters.locality = localitiesToUse.map((l) => l.name);
-      filters.localityId = localitiesToUse.map((l) => l.id).join(",");
-    }
-
-    if (params.searchText && params.searchText.trim()) {
-      filters.search = params.searchText.trim();
-    }
-
-    // Dispatch to Redux
     dispatch(setFilters(filters));
-
-    // Encode and navigate
     const encoded = encodeFilters(filters);
-    if (encoded) {
-      window.open(`/properties/search/${encoded}`, "_blank");
-    } else {
-      window.open(`/properties/search`, "_blank");
-    }
+    window.open(
+      encoded ? `/properties/search/${encoded}` : "/properties/search",
+      "_blank",
+    );
 
-    if (onSearch) {
-      onSearch({
-        cityId: params.cityId,
-        cityName: params.cityName,
-        localityId:
-          localitiesToUse.length > 0
-            ? localitiesToUse.map((l) => l.id)
-            : undefined,
-        localityName:
-          localitiesToUse.length > 0
-            ? localitiesToUse.map((l) => l.name)
-            : undefined,
-        searchText: params.searchText,
-        propertyType: finalPropertyType,
-        propertyPurpose: finalPropertyPurpose,
-      });
-    }
+    onSearch?.({
+      cityId: params.cityId,
+      cityName: params.cityName,
+      localityId: locs.length ? locs.map((l) => l.id) : undefined,
+      localityName: locs.length ? locs.map((l) => l.name) : undefined,
+      searchText: params.searchText,
+      propertyType: ft,
+      propertyPurpose: fp,
+    });
   };
 
-  const handleSearch = () => {
+  const handleSearch = () =>
     navigateToSearch({
       cityId: selectedCityId,
       cityName: selectedCityName,
       searchText: searchInput.trim(),
-      localities: selectedLocalities,
     });
-  };
 
-  const removeLocality = (localityId: string) => {
-    setSelectedLocalities(
-      selectedLocalities.filter((loc) => loc.id !== localityId),
-    );
-  };
+  const initialSuggestions: SuggestionItem[] =
+    showSuggestions && searchInput.length === 0
+      ? [
+          ...popularLocalities.slice(0, 4),
+          ...POPULAR_SEARCHES.slice(0, 4).map((t) => ({
+            id: `popular-${t}`,
+            type: "popular" as const,
+            name: t,
+            displayName: `${t} in ${selectedCityName}`,
+            cityId: selectedCityId,
+            cityName: selectedCityName,
+          })),
+        ]
+      : [];
 
-  const handlePurposeChange = (newPurpose: string) => {
-    const oldPurpose = purpose;
-    setPurpose(newPurpose);
-
-    // Determine the commercial sub-purpose to use
-    let effectiveCommercialSubPurpose = commercialSubPurpose;
-
-    if (newPurpose === "commercial") {
-      effectiveCommercialSubPurpose = "buy"; // Default to "buy" for commercial
-      setCommercialSubPurpose("buy");
-    }
-
-    const newPropertyType = getPropertyTypeFromPurpose(newPurpose);
-    const oldPropertyType = getPropertyTypeFromPurpose(oldPurpose);
-
-    // Use the effective commercial sub-purpose (not the state value)
-    const newPropertyPurpose = getPropertyPurposeFromPurpose(
-      newPurpose,
-      newPurpose === "commercial" ? effectiveCommercialSubPurpose : undefined,
-    );
-
-    const oldPropertyPurpose = getPropertyPurposeFromPurpose(
-      oldPurpose,
-      oldPurpose === "commercial" ? commercialSubPurpose : undefined,
-    );
-
-    // Only call if values actually changed
-    if (onPropertyTypeChange && newPropertyType !== oldPropertyType) {
-      onPropertyTypeChange(newPropertyType);
-    }
-
-    if (onPropertyPurposeChange && newPropertyPurpose !== oldPropertyPurpose) {
-      onPropertyPurposeChange(newPropertyPurpose);
-    }
-  };
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
-
-  const clearSearch = () => {
-    setSearchInput("");
-    setShowSuggestions(false);
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
-  const handleCommercialSubPurposeChange = (subPurpose: string) => {
-    setCommercialSubPurpose(subPurpose);
-
-    // When commercial sub-purpose changes, propagate property purpose
-    if (purpose === "commercial") {
-      const propertyPurpose = getPropertyPurposeFromPurpose(
-        "commercial",
-        subPurpose,
-      );
-      if (onPropertyPurposeChange) {
-        onPropertyPurposeChange(propertyPurpose);
-      }
-    }
-  };
-
-  const handleInputFocus = () => {
-    setShowSuggestions(true);
-  };
-
-  // Get popular localities for display when input is empty
-  const getInitialSuggestions = () => {
-    if (!showSuggestions || searchInput.length > 0) {
-      return [];
-    }
-
-    const initialSuggestions: SuggestionItem[] = [
-      // Popular localities in current city
-      ...popularLocalities.slice(0, 4).map((locality) => ({
-        ...locality,
-        type: "locality" as const,
-      })),
-      // Popular searches
-      ...POPULAR_SEARCHES.slice(0, 4).map((term) => ({
-        id: `popular-${term}`,
-        type: "popular" as const,
-        name: term,
-        displayName: `${term} in ${selectedCityName}`,
-        cityId: selectedCityId,
-        cityName: selectedCityName,
-      })),
-    ];
-
-    return initialSuggestions;
-  };
-
-  // Filter cities based on search input
-  const filteredCities = cities
-    .filter(
-      (city) =>
-        searchCityInput === "" ||
-        city.name.toLowerCase().includes(searchCityInput.toLowerCase()) ||
-        city.state?.toLowerCase().includes(searchCityInput.toLowerCase()),
-    )
-    .slice(0, 20);
-
+  // ── COMPACT VARIANT ────────────────────────────────────────────────────────
   if (variant === "compact") {
     return (
       <div className="w-full">
-        {/* Purpose Tabs */}
-        <div className="flex items-center gap-2 mb-3">
-          {PURPOSE_OPTIONS.map((option) => {
-            const Icon = option.icon;
-            return (
-              <button
-                key={option.value}
-                onClick={() => handlePurposeChange(option.value)}
-                className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                  purpose === option.value
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {option.label}
-              </button>
-            );
-          })}
+        {/* Purpose pills — horizontally scrollable */}
+        <div className="flex items-center gap-1.5 mb-3 overflow-x-auto no-scrollbar pb-1">
+          {PURPOSE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => handlePurposeChange(opt.value)}
+              className={`flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
+                purpose === opt.value
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
-        {/* Search Bar */}
-        <div className="relative" ref={searchContainerRef}>
-          <div className="flex items-center gap-2 bg-white rounded-xl shadow-sm border border-gray-300 hover:border-blue-500 transition-colors">
-            {/* City Selector with Dropdown */}
-            <div className="relative" ref={cityDropdownRef}>
-              <button
-                onClick={() => setShowCityDropdown(!showCityDropdown)}
-                className="dropdown-toggle flex items-center gap-2 pl-10 pr-8 py-3 bg-gray-50 rounded-l-xl border-r border-gray-300 hover:bg-gray-100 transition-colors min-w-[140px] relative"
-              >
-                <MapPin className="absolute left-3 w-4 h-4 text-gray-500" />
-                <span className="font-medium text-gray-700 truncate">
-                  {selectedCityName}
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    showCityDropdown ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+        <div ref={searchWrapperRef} className="relative">
+          <div className="flex items-center bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm overflow-hidden">
+            {/* City */}
+            <CitySelector
+              cities={cities}
+              variant="inline"
+              selectedCityId={selectedCityId}
+              selectedCityName={selectedCityName}
+              onCityChange={handleCityChange}
+            />
 
-              {/* City Dropdown */}
-              <Dropdown
-                isOpen={true}
-                onClose={() => {
-                  setShowCityDropdown(false);
-                  setSearchCityInput("");
-                }}
-                className="left-0 mt-1 min-w-[200px] max-h-64"
-              >
-                <div ref={cityModalRef} className="p-2">
-                  {/* City Search */}
-                  <div className="relative mb-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={searchCityInput}
-                      onChange={(e) => setSearchCityInput(e.target.value)}
-                      placeholder="Search city..."
-                      className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* City List */}
-                  <div className="max-h-48 overflow-y-auto z-1000">
-                    {filteredCities.map((city) => (
-                      <DropdownItem
-                        key={city.id}
-                        onItemClick={() => handleCityChange(city.id)}
-                        className={`flex items-center gap-2 ${
-                          selectedCityId === city.id
-                            ? "bg-blue-50 text-blue-600"
-                            : ""
-                        }`}
-                      >
-                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <div className="flex-1">
-                          <span className="font-medium">{city.name}</span>
-                          {city.state && (
-                            <span className="text-xs text-gray-500 block">
-                              {city.state}
-                            </span>
-                          )}
-                        </div>
-                      </DropdownItem>
-                    ))}
-                    {filteredCities.length === 0 && (
-                      <div className="px-3 py-2 text-center text-gray-500 text-sm">
-                        No cities found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Dropdown>
-            </div>
-
-            {selectedLocalities.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-3 py-2 border-r border-gray-300">
-                {selectedLocalities.map((locality) => (
-                  <div
-                    key={locality.id}
-                    className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-                  >
-                    <span className="font-medium">{locality.name}</span>
-                    <button
-                      onClick={() => removeLocality(locality.id)}
-                      className="hover:bg-blue-200 rounded-full p-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            {/* Search input */}
+            <div className="flex-1 relative min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
               <input
                 ref={inputRef}
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                onFocus={handleInputFocus}
-                onKeyPress={handleKeyPress}
-                placeholder="Search for locality, landmark, project, or builder"
-                className="w-full pl-10 pr-10 py-3 focus:outline-none placeholder-gray-500"
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Locality, project..."
+                className="w-full pl-9 pr-8 py-3 text-sm bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
               />
               {searchInput && (
                 <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  onClick={() => setSearchInput("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                >
+                  <X className="w-3.5 h-3.5 text-gray-400" />
+                </button>
+              )}
+            </div>
+
+            {/* Search btn */}
+            <button
+              onClick={handleSearch}
+              className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0 transition-colors"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </div>
+
+          <SuggestionsDropdown
+            show={showSuggestions}
+            searchInput={searchInput}
+            suggestions={suggestions}
+            initialSuggestions={initialSuggestions}
+            selectedCityName={selectedCityName}
+            selectedLocalities={selectedLocalities}
+            onSelect={handleSuggestionSelect}
+            onRemoveLocality={(id) =>
+              setSelectedLocalities((p) => p.filter((l) => l.id !== id))
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── DEFAULT VARIANT (full hero) ────────────────────────────────────────────
+  return (
+    <div className="w-full">
+      {/* ── Mobile layout (Housing.com style) ── */}
+      <div className="block sm:hidden">
+        {/* City pill */}
+        <div className="flex justify-center mb-5">
+          <CitySelector
+            cities={cities}
+            variant="pill"
+            selectedCityId={selectedCityId}
+            selectedCityName={selectedCityName}
+            onCityChange={handleCityChange}
+          />
+        </div>
+
+        {/* Purpose tabs — scrollable row */}
+        <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar px-1 pb-1">
+          {PURPOSE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => handlePurposeChange(opt.value)}
+              className={`flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg border-b-2 transition-all ${
+                purpose === opt.value
+                  ? "border-white text-white bg-white/20 backdrop-blur-sm"
+                  : "border-transparent text-white/70 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search bar */}
+        <div ref={searchWrapperRef} className="relative px-1">
+          <div className="flex items-center bg-white dark:bg-gray-900 rounded-xl shadow-xl overflow-hidden">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Search city, locality, project..."
+                className="w-full pl-10 pr-4 py-3.5 text-sm bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
+              />
+            </div>
+            <button
+              onClick={handleSearch}
+              className="px-4 py-3.5 bg-blue-600 hover:bg-blue-700 text-white transition-colors flex-shrink-0 rounded-r-xl"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
+
+          <SuggestionsDropdown
+            show={showSuggestions}
+            searchInput={searchInput}
+            suggestions={suggestions}
+            initialSuggestions={initialSuggestions}
+            selectedCityName={selectedCityName}
+            selectedLocalities={selectedLocalities}
+            onSelect={handleSuggestionSelect}
+            onRemoveLocality={(id) =>
+              setSelectedLocalities((p) => p.filter((l) => l.id !== id))
+            }
+          />
+        </div>
+
+        {/* Commercial sub-purpose */}
+        {purpose === "commercial" && (
+          <div className="flex gap-2 mt-3 justify-center">
+            {COMMERCIAL_SUB_PURPOSES.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleCommercialSubChange(opt.value)}
+                className={`px-5 py-1.5 text-sm font-semibold rounded-full transition-all ${
+                  commercialSub === opt.value
+                    ? "bg-white text-blue-600 shadow"
+                    : "bg-white/20 text-white hover:bg-white/30"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Desktop layout ── */}
+      <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 sm:p-8">
+        {/* Purpose tabs */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-6 overflow-x-auto no-scrollbar">
+          {PURPOSE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => handlePurposeChange(opt.value)}
+              className={`flex-shrink-0 px-4 sm:px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                purpose === opt.value
+                  ? "bg-blue-600 text-white shadow-lg scale-105"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search bar */}
+        <div ref={searchWrapperRef} className="relative">
+          <div className="flex items-stretch bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors overflow-hidden shadow-sm">
+            {/* City selector */}
+            <CitySelector
+              cities={cities}
+              variant="inline"
+              selectedCityId={selectedCityId}
+              selectedCityName={selectedCityName}
+              onCityChange={handleCityChange}
+            />
+
+            {/* Selected locality chips */}
+            {selectedLocalities.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-r border-gray-200 dark:border-gray-600 max-w-[200px]">
+                {selectedLocalities.map((loc) => (
+                  <span
+                    key={loc.id}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium"
+                  >
+                    {loc.name}
+                    <button
+                      onClick={() =>
+                        setSelectedLocalities((p) =>
+                          p.filter((l) => l.id !== loc.id),
+                        )
+                      }
+                      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Text input */}
+            <div className="flex-1 relative min-w-0">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Search locality, landmark, project or builder"
+                className="w-full pl-11 pr-10 py-4 text-sm sm:text-base bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
+              />
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
                 >
                   <X className="w-4 h-4 text-gray-400" />
                 </button>
               )}
             </div>
 
-            {/* Search Button */}
-            <button
-              onClick={handleSearch}
-              className="px-6 py-3 bg-blue-600 text-white rounded-r-xl hover:bg-blue-700 transition-colors font-medium"
-            >
-              Search
-            </button>
-          </div>
-
-          {/* Suggestions Dropdown */}
-          {showSuggestions && (
-            <div
-              ref={suggestionsRef}
-              className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-80 overflow-y-auto"
-            >
-              {/* Empty state suggestions */}
-              {(!searchInput || searchInput.length === 0) &&
-                getInitialSuggestions().length > 0 && (
-                  <>
-                    <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Popular in {selectedCityName}
-                      </div>
-                    </div>
-                    {getInitialSuggestions().map((suggestion) => (
-                      <button
-                        key={`${suggestion.type}-${suggestion.id}`}
-                        onClick={() => handleSuggestionSelect(suggestion)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                      >
-                        <div
-                          className={`p-2 rounded-lg ${
-                            suggestion.type === "locality"
-                              ? "bg-green-100"
-                              : "bg-blue-100"
-                          }`}
-                        >
-                          {suggestion.type === "locality" ? (
-                            <Home className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <Search className="w-4 h-4 text-blue-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">
-                            {suggestion.displayName}
-                          </div>
-                          <div className="text-xs text-gray-500 capitalize">
-                            {suggestion.type}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </>
-                )}
-
-              {/* Search suggestions */}
-              {searchInput && suggestions.length > 0 && (
-                <>
-                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Suggestions
-                    </div>
-                  </div>
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={`${suggestion.type}-${suggestion.id}`}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                    >
-                      <div
-                        className={`p-2 rounded-lg ${
-                          suggestion.type === "city"
-                            ? "bg-blue-100"
-                            : suggestion.type === "locality"
-                              ? "bg-green-100"
-                              : suggestion.type === "project"
-                                ? "bg-purple-100"
-                                : suggestion.type === "builder"
-                                  ? "bg-amber-100"
-                                  : suggestion.type === "popular"
-                                    ? "bg-indigo-100"
-                                    : "bg-gray-100"
-                        }`}
-                      >
-                        {suggestion.type === "city" && (
-                          <MapPin className="w-4 h-4 text-blue-600" />
-                        )}
-                        {suggestion.type === "locality" && (
-                          <Home className="w-4 h-4 text-green-600" />
-                        )}
-                        {suggestion.type === "project" && (
-                          <Building2 className="w-4 h-4 text-purple-600" />
-                        )}
-                        {suggestion.type === "builder" && (
-                          <Building2 className="w-4 h-4 text-amber-600" />
-                        )}
-                        {suggestion.type === "popular" && (
-                          <Search className="w-4 h-4 text-indigo-600" />
-                        )}
-                        {suggestion.type === "landmark" && (
-                          <MapPin className="w-4 h-4 text-gray-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">
-                          {suggestion.displayName}
-                        </div>
-                        <div className="text-xs text-gray-500 capitalize">
-                          {suggestion.type}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </>
-              )}
-
-              {/* No suggestions found */}
-              {searchInput && suggestions.length === 0 && (
-                <div className="px-4 py-3 text-center text-gray-500">
-                  No suggestions found for "{searchInput}"
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Default variant
-  return (
-    <div className="w-full bg-white rounded-2xl shadow-xl p-8 overflow-visible">
-      {/* Purpose Tabs */}
-      <div className="flex items-center justify-center gap-4 mb-8">
-        {PURPOSE_OPTIONS.map((option) => {
-          const Icon = option.icon;
-          return (
-            <button
-              key={option.value}
-              onClick={() => handlePurposeChange(option.value)}
-              className={`flex flex-col items-center gap-2 px-6 py-3 rounded-xl transition-all ${
-                purpose === option.value
-                  ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              <Icon className="w-6 h-6" />
-              <span className="font-semibold text-sm">{option.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative" ref={searchContainerRef}>
-        <div className="flex items-center bg-white rounded-xl shadow-lg border-2 border-gray-300 hover:border-blue-500 transition-colors overflow-visible">
-          {/* City Selector with Dropdown */}
-          <div className="" ref={cityDropdownRef}>
-            <button
-              onClick={() => setShowCityDropdown(!showCityDropdown)}
-              className="dropdown-toggle flex items-center gap-2 pl-6 pr-6 py-4 bg-gray-50 border-r border-gray-300 hover:bg-gray-100 transition-colors relative group min-w-[180px]"
-            >
-              <MapPin className="w-5 h-5 text-gray-500" />
-              <span className="font-semibold text-gray-700 truncate">
-                {selectedCityName}
-              </span>
-              <ChevronDown
-                className={`w-5 h-5 text-gray-400 ml-2 transition-transform ${
-                  showCityDropdown ? "rotate-180" : ""
-                }`}
-              />
-
-              {/* Hover effect */}
-              <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity" />
-            </button>
-
-            {/* City Dropdown */}
-            <Dropdown
-              isOpen={showCityDropdown}
-              onClose={() => {
-                setShowCityDropdown(false);
-                setSearchCityInput("");
-              }}
-              className="left-0 mt-1 min-w-[280px] max-h-96 z-[9999]"
-            >
-              <div className="p-4">
-                {/* City Search */}
-                <div className="relative mb-4">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchCityInput}
-                    onChange={(e) => setSearchCityInput(e.target.value)}
-                    placeholder="Search city..."
-                    className="w-full pl-12 pr-4 py-3 text-base border-2 border-gray-300 rounded-xl focus:outline-none focus:border-blue-500"
-                    onClick={(e) => e.stopPropagation()}
-                    autoFocus
-                  />
-                </div>
-
-                {/* City List */}
-                <div className="max-h-72 z-80">
-                  <div className="grid grid-cols-1 gap-1">
-                    {filteredCities.map((city) => (
-                      <DropdownItem
-                        key={city.id}
-                        onItemClick={() => handleCityChange(city.id)}
-                        className={`flex items-center gap-3 ${
-                          selectedCityId === city.id
-                            ? "bg-blue-50 text-blue-600 border-2 border-blue-200"
-                            : ""
-                        }`}
-                      >
-                        <MapPin
-                          className={`w-5 h-5 ${
-                            selectedCityId === city.id
-                              ? "text-blue-500"
-                              : "text-gray-400"
-                          }`}
-                        />
-                        <div className="flex-1">
-                          <div className="font-semibold text-lg">
-                            {city.name}
-                          </div>
-                          {city.state && (
-                            <div className="text-sm text-gray-500">
-                              {city.state}
-                            </div>
-                          )}
-                        </div>
-                        {selectedCityId === city.id && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                        )}
-                      </DropdownItem>
-                    ))}
-                    {filteredCities.length === 0 && (
-                      <div className="px-4 py-6 text-center">
-                        <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <div className="text-gray-600 font-medium">
-                          No cities found
-                        </div>
-                        <div className="text-sm text-gray-500 mt-1">
-                          Try a different search term
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Dropdown>
-          </div>
-          {selectedLocalities.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-3 py-2 border-r border-gray-300">
-              {selectedLocalities.map((locality) => (
-                <div
-                  key={locality.id}
-                  className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-                >
-                  <span className="font-medium">{locality.name}</span>
+            {/* Commercial sub-tabs (desktop only, inline) */}
+            {purpose === "commercial" && (
+              <div className="flex items-center gap-1 px-3 border-l border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                {COMMERCIAL_SUB_PURPOSES.map((opt) => (
                   <button
-                    onClick={() => removeLocality(locality.id)}
-                    className="hover:bg-blue-200 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onFocus={handleInputFocus}
-              onKeyPress={handleKeyPress}
-              placeholder="Search for locality, landmark, project, or builder"
-              className="w-full pl-12 pr-12 py-4 text-lg focus:outline-none placeholder-gray-500"
-            />
-            {searchInput && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            )}
-          </div>
-          {purpose === "commercial" && (
-            <div className="flex items-center border-l-2 border-gray-300 bg-gradient-to-b from-gray-50 to-gray-100">
-              <div className="flex gap-2 mx-4">
-                {COMMERCIAL_SUB_PURPOSES.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() =>
-                      handleCommercialSubPurposeChange(option.value)
-                    }
-                    className={`px-4 py-3 text-sm font-semibold rounded-lg transition-all ${
-                      commercialSubPurpose === option.value
-                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl"
-                        : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border border-gray-200"
+                    key={opt.value}
+                    onClick={() => handleCommercialSubChange(opt.value)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                      commercialSub === opt.value
+                        ? "bg-blue-600 text-white shadow"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    {option.label}
+                    {opt.label}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          <button
-            onClick={handleSearch}
-            className="px-8 py-4 bg-blue-600 text-white hover:bg-blue-700 transition-colors font-semibold text-lg"
-          >
-            Search
-          </button>
-        </div>
-
-        {/* Suggestions Dropdown */}
-        {showSuggestions && (
-          <div
-            ref={suggestionsRef}
-            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
-          >
-            {/* Empty state suggestions */}
-            {(!searchInput || searchInput.length === 0) &&
-              getInitialSuggestions().length > 0 && (
-                <>
-                  <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                    <div className="text-sm font-semibold text-gray-700">
-                      Popular in {selectedCityName}
-                    </div>
-                  </div>
-                  <div className="p-2">
-                    {getInitialSuggestions().map((suggestion) => (
-                      <button
-                        key={`${suggestion.type}-${suggestion.id}`}
-                        onClick={() => handleSuggestionSelect(suggestion)}
-                        className="w-full px-4 py-3 text-left hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-4 mb-1"
-                      >
-                        <div
-                          className={`p-3 rounded-lg ${
-                            suggestion.type === "locality"
-                              ? "bg-green-100"
-                              : "bg-blue-100"
-                          }`}
-                        >
-                          {suggestion.type === "locality" ? (
-                            <Home className="w-6 h-6 text-green-600" />
-                          ) : (
-                            <Search className="w-6 h-6 text-blue-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-900 text-lg">
-                            {suggestion.displayName}
-                          </div>
-                          <div className="text-sm text-gray-500 capitalize">
-                            {suggestion.type}
-                          </div>
-                        </div>
-                        <div className="text-blue-600 font-medium">Select</div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-            {/* Search suggestions */}
-            {searchInput && suggestions.length > 0 && (
-              <>
-                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
-                  <div className="text-sm font-semibold text-gray-700">
-                    Suggestions for "{searchInput}"
-                  </div>
-                </div>
-                <div className="p-2">
-                  {suggestions.map((suggestion) => (
-                    <button
-                      key={`${suggestion.type}-${suggestion.id}`}
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                      className="w-full px-4 py-3 text-left hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-4 mb-1"
-                    >
-                      <div
-                        className={`p-3 rounded-lg ${
-                          suggestion.type === "city"
-                            ? "bg-blue-100"
-                            : suggestion.type === "locality"
-                              ? "bg-green-100"
-                              : suggestion.type === "project"
-                                ? "bg-purple-100"
-                                : suggestion.type === "builder"
-                                  ? "bg-amber-100"
-                                  : suggestion.type === "popular"
-                                    ? "bg-indigo-100"
-                                    : "bg-gray-100"
-                        }`}
-                      >
-                        {suggestion.type === "city" && (
-                          <MapPin className="w-6 h-6 text-blue-600" />
-                        )}
-                        {suggestion.type === "locality" && (
-                          <Home className="w-6 h-6 text-green-600" />
-                        )}
-                        {suggestion.type === "project" && (
-                          <Building2 className="w-6 h-6 text-purple-600" />
-                        )}
-                        {suggestion.type === "builder" && (
-                          <Building2 className="w-6 h-6 text-amber-600" />
-                        )}
-                        {suggestion.type === "popular" && (
-                          <Search className="w-6 h-6 text-indigo-600" />
-                        )}
-                        {suggestion.type === "landmark" && (
-                          <MapPin className="w-6 h-6 text-gray-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900 text-lg">
-                          {suggestion.displayName}
-                        </div>
-                        <div className="text-sm text-gray-500 capitalize">
-                          {suggestion.type}
-                        </div>
-                      </div>
-                      <div className="text-blue-600 font-medium">Select</div>
-                    </button>
-                  ))}
-                </div>
-              </>
             )}
 
-            {/* No suggestions found */}
-            {searchInput && suggestions.length === 0 && (
-              <div className="p-8 text-center">
-                <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <div className="text-gray-600 font-medium mb-2">
-                  No suggestions found for "{searchInput}"
-                </div>
-                <div className="text-sm text-gray-500">
-                  Try searching for localities, projects, or builders in{" "}
-                  {selectedCityName}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Popular Searches */}
-      <div className="mt-6">
-        <div className="text-sm text-gray-600 mb-2">Popular Searches:</div>
-        <div className="flex flex-wrap gap-2">
-          {POPULAR_SEARCHES.slice(0, 6).map((term) => (
+            {/* Search button */}
             <button
-              key={term}
-              onClick={() => setSearchInput(`${term} in ${selectedCityName}`)}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+              onClick={handleSearch}
+              className="px-6 sm:px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm sm:text-base transition-colors flex-shrink-0 flex items-center gap-2"
             >
-              {term}
+              <Search className="w-4 h-4" />
+              <span className="hidden sm:inline">Search</span>
             </button>
-          ))}
+          </div>
+
+          <SuggestionsDropdown
+            show={showSuggestions}
+            searchInput={searchInput}
+            suggestions={suggestions}
+            initialSuggestions={initialSuggestions}
+            selectedCityName={selectedCityName}
+            selectedLocalities={selectedLocalities}
+            onSelect={handleSuggestionSelect}
+            onRemoveLocality={(id) =>
+              setSelectedLocalities((p) => p.filter((l) => l.id !== id))
+            }
+          />
+        </div>
+
+        {/* Popular searches */}
+        <div className="mt-5">
+          <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wide">
+            Popular
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {POPULAR_SEARCHES.slice(0, 6).map((term) => (
+              <button
+                key={term}
+                onClick={() => {
+                  setSearchInput(term);
+                  setShowSuggestions(true);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-gray-600 dark:text-gray-300 rounded-lg text-xs font-medium transition-colors"
+              >
+                {term}
+                <ChevronRight className="w-3 h-3 opacity-50" />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <style>{inlineStyles}</style>
+
+      {/* Scrollbar hide */}
+      <style>{`.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}`}</style>
     </div>
   );
 };
-const inlineStyles = `
-  .commercial-tabs-right {
-    display: flex;
-    gap: 2px;
-    padding: 0 8px;
-  }
-  
-  .commercial-tab-right {
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    border: 1px solid transparent;
-  }
-  
-  .commercial-tab-right:hover {
-    transform: translateY(-1px);
-  }
-  
-  /* Animation for tab switch */
-  @keyframes tabSwitch {
-    0% { transform: scale(0.95); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  
-  .commercial-tab-right.active {
-    animation: tabSwitch 0.2s ease-out;
-  }
-  
-  /* Ensure proper spacing for the entire search bar */
-  .search-bar-with-commercial {
-    display: flex;
-    align-items: stretch;
-  }
-`;

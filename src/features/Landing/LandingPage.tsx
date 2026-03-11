@@ -1,62 +1,38 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
-  ArrowRight,
-  Filter,
-  Home,
-  Search,
-  X,
-  Building2,
-  Sparkles,
-  TrendingUp,
-  Shield,
-  Users,
-  Award,
-  MapPin,
-  ChevronRight,
-  Bath,
-  Bed,
   Check,
-  Eye,
-  Heart,
-  Share2,
-  Square,
-  Menu,
-  Star,
-  Clock,
-  ChevronDown,
+  Shield,
   Zap,
-  Phone,
-  Mail,
+  Search,
+  Building2,
+  Clock,
   Trophy,
   User,
   Briefcase,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { FilterPanel } from "./FilterPanel";
-import { LandingPropertyCard } from "./LandingPropertyCard";
-import {
-  type PropertyPurpose,
-  type PropertySearchFilters,
-  type PropertySubType,
-  type PropertyType,
-} from "../../types";
+import { type PropertyPurpose, type PropertySearchFilters } from "../../types";
 import {
   useGetCategorizedPropertiesQuery,
   useGetUserFavoritesQuery,
   useSearchPropertiesQuery,
 } from "../../services/propertyApi";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PublicHeader } from "../../layout/PublicHeader";
 import { useAuth } from "../../hooks/useAuth";
 import { Footer } from "../../layout/Footer";
 import { useDefaultCity } from "../../hooks/useDefaultCity";
-import { CategorizedSection } from "./CategorizedSection";
-import { SearchComponent } from "./SearchComponent";
 import { HorizontalScrollSection } from "./HorizontalSection";
 import { AdBanner } from "./AddBanner";
 import { BuilderPropertyCard } from "./BuilderPropertyCard";
 import { StandardPropertyCard } from "./StandardPropertyCard";
 import { CategorySkeletonLoader } from "./CategorySkeletonLoader";
+import { SearchComponent } from "./SearchComponent";
+import bg1 from "../../assets/bg-1.jpg";
+import bg2 from "../../assets/bg-2.jpg";
+import bg3 from "../../assets/bg-3.jpg";
+
 export const PropertyLandingPage = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<PropertySearchFilters>({});
@@ -67,23 +43,39 @@ export const PropertyLandingPage = () => {
   const [searchInput, setSearchInput] = useState("");
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [sortBy, setSortBy] = useState("");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
+  const [bgIndex, setBgIndex] = useState(0);
+
+  const heroBgs = [bg1, bg2, bg3];
+
+  // Rotate hero background every 5 seconds with smooth crossfade
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBgIndex((i) => (i + 1) % heroBgs.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const { isAuthenticated } = useAuth();
   const { data: favouriteData, refetch } = useGetUserFavoritesQuery(undefined, {
     skip: !isAuthenticated,
   });
-  // const [selectedCityId, setSelectedCityId] = useState<string>("");
+
+  // ── Single source of truth for city ────────────────────────────────────────
+  // Both PublicHeader (header city pill) and SearchComponent (search bar city)
+  // read from here and call the same handleCityChange, so they stay perfectly
+  // in sync. Changing city in either place updates both simultaneously.
   const { selectedCityId, selectedCityName, handleCityChange } =
     useDefaultCity();
 
   const { data, isLoading } = useSearchPropertiesQuery({
     ...filters,
     search: searchInput,
-    sortBy: sortBy,
+    sortBy,
     sortOrder: "desc",
     status: "AVAILABLE",
   });
+
   const { data: categorizedData, isLoading: isCategorizedLoading } =
     useGetCategorizedPropertiesQuery({
       purpose: propertyPurpose,
@@ -92,25 +84,22 @@ export const PropertyLandingPage = () => {
       limit: 8,
     });
 
-  // Categories configuration
   const categories = [
     {
       id: "top",
       title: "Top Properties",
-      description:
-        "Smart-picked properties based on engagement, quality, and value",
-      icon: <Trophy className="w-6 h-6 text-white" />,
-      color: "from-amber-500 to-orange-500",
+      description: "Smart-picked based on engagement, quality, and value",
+      icon: <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-white" />,
+      color: "from-blue-600 to-indigo-600",
       CardComponent: StandardPropertyCard,
       properties: categorizedData?.data?.top || [],
-      adBanner: true,
     },
     {
       id: "featuredBuilders",
       title: "Premium Builder Projects",
       description: "Exclusive projects from verified builders",
-      icon: <Building2 className="w-6 h-6 text-white" />,
-      color: "from-blue-500 to-indigo-600",
+      icon: <Building2 className="w-4 h-4 sm:w-6 sm:h-6 text-white" />,
+      color: "from-amber-500 to-orange-500",
       properties: categorizedData?.data?.featuredBuilders || [],
       CardComponent: BuilderPropertyCard,
     },
@@ -118,8 +107,8 @@ export const PropertyLandingPage = () => {
       id: "featuredOwners",
       title: "Featured Owner Properties",
       description: "Direct listings from property owners",
-      icon: <User className="w-6 h-6 text-white" />,
-      color: "from-green-500 to-emerald-600",
+      icon: <User className="w-4 h-4 sm:w-6 sm:h-6 text-white" />,
+      color: "from-blue-500 to-cyan-500",
       properties: categorizedData?.data?.featuredOwners || [],
       CardComponent: StandardPropertyCard,
     },
@@ -127,8 +116,8 @@ export const PropertyLandingPage = () => {
       id: "featuredAgents",
       title: "Agent Recommended",
       description: "Curated properties by professional agents",
-      icon: <Briefcase className="w-6 h-6 text-white" />,
-      color: "from-purple-500 to-pink-500",
+      icon: <Briefcase className="w-4 h-4 sm:w-6 sm:h-6 text-white" />,
+      color: "from-indigo-600 to-blue-700",
       properties: categorizedData?.data?.featuredAgents || [],
       CardComponent: StandardPropertyCard,
     },
@@ -136,8 +125,8 @@ export const PropertyLandingPage = () => {
       id: "recentlyAdded",
       title: "Recently Added",
       description: "Fresh listings just added to our platform",
-      icon: <Clock className="w-6 h-6 text-white" />,
-      color: "from-red-500 to-rose-500",
+      icon: <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-white" />,
+      color: "from-sky-500 to-blue-600",
       properties: categorizedData?.data?.recentlyAdded || [],
       CardComponent: StandardPropertyCard,
     },
@@ -148,209 +137,157 @@ export const PropertyLandingPage = () => {
   }, [isAuthenticated, refetch]);
 
   useEffect(() => {
-    if (selectedCityId) {
-      setFilters((prev) => ({ ...prev, cityId: selectedCityId }));
-    }
+    if (selectedCityId) setFilters((p) => ({ ...p, cityId: selectedCityId }));
   }, [selectedCityId]);
 
   useEffect(() => {
-    if (isAuthenticated && favouriteData && favouriteData.data) {
+    if (isAuthenticated && favouriteData?.data)
       setFavPropertiesIds(favouriteData.data);
-    }
   }, [favouriteData, isAuthenticated]);
-
-  const properties = data?.data || [];
-  const activeFilterCount = Object.keys(filters).filter(
-    (key) => filters[key as keyof PropertySearchFilters] !== undefined
-  ).length;
-
-  const handleSearch = () => {
-    // Search is reactive through useSearchPropertiesQuery
-  };
-  // Handle purpose change from search component
-  const handlePurposeChange = (purpose: PropertyPurpose) => {
-    setSelectedPurpose(purpose);
-    // You might want to refresh data or scroll to properties section
-  };
-  const handleShowFavorites = () => {
-    navigate("/saved-properties");
-  };
-
-  const handleShowAppointments = () => {
-    navigate("/appointments");
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      {/* Premium Navigation Bar with Glass Morphism */}
+      {/* Header — receives shared city, calls same handleCityChange */}
       <PublicHeader
         theme="vibrant"
-        onShowFavorites={handleShowFavorites}
-        onShowAppointments={handleShowAppointments}
+        onShowFavorites={() => navigate("/saved-properties")}
+        onShowAppointments={() => navigate("/appointments")}
         selectedCityId={selectedCityId}
         onCityChange={handleCityChange}
       />
 
-      {/* Hero Section with Advanced Animations */}
-      <section className="relative pt-32 pb-4 overflow-visible">
-        {/* Animated Gradient Mesh Background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50" />
-          <div className="absolute inset-0 opacity-40">
-            <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-br from-blue-400 to-cyan-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
-            <div className="absolute top-40 right-20 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
-            <div className="absolute -bottom-8 left-1/2 w-96 h-96 bg-gradient-to-br from-indigo-400 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
+      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      <section className="relative pt-16 sm:pt-24 lg:pt-32 pb-4 sm:pb-8 overflow-visible">
+        {/* ── Crossfading background images ─────────────────────────────── */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {heroBgs.map((bg, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[1500ms] ease-in-out"
+              style={{
+                backgroundImage: `url(${bg})`,
+                opacity: i === bgIndex ? 1 : 0,
+              }}
+            />
+          ))}
+          {/* Dark overlay so text stays readable over any image */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
+          {/* Subtle bottom fade into page bg */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
+          {/* Dot indicator — bottom centre */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+            {heroBgs.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setBgIndex(i)}
+                className={`rounded-full transition-all duration-300 ${
+                  i === bgIndex
+                    ? "w-5 h-1.5 bg-white"
+                    : "w-1.5 h-1.5 bg-white/50 hover:bg-white/75"
+                }`}
+              />
+            ))}
           </div>
-          {/* Grid Pattern Overlay */}
-          <div className="absolute inset-0 bg-grid-pattern opacity-5" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            {/* Floating Badge with Pulse Animation */}
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-2xl shadow-blue-500/20 mb-8 border border-blue-100 animate-fade-in hover:scale-105 transition-transform duration-300">
-              <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="text-center mb-4 sm:mb-10 lg:mb-16">
+            <div className="inline-flex items-center gap-1.5 px-3 sm:px-5 py-1 sm:py-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-xl shadow-blue-500/20 mb-3 sm:mb-6 border border-blue-100 animate-fade-in hover:scale-105 transition-transform duration-300">
+              <span className="text-[10px] sm:text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 #1 Trusted Real Estate Platform in 2025
               </span>
             </div>
 
-            {/* Premium Search Bar with Enhanced Styling */}
+            <h1 className="text-xl sm:text-4xl lg:text-6xl font-black text-white mb-1 sm:mb-4 tracking-tight leading-tight drop-shadow-lg">
+              Find Your
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {" "}
+                Dream Home
+              </span>
+            </h1>
+
+            <p className="text-[11px] sm:text-base lg:text-lg text-white/80 mb-3 sm:mb-8 font-medium drop-shadow">
+              7K+ listings added daily · 73K+ total verified
+            </p>
+
+            {/* SearchComponent — seeded with shared city, writes back via onCityChange */}
             <div className="max-w-6xl mx-auto animate-slide-up-delay">
               <SearchComponent
-                onPurposeChange={handlePurposeChange}
+                onPurposeChange={(p) => setSelectedPurpose(p)}
                 initialPurpose={selectedPurpose}
                 initialCity={selectedCityName}
+                onCityChange={handleCityChange}
                 onPropertyTypeChange={setPropertyType}
                 onPropertyPurposeChange={setPropertyPurpose}
               />
             </div>
 
-            {/* Trust Signals */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600 animate-fade-in-delay-2">
-              <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-500" />
-                <span className="font-semibold">Verified Listings</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-500" />
-                <span className="font-semibold">Secure Transactions</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-500" />
-                <span className="font-semibold">Instant Booking</span>
-              </div>
+            <div className="flex items-center justify-center gap-3 sm:gap-6 mt-3 sm:mt-6 animate-fade-in-delay-2">
+              {[
+                { icon: Check, color: "text-emerald-400", label: "Verified" },
+                { icon: Shield, color: "text-blue-300", label: "Secure" },
+                {
+                  icon: Zap,
+                  color: "text-amber-300",
+                  label: "Instant Booking",
+                },
+              ].map(({ icon: Icon, color, label }) => (
+                <div key={label} className="flex items-center gap-1 sm:gap-2">
+                  <Icon
+                    className={`w-3 h-3 sm:w-5 sm:h-5 flex-shrink-0 ${color}`}
+                  />
+                  <span className="text-[10px] sm:text-sm font-semibold text-white/80 whitespace-nowrap drop-shadow">
+                    {label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Categorized Properties Sections */}
-      {/* {!isCategorizedLoading && categorizedData?.data && (
-        <div className="space-y-1">
-          {categories.map((category, index) => (
-            <CategorizedSection
-              key={category.id}
-              title={category.title}
-              description={category.description}
-              icon={category.icon}
-              properties={category.properties}
-              color={category.color}
-              index={index}
-            />
-          ))}
-        </div>
-      )} */}
-
+      {/* ── Property Category Sections ─────────────────────────────────────── */}
       {categories.map((category, index) => {
-        // Check if category has no properties
-        if (
-          !isCategorizedLoading &&
-          (!category.properties || category.properties.length === 0)
-        ) {
+        if (isCategorizedLoading) {
+          return <CategorySkeletonLoader key={category.id} />;
+        }
+
+        if (!category.properties || category.properties.length === 0) {
           return (
-            <section key={category.id} className="py-12 bg-white">
-              <div className="max-w-full mx-auto px-6">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`p-4 rounded-2xl bg-gradient-to-r ${category.color} shadow-lg`}
-                    >
-                      {category.icon}
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-black text-gray-900">
-                        {category.title}
-                      </h2>
-                      <p className="text-gray-600 mt-1 font-medium">
-                        {category.description}
-                      </p>
-                    </div>
+            <section key={category.id} className="py-5 sm:py-12 bg-white">
+              <div className="max-w-full mx-auto px-3 sm:px-6">
+                <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
+                  <div
+                    className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r ${category.color} shadow-md flex-shrink-0`}
+                  >
+                    {category.icon}
+                  </div>
+                  <div>
+                    <h2 className="text-sm sm:text-3xl font-black text-gray-900 leading-tight">
+                      {category.title}
+                    </h2>
+                    <p className="text-xs sm:text-base text-gray-500 mt-0.5 font-medium hidden sm:block">
+                      {category.description}
+                    </p>
                   </div>
                 </div>
-
-                {/* No Properties Card */}
-                <div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl border-2 border-dashed border-gray-300 p-12 text-center">
-                  <div className="max-w-md mx-auto">
-                    <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Search className="w-12 h-12 text-gray-400" />
+                <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl sm:rounded-3xl border-2 border-dashed border-gray-200 p-5 sm:p-12 text-center">
+                  <div className="max-w-sm mx-auto">
+                    <div className="w-10 h-10 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-6">
+                      <Search className="w-5 h-5 sm:w-12 sm:h-12 text-gray-400" />
                     </div>
-
-                    <h3 className="text-2xl font-bold text-gray-800 mb-3">
-                      No properties found in {selectedCityName}
+                    <h3 className="text-sm sm:text-2xl font-bold text-gray-800 mb-1.5 sm:mb-3">
+                      No properties in {selectedCityName}
                     </h3>
-
-                    <p className="text-gray-600 mb-8">
-                      We couldn't find any {category.title.toLowerCase()} in{" "}
-                      {selectedCityName}. Try searching in a different city or
-                      check back later.
+                    <p className="text-[11px] sm:text-base text-gray-500 mb-3 sm:mb-8">
+                      Try a different city or check back later.
                     </p>
-
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                      <button
-                        onClick={() => {
-                          // Optionally change city or show city selector
-                          const popularCities = [
-                            "Delhi",
-                            "Mumbai",
-                            "Bangalore",
-                            "Hyderabad",
-                          ];
-                          const randomCity =
-                            popularCities[
-                              Math.floor(Math.random() * popularCities.length)
-                            ];
-                          // You would need to map city names to IDs
-                          // handleCityChange(cityId);
-                        }}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors"
-                      >
-                        Try Different City
-                      </button>
-
-                      <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
-                      >
-                        Refresh Results
-                      </button>
-                    </div>
-
-                    <div className="mt-8 pt-8 border-t border-gray-200">
-                      <p className="text-sm text-gray-500 mb-3">
-                        Looking for something specific?
-                      </p>
-                      <button
-                        onClick={() => {
-                          // Focus on search input
-                          // document.querySelector('input[type="text"]')?.focus();
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
-                      >
-                        <Search className="w-4 h-4" />
-                        Search Different Property
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="px-3 sm:px-6 py-1.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl transition-colors"
+                    >
+                      Refresh
+                    </button>
                   </div>
                 </div>
               </div>
@@ -358,12 +295,6 @@ export const PropertyLandingPage = () => {
           );
         }
 
-        // Show skeleton loader while loading
-        if (isCategorizedLoading) {
-          return <CategorySkeletonLoader key={category.id} />;
-        }
-
-        // Show actual content when data is loaded and has properties
         return (
           <React.Fragment key={category.id}>
             <HorizontalScrollSection {...category} />
@@ -372,140 +303,6 @@ export const PropertyLandingPage = () => {
         );
       })}
 
-      {/* Premium Stats Section with Animated Counters */}
-      {/* <section className="relative py-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
-        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-
-        <div className="relative max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: TrendingUp,
-                value: properties.length || "15K",
-                label: "Active Listings",
-                suffix: "+",
-              },
-              { icon: Users, value: "8K", label: "Happy Clients", suffix: "+" },
-              {
-                icon: MapPin,
-                value: "200",
-                label: "Cities Covered",
-                suffix: "+",
-              },
-              {
-                icon: Award,
-                value: "$2.5B",
-                label: "Properties Sold",
-                suffix: "+",
-              },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className="text-center group hover:scale-110 transition-transform duration-500 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-4 group-hover:bg-white/30 transition-all group-hover:rotate-6">
-                  <stat.icon className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-5xl lg:text-6xl font-black text-white mb-2 tracking-tight">
-                  {stat.value}
-                  {stat.suffix}
-                </div>
-                <div className="text-sm lg:text-base text-blue-100 font-bold uppercase tracking-wider">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
-      {/* Why Choose Us Section with Card Hover Effects */}
-      {/* <section
-        id="how-it-works"
-        className="py-24 bg-white relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <div className="inline-block mb-4">
-              <span className="px-5 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-black uppercase tracking-wider">
-                Why Choose Us
-              </span>
-            </div>
-            <h2 className="text-5xl lg:text-6xl font-black text-gray-900 mb-6">
-              The Bengal Property
-              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Advantage
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto font-medium">
-              Experience the future of real estate with cutting-edge technology
-              and personalized service
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Shield,
-                title: "100% Verified Listings",
-                description:
-                  "Every property undergoes rigorous verification by our expert team to ensure authenticity, quality, and legal compliance",
-                gradient: "from-blue-500 to-cyan-500",
-                bg: "from-blue-50 to-cyan-50",
-              },
-              {
-                icon: TrendingUp,
-                title: "Exclusive Deals",
-                description:
-                  "Access pre-market properties and competitive pricing that you won't find anywhere else in the market",
-                gradient: "from-purple-500 to-pink-500",
-                bg: "from-purple-50 to-pink-50",
-              },
-              {
-                icon: Users,
-                title: "24/7 Expert Support",
-                description:
-                  "Dedicated support from licensed real estate professionals ready to assist you at every step of your journey",
-                gradient: "from-green-500 to-emerald-500",
-                bg: "from-green-50 to-emerald-50",
-              },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className={`relative group p-8 bg-gradient-to-br ${feature.bg} rounded-3xl border-2 border-gray-100 hover:border-transparent hover:shadow-2xl transition-all duration-500 overflow-hidden`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                <div className="relative">
-                  <div
-                    className={`w-20 h-20 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 shadow-2xl group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}
-                  >
-                    <feature.icon className="w-10 h-10 text-white" />
-                  </div>
-
-                  <h3 className="text-2xl font-black text-gray-900 mb-4 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all">
-                    {feature.title}
-                  </h3>
-
-                  <p className="text-gray-600 leading-relaxed font-medium">
-                    {feature.description}
-                  </p>
-
-                  <div
-                    className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br ${feature.gradient} rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500`}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
-      {/* Filter Panel Modal */}
       {showFilterPanel && (
         <FilterPanel
           filters={filters}
@@ -514,163 +311,23 @@ export const PropertyLandingPage = () => {
         />
       )}
 
-      {/* Footer Section */}
       <Footer />
-      {/* Custom CSS for Advanced Animations */}
+
       <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(20px, -50px) scale(1.1); }
-          50% { transform: translate(-20px, 20px) scale(0.9); }
-          75% { transform: translate(50px, 50px) scale(1.05); }
-        }
-        
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-        
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slide-down {
-          from { opacity: 0; transform: translateY(-20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes gradient {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-        
-        .animate-fade-in-delay {
-          animation: fade-in 0.6s ease-out 0.2s both;
-        }
-
-        .animate-fade-in-delay-2 {
-          animation: fade-in 0.6s ease-out 0.4s both;
-        }
-        
-        .animate-slide-up {
-          animation: slide-up 0.8s ease-out;
-        }
-        
-        .animate-slide-up-delay {
-          animation: slide-up 0.8s ease-out 0.3s both;
-        }
-
-        .animate-slide-down {
-          animation: slide-down 0.5s ease-out;
-        }
-
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out both;
-        }
-
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 3s ease infinite;
-        }
-
-        .animate-shimmer {
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-          background-size: 1000px 100%;
-          animation: shimmer 2s infinite;
-        }
-
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .animate-float-delayed {
-          animation: float 3s ease-in-out infinite 1.5s;
-        }
-
-        .animate-spin-slow {
-          animation: spin-slow 3s linear infinite;
-        }
-
-        .bg-grid-pattern {
-          background-image: 
-            linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
-          background-size: 40px 40px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *,
-          *::before,
-          *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
-        .animate-fade-in-up {
-  animation: fade-in-up 0.6s ease-out both;
-}
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Ensure smooth animations */
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-in-up {
-    animation: none;
-  }
+        @keyframes blob{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(20px,-50px) scale(1.1)}50%{transform:translate(-20px,20px) scale(0.9)}75%{transform:translate(50px,50px) scale(1.05)}}
+        .animate-blob{animation:blob 7s infinite}
+        .animation-delay-2000{animation-delay:2s}
+        .animation-delay-4000{animation-delay:4s}
+        @keyframes fade-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slide-up{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+        .animate-fade-in{animation:fade-in 0.6s ease-out}
+        .animate-fade-in-delay{animation:fade-in 0.6s ease-out 0.2s both}
+        .animate-fade-in-delay-2{animation:fade-in 0.6s ease-out 0.4s both}
+        .animate-slide-up{animation:slide-up 0.8s ease-out}
+        .animate-slide-up-delay{animation:slide-up 0.8s ease-out 0.3s both}
+        .bg-grid-pattern{background-image:linear-gradient(to right,rgba(0,0,0,0.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(0,0,0,0.05) 1px,transparent 1px);background-size:40px 40px}
+        .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}}
       `}</style>
     </div>
   );

@@ -10,40 +10,30 @@ import {
   UserX,
 } from "lucide-react";
 import { userStatuses } from "../../utils/user-utils";
-// import { useGetRolesQuery } from "../../services/rbacApi";
 
 export const UserTableRow: React.FC<{
   user: UserResponse;
   isSelected: boolean;
-  onSelect: (id: string) => void;
+  showActions: boolean; // passed from UserTable — controls actions <td> rendering
   onView: (user: UserResponse) => void;
-  onEdit: (user: UserResponse) => void;
-  onDelete: (id: string) => void;
-  onStatusUpdate: (id: string, status: UserStatus) => void;
+  // Optional — parent passes undefined when user lacks the permission
+  onSelect?: (id: string) => void;
+  onEdit?: (user: UserResponse) => void;
+  onDelete?: (id: string) => void;
+  onStatusUpdate?: (id: string, status: UserStatus) => void;
 }> = ({
   user,
   isSelected,
-  onSelect,
+  showActions,
   onView,
+  onSelect,
   onEdit,
   onDelete,
   onStatusUpdate,
 }) => {
-  const [showActions, setShowActions] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
-  // Fetch roles from API
-  // const { data: rolesData } = useGetRolesQuery({
-  //   page: 1,
-  //   limit: 100,
-  // });
-
-  // const roles = rolesData?.data || [];
-
-  // Get role object from user's roleId
-  const getUserRole = () => {
-    return user.role;
-    // return roles.find((role) => role.id === user.role.id) || user.role;
-  };
+  const getUserRole = () => user.role;
 
   const getStatusColor = (status: UserStatus) => {
     const colors = {
@@ -57,7 +47,6 @@ export const UserTableRow: React.FC<{
     return colors[status];
   };
 
-  // Updated getRoleColor to work with role object
   const getRoleColor = (roleName: string) => {
     const colors: Record<string, string> = {
       SUPER_ADMIN:
@@ -81,17 +70,24 @@ export const UserTableRow: React.FC<{
   };
 
   const currentRole = getUserRole();
+  // Three-dot menu has content when at least one mutable action exists
+  const hasMenuActions = !!onStatusUpdate || !!onDelete;
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-      <td className="px-6 py-4">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onSelect(user.id)}
-          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
-      </td>
+      {/* Checkbox — only rendered when selection is enabled */}
+      {onSelect && (
+        <td className="px-6 py-4">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onSelect(user.id)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+        </td>
+      )}
+
+      {/* User info — always shown */}
       <td className="px-6 py-4">
         <div className="flex items-center">
           <div className="h-10 w-10 flex-shrink-0">
@@ -120,107 +116,152 @@ export const UserTableRow: React.FC<{
           </div>
         </div>
       </td>
+
+      {/* Role — always shown */}
       <td className="px-6 py-4">
         {user.roleId && (
           <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
-              currentRole.name
-            )}`}
+            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(currentRole.name)}`}
           >
             {currentRole.name}
           </span>
         )}
       </td>
+
+      {/* Status — editable dropdown when canEdit, read-only badge otherwise */}
       <td className="px-6 py-4">
-        <select
-          value={user.status}
-          onChange={(e) =>
-            onStatusUpdate(user.id, e.target.value as UserStatus)
-          }
-          className={`text-xs font-semibold px-2 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(
-            user.status
-          )}`}
-        >
-          {userStatuses.map((status) => (
-            <option key={status} value={status}>
-              {status.replace("_", " ")}
-            </option>
-          ))}
-        </select>
+        {onStatusUpdate ? (
+          <select
+            value={user.status}
+            onChange={(e) =>
+              onStatusUpdate(user.id, e.target.value as UserStatus)
+            }
+            className={`text-xs font-semibold px-2 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.status)}`}
+          >
+            {userStatuses.map((status) => (
+              <option key={status} value={status}>
+                {status.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span
+            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}
+          >
+            {user.status.replace("_", " ")}
+          </span>
+        )}
       </td>
+
+      {/* Last active — always shown */}
       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
         {user.lastLoginAt
           ? new Date(user.lastLoginAt).toLocaleDateString()
           : "Never"}
       </td>
-      <td className="px-6 py-4 text-right text-sm font-medium">
-        <div className="flex justify-end items-center space-x-2">
-          <button
-            onClick={() => onView(user)}
-            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            onClick={() => onEdit(user)}
-            className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-          >
-            <Edit size={16} />
-          </button>
-          <div className="relative">
+
+      {/* Actions cell — only rendered when showActions=true (col count must match header) */}
+      {showActions && (
+        <td className="px-6 py-4 text-right text-sm font-medium">
+          <div className="flex justify-end items-center space-x-2">
+            {/* View — always shown in actions cell */}
             <button
-              onClick={() => setShowActions(!showActions)}
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+              onClick={() => onView(user)}
+              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              title="View"
             >
-              <MoreVertical size={16} />
+              <Eye size={16} />
             </button>
 
-            {showActions && (
-              <div className="absolute right-0 top-6 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      onStatusUpdate(
-                        user.id,
-                        user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE"
-                      );
-                      setShowActions(false);
-                    }}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    {user.status === "ACTIVE" ? (
-                      <UserX size={16} />
-                    ) : (
-                      <UserCheck size={16} />
-                    )}
-                    {user.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Handle send email
-                      setShowActions(false);
-                    }}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <Mail size={16} />
-                    Send Email
-                  </button>
-                  <button
-                    onClick={() => {
-                      onDelete(user.id);
-                      setShowActions(false);
-                    }}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </button>
-                </div>
+            {/* Edit — only when handler present */}
+            {onEdit && (
+              <button
+                onClick={() => onEdit(user)}
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                title="Edit"
+              >
+                <Edit size={16} />
+              </button>
+            )}
+
+            {/* Three-dot menu — only when at least one mutable action exists */}
+            {hasMenuActions && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                  title="More"
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {showMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowMenu(false)}
+                    />
+                    <div className="absolute right-0 top-6 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20">
+                      <div className="py-1">
+                        {/* Activate / Deactivate */}
+                        {onStatusUpdate && (
+                          <button
+                            onClick={() => {
+                              onStatusUpdate(
+                                user.id,
+                                user.status === "ACTIVE"
+                                  ? "INACTIVE"
+                                  : "ACTIVE",
+                              );
+                              setShowMenu(false);
+                            }}
+                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            {user.status === "ACTIVE" ? (
+                              <UserX size={16} />
+                            ) : (
+                              <UserCheck size={16} />
+                            )}
+                            {user.status === "ACTIVE"
+                              ? "Deactivate"
+                              : "Activate"}
+                          </button>
+                        )}
+
+                        {/* Send Email — informational, no permission needed */}
+                        <button
+                          onClick={() => setShowMenu(false)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          <Mail size={16} />
+                          Send Email
+                        </button>
+
+                        {/* Delete */}
+                        {onDelete && (
+                          <>
+                            <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                            <button
+                              onClick={() => {
+                                onDelete(user.id);
+                                setShowMenu(false);
+                              }}
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              <Trash2 size={16} />
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
-        </div>
-      </td>
+        </td>
+      )}
     </tr>
   );
 };

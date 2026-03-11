@@ -1,28 +1,34 @@
+// FilterBar.tsx
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// components/FilterBar.tsx
 import React, { useEffect, useRef } from "react";
 import {
   Home,
   Building2,
-  Warehouse,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Maximize,
-  Package,
   User,
-  Store,
-  Factory,
-  Building,
   MapPin,
+  Check,
+  X,
+  ArrowUpDown,
 } from "lucide-react";
-import type {
-  PropertySearchFilters,
-  PropertyType,
-  PropertyPurpose,
-} from "../../types";
+import type { PropertySearchFilters, PropertyPurpose } from "../../types";
 import { useGetPropertyTypesQuery } from "../../services/propertyApi";
-import { getIconForPropertyType, getIconForSubType } from "../../utils";
+import { FilterDropdown } from "./FilterDropdown";
+import {
+  PropertyTypeContent,
+  SubTypeContent,
+  BhkContent,
+  PriceRangeContent,
+  ToggleListContent,
+  MoreFiltersContent,
+} from "./FilterDropdownContent";
+
+const SORT_OPTIONS = [
+  { value: "featured-desc", label: "Relevance" },
+  { value: "price-asc", label: "Price: Low → High" },
+  { value: "price-desc", label: "Price: High → Low" },
+  { value: "createdAt-desc", label: "Newest First" },
+  { value: "viewCount-desc", label: "Most Popular" },
+];
 
 interface FilterBarProps {
   filters: PropertySearchFilters;
@@ -31,109 +37,150 @@ interface FilterBarProps {
   setActiveDropdown: (id: string | null) => void;
 }
 
-// --- Inline Dropdown Component (Fixed positioning) ---
-const Dropdown = ({
-  label,
-  children,
-  id,
-  count = 0,
-  activeDropdown,
-  setActiveDropdown,
-}: {
-  label: string;
-  children: React.ReactNode;
-  id: string;
-  count?: number;
-  activeDropdown: string | null;
-  setActiveDropdown: (id: string | null) => void;
-}) => {
-  const isOpen = activeDropdown === id;
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+// ── Static data ──────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setActiveDropdown(null);
-      }
-    };
+const RESIDENTIAL_PRICES = [
+  { label: "Under ₹50 L", min: 1, max: 5_000_000 },
+  { label: "₹50 L – ₹1 Cr", min: 5_000_000, max: 10_000_000 },
+  { label: "₹1 Cr – ₹2 Cr", min: 10_000_000, max: 20_000_000 },
+  { label: "₹2 Cr – ₹5 Cr", min: 20_000_000, max: 50_000_000 },
+  { label: "₹5 Cr+", min: 50_000_000, max: undefined },
+];
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+const COMMERCIAL_PRICES = [
+  { label: "Under ₹25 L", min: 1, max: 2_500_000 },
+  { label: "₹25 L – ₹50 L", min: 2_500_000, max: 5_000_000 },
+  { label: "₹50 L – ₹1 Cr", min: 5_000_000, max: 10_000_000 },
+  { label: "₹1 Cr – ₹5 Cr", min: 10_000_000, max: 50_000_000 },
+  { label: "₹5 Cr – ₹10 Cr", min: 50_000_000, max: 100_000_000 },
+  { label: "₹10 Cr+", min: 100_000_000, max: undefined },
+];
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, setActiveDropdown]);
+const SALE_TYPES: Array<{ value: PropertyPurpose; label: string }> = [
+  { value: "SALE", label: "For Sale" },
+  { value: "RENT", label: "For Rent" },
+];
 
-  useEffect(() => {
-    if (isOpen && buttonRef.current && menuRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const dropdownHeight = Math.min(400, viewportHeight - 100);
+const CONSTRUCTION_STATUSES = [
+  { value: "READY_TO_MOVE", label: "Ready to Move" },
+  { value: "UNDER_CONSTRUCTION", label: "Under Construction" },
+];
 
-      menuRef.current.style.top = `${buttonRect.bottom + 8}px`;
-      menuRef.current.style.left = `${buttonRect.left}px`;
-      menuRef.current.style.width = `${buttonRect.width}px`;
-      menuRef.current.style.minWidth = "240px";
+const LISTING_SOURCES: Array<{
+  value: "AGENT" | "BUILDER" | "OWNER";
+  label: React.ReactNode;
+}> = [
+  {
+    value: "AGENT",
+    label: (
+      <span className="flex items-center gap-2">
+        <User className="w-4 h-4" />
+        Agent
+      </span>
+    ),
+  },
+  {
+    value: "BUILDER",
+    label: (
+      <span className="flex items-center gap-2">
+        <Building2 className="w-4 h-4" />
+        Builder
+      </span>
+    ),
+  },
+  {
+    value: "OWNER",
+    label: (
+      <span className="flex items-center gap-2">
+        <Home className="w-4 h-4" />
+        Owner
+      </span>
+    ),
+  },
+];
 
-      const spaceBelow = viewportHeight - buttonRect.bottom - 8;
-      if (spaceBelow < dropdownHeight) {
-        menuRef.current.style.top = `${buttonRect.top - dropdownHeight - 8}px`;
-      }
-    }
-  }, [isOpen]);
+const FURNISHING_STATUSES = [
+  { value: "FURNISHED", label: "Furnished" },
+  { value: "SEMI_FURNISHED", label: "Semi-Furnished" },
+  { value: "UNFURNISHED", label: "Unfurnished" },
+];
 
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setActiveDropdown(isOpen ? null : id);
-        }}
-        className={`flex items-center gap-1 px-3 py-2 border rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap 
-          ${
-            count > 0 || isOpen
-              ? "border-purple-600 bg-purple-50 text-purple-700 shadow-sm"
-              : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
-          }`}
-      >
-        <span>{label}</span>
-        {count > 0 && (
-          <span className="bg-purple-600 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-            {count}
-          </span>
-        )}
-        {isOpen ? (
-          <ChevronUp className="w-4 h-4" />
-        ) : (
-          <ChevronDown className="w-4 h-4" />
-        )}
-      </button>
+const FACING_DIRECTIONS = [
+  {
+    value: "NORTH",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        North
+      </span>
+    ),
+  },
+  {
+    value: "SOUTH",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        South
+      </span>
+    ),
+  },
+  {
+    value: "EAST",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        East
+      </span>
+    ),
+  },
+  {
+    value: "WEST",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        West
+      </span>
+    ),
+  },
+  {
+    value: "NORTH_EAST",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        North-East
+      </span>
+    ),
+  },
+  {
+    value: "NORTH_WEST",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        North-West
+      </span>
+    ),
+  },
+  {
+    value: "SOUTH_EAST",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        South-East
+      </span>
+    ),
+  },
+  {
+    value: "SOUTH_WEST",
+    label: (
+      <span className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        South-West
+      </span>
+    ),
+  },
+];
 
-      {isOpen && (
-        <div
-          ref={menuRef}
-          className="fixed bg-white border border-gray-200 rounded-lg shadow-2xl max-h-[400px] overflow-y-auto z-[100]"
-          style={{
-            top: "auto",
-            left: "auto",
-          }}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-};
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export const FilterBar: React.FC<FilterBarProps> = ({
   filters,
@@ -141,201 +188,46 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   activeDropdown,
   setActiveDropdown,
 }) => {
-  const { data: propertyTypesData, isLoading: loading } =
-    useGetPropertyTypesQuery({
-      isActive: true,
-      includeSubTypes: true,
-    });
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  const { data: propertyTypesData, isLoading } = useGetPropertyTypesQuery({
+    isActive: true,
+    includeSubTypes: true,
+  });
   const propertyTypes = propertyTypesData?.data || [];
 
+  // Resolve UUID if filter contains a name instead
   useEffect(() => {
-    if (propertyTypes.length > 0) {
-      // Only if propertyType is set as a name, not UUID
-      if (filters.propertyType && !filters.propertyType.includes("-")) {
-        const matched = propertyTypes.find(
-          (pt) => pt.name === filters.propertyType,
-        );
-        if (matched) {
-          setFilters((prev) => ({
-            ...prev,
-            propertyType: matched.id, // set UUID
-          }));
-        }
-      }
+    if (!propertyTypes.length) return;
+    if (filters.propertyType && !filters.propertyType.includes("-")) {
+      const matched = propertyTypes.find(
+        (pt) => pt.name === filters.propertyType,
+      );
+      if (matched) setFilters((p) => ({ ...p, propertyType: matched.id }));
     }
   }, [propertyTypes]);
 
   const currentPropertyType = propertyTypes.find(
     (pt) => pt.id === filters.propertyType || pt.name === filters.propertyType,
   );
-
-  // Get subtypes for current property type
   const availableSubTypes =
     currentPropertyType?.subTypes?.filter((st) => st.isActive) || [];
-
-  // Determine if commercial/residential
   const isCommercial = currentPropertyType?.name === "COMMERCIAL";
   const isResidential =
     !filters.propertyType || currentPropertyType?.name === "RESIDENTIAL";
 
-  // Residential specific
-  const bhkOptions = [1, 2, 3, 4, 5, 6];
-
-  const commercialPriceRanges = [
-    { label: "₹0 - ₹25 L", min: 1, max: 2500000 },
-    { label: "₹25 L - ₹50 L", min: 2500000, max: 5000000 },
-    { label: "₹50 L - ₹1 Cr", min: 5000000, max: 10000000 },
-    { label: "₹1 Cr - ₹5 Cr", min: 10000000, max: 50000000 },
-    { label: "₹5 Cr - ₹10 Cr", min: 50000000, max: 100000000 },
-    { label: "₹10 Cr+", min: 100000000, max: undefined },
-  ];
-
-  const listingSources: Array<{
-    value: "AGENT" | "BUILDER" | "OWNER";
-    label: string;
-  }> = [
-    { value: "AGENT", label: "Agent" },
-    { value: "BUILDER", label: "Builder" },
-    { value: "OWNER", label: "Owner" },
-  ];
-
-  const residentialPriceRanges = [
-    { label: "₹0 - ₹50 L", min: 1, max: 5000000 },
-    { label: "₹50 L - ₹1 Cr", min: 5000000, max: 10000000 },
-    { label: "₹1 Cr - ₹2 Cr", min: 10000000, max: 20000000 },
-    { label: "₹2 Cr - ₹5 Cr", min: 20000000, max: 50000000 },
-    { label: "₹5 Cr+", min: 50000000, max: undefined },
-  ];
-
-  const constructionStatuses = ["READY_TO_MOVE", "UNDER_CONSTRUCTION"];
-
-  const saleTypes: Array<{ value: PropertyPurpose; label: string }> = [
-    { value: "SALE", label: "For Sale" },
-    { value: "RENT", label: "For Rent" },
-  ];
-
-  const furnishingStatuses = [
-    { value: "FURNISHED", label: "Furnished" },
-    { value: "SEMI_FURNISHED", label: "Semi-Furnished" },
-    { value: "UNFURNISHED", label: "Unfurnished" },
-  ];
-
-  const facingDirections = [
-    { value: "NORTH", label: "North" },
-    { value: "SOUTH", label: "South" },
-    { value: "EAST", label: "East" },
-    { value: "WEST", label: "West" },
-    { value: "NORTH_EAST", label: "North-East" },
-    { value: "NORTH_WEST", label: "North-West" },
-    { value: "SOUTH_EAST", label: "South-East" },
-    { value: "SOUTH_WEST", label: "South-West" },
-  ];
-
-  // Helper to count active filters
-  const getActiveFilterCount = () => {
-    let count = 0;
-
-    if (filters.propertyType) count++;
-    if (filters.minPrice || filters.maxPrice) count++;
-    if (filters.possessionStatus) count++;
-    if (filters.verified) count++;
-    if (filters.purpose) count++;
-    if (filters.listingSource) count++;
-
-    // Residential specific
-    if (isResidential) {
-      if (filters.bedrooms && filters.bedrooms.length > 0) count++;
-      if (filters.hasBalcony) count++;
-    }
-
-    // Commercial specific
-    if (isCommercial) {
-      if (filters.subType) count++;
-      if (filters.furnishingStatus) count++;
-      if (filters.facingDirection) count++;
-    }
-
-    return count;
-  };
-
-  const totalActiveFilters = getActiveFilterCount();
-
-  // Handle filter changes
-  const handleFilterChange = (
-    key: keyof PropertySearchFilters,
-    value: any,
-    closeDropdown = true,
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-    if (closeDropdown) setActiveDropdown(null);
-  };
-
-  const handleFilterToggle = (
-    key: keyof PropertySearchFilters,
-    value: any,
-    closeDropdown = true,
-  ) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]:
-        prev[key as keyof PropertySearchFilters] === value ? undefined : value,
-    }));
-    if (closeDropdown) setActiveDropdown(null);
-  };
-
-  const handleMultiSelectChange = (key: "bedrooms", value: number) => {
-    setFilters((prev) => {
-      const current: number[] = prev[key] || [];
-      const updated = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value];
-      return {
-        ...prev,
-        [key]: updated.length ? updated : undefined,
-      };
-    });
-  };
-
-  // Reset filters when property type changes
-  // useEffect(() => {
-  //   if (filters.propertyType) {
-  //     setFilters((prev) => {
-  //       const baseFilters = {
-  //         propertyType: prev.propertyType,
-  //         status: prev.status,
-  //         sortBy: prev.sortBy,
-  //         sortOrder: prev.sortOrder,
-  //         cityId: prev.cityId,
-  //         city: prev.city,
-  //         locality: prev.locality,
-  //         localityId: prev.localityId,
-  //       };
-  //       return baseFilters as PropertySearchFilters;
-  //     });
-  //   }
-  // }, [filters.propertyType]);
-
+  // Keyboard close
   useEffect(() => {
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && activeDropdown) {
-        setActiveDropdown(null);
-      }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && activeDropdown) setActiveDropdown(null);
     };
-
-    document.addEventListener("keydown", handleEscapeKey);
-    return () => {
-      document.removeEventListener("keydown", handleEscapeKey);
-    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [activeDropdown, setActiveDropdown]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
+  // Outside-container close
   useEffect(() => {
-    const handleContainerClick = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node) &&
@@ -344,22 +236,96 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         setActiveDropdown(null);
       }
     };
-
-    document.addEventListener("click", handleContainerClick);
-    return () => {
-      document.removeEventListener("click", handleContainerClick);
-    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
   }, [activeDropdown, setActiveDropdown]);
-  if (loading) {
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const change = (
+    key: keyof PropertySearchFilters,
+    value: any,
+    close = true,
+  ) => {
+    setFilters((p) => ({ ...p, [key]: value }));
+    if (close) setActiveDropdown(null);
+  };
+
+  const toggle = (
+    key: keyof PropertySearchFilters,
+    value: any,
+    close = true,
+  ) => {
+    setFilters((p) => ({ ...p, [key]: p[key] === value ? undefined : value }));
+    if (close) setActiveDropdown(null);
+  };
+
+  const multiSelect = (key: "bedrooms", value: number) => {
+    setFilters((p) => {
+      const cur: number[] = p[key] || [];
+      const next = cur.includes(value)
+        ? cur.filter((v) => v !== value)
+        : [...cur, value];
+      return { ...p, [key]: next.length ? next : undefined };
+    });
+  };
+
+  const setPriceRange = (min: number | undefined, max: number | undefined) => {
+    setFilters((p) => ({ ...p, minPrice: min, maxPrice: max }));
+    setActiveDropdown(null);
+  };
+
+  const resetAll = () => {
+    setFilters({
+      status: "AVAILABLE",
+      sortBy: "createdAt",
+      sortOrder: "desc",
+      cityId: filters.cityId,
+      city: filters.city,
+      locality: filters.locality,
+      localityId: filters.localityId,
+    });
+    setActiveDropdown(null);
+  };
+
+  // Active filter count
+  const activeCount = [
+    filters.propertyType,
+    filters.minPrice || filters.maxPrice,
+    filters.possessionStatus,
+    filters.verified,
+    filters.purpose,
+    filters.listingSource,
+    isResidential && filters.bedrooms?.length,
+    isResidential && filters.hasBalcony,
+    isCommercial && filters.subType,
+    isCommercial && filters.furnishingStatus,
+    isCommercial && filters.facingDirection,
+  ].filter(Boolean).length;
+
+  // ── The header is:
+  //   mobile:  56px nav + 58px locality bar = 114px  → top-[114px]
+  //   sm:      64px nav + 58px locality bar = 122px  → top-[122px]
+  //   md+:     68px nav only (no locality bar)       → top-[68px]
+  // We also add a fallback at top-0 in case displaySearchBar=false (no locality row).
+
+  if (isLoading) {
     return (
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm pt-20">
-        <div className="max-w-full mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="animate-pulse bg-gray-200 h-10 w-32 rounded-full"></div>
-            <div className="animate-pulse bg-gray-200 h-10 w-24 rounded-full"></div>
-            <div className="animate-pulse bg-gray-200 h-10 w-28 rounded-full"></div>
-            <div className="animate-pulse bg-gray-200 h-10 w-28 rounded-full"></div>
-            <div className="animate-pulse bg-gray-200 h-10 w-28 rounded-full"></div>
+      <div
+        className="
+          bg-white border-b border-blue-100 shadow-sm
+          sticky top-[114px] sm:top-[122px] md:top-[68px] z-40
+        "
+      >
+        <div className="max-w-full mx-auto px-3 sm:px-5 py-2 sm:py-2.5">
+          <div className="flex items-center gap-2">
+            {[80, 72, 80, 72, 88].map((w, i) => (
+              <div
+                key={i}
+                className="animate-pulse bg-blue-50 rounded-full h-7 sm:h-8"
+                style={{ width: w }}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -369,576 +335,268 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   return (
     <div
       ref={containerRef}
-      className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm pt-20"
+      className="
+        bg-white border-b border-blue-100 shadow-sm
+        sticky top-[114px] sm:top-[122px] md:top-[68px] z-40
+      "
     >
-      <div className="max-w-full mx-auto px-4 py-3">
+      <div className="max-w-full mx-auto px-3 sm:px-5 py-2 sm:py-2.5">
         <div
-          className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide"
+          className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1"
           style={{ scrollbarWidth: "none" }}
         >
-          {/* 1. Property Type Filter */}
-          <Dropdown
-            label="Property Type"
+          {/* 1 — Property Type */}
+          <FilterDropdown
+            label="Type"
             id="property-type"
             count={filters.propertyType ? 1 : 0}
             activeDropdown={activeDropdown}
             setActiveDropdown={setActiveDropdown}
           >
-            <div className="p-3 space-y-1">
-              {propertyTypes.map((type) => {
-                const IconComponent = getIconForPropertyType(type.name);
-                const isActive =
-                  filters.propertyType === type.id ||
-                  filters.propertyType === type.name;
+            <PropertyTypeContent
+              propertyTypes={propertyTypes}
+              filters={filters}
+              onToggle={toggle}
+            />
+          </FilterDropdown>
 
-                return (
-                  <button
-                    key={type.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterToggle("propertyType", type.id);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                      isActive
-                        ? "bg-purple-50 text-purple-600 font-semibold"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    <IconComponent className="w-5 h-5" />
-                    <span>
-                      {type.name.charAt(0) +
-                        type.name.slice(1).toLowerCase().replace("_", " ")}
-                    </span>
-                    {isActive && (
-                      <Check className="w-4 h-4 ml-auto text-purple-600" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </Dropdown>
-
-          {/* RESIDENTIAL FILTERS */}
+          {/* RESIDENTIAL */}
           {isResidential && (
             <>
-              {/* residential Sub Type */}
-              <Dropdown
-                label="Property Sub Type"
-                id="commercial-subtype"
+              <FilterDropdown
+                label="Sub Type"
+                id="res-subtype"
                 count={filters.subType ? 1 : 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-3 space-y-1">
-                  {availableSubTypes.length > 0 ? (
-                    availableSubTypes.map((subType) => {
-                      const IconComponent = getIconForSubType(subType.name);
-                      const isActive =
-                        filters.subType === subType.id ||
-                        filters.subType === subType.name;
+                <SubTypeContent
+                  subTypes={availableSubTypes}
+                  filters={filters}
+                  onToggle={toggle}
+                />
+              </FilterDropdown>
 
-                      return (
-                        <button
-                          key={subType.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleFilterToggle("subType", subType.id);
-                          }}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                            isActive
-                              ? "bg-purple-50 text-purple-600 font-semibold"
-                              : "hover:bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          <IconComponent className="w-5 h-5" />
-                          <span>
-                            {subType.name.charAt(0) +
-                              subType.name
-                                .slice(1)
-                                .toLowerCase()
-                                .replace("_", " ")}
-                          </span>
-                          {isActive && (
-                            <Check className="w-4 h-4 ml-auto text-purple-600" />
-                          )}
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500">
-                      No subtypes available
-                    </div>
-                  )}
-                </div>
-              </Dropdown>
-              {/* BHK Type Filter */}
-              <Dropdown
-                label="BHK Type"
+              <FilterDropdown
+                label="BHK"
                 id="bhk-type"
                 count={filters.bedrooms?.length || 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-4">
-                  <div className="grid grid-cols-3 gap-2">
-                    {bhkOptions.map((bhk) => {
-                      const isActive = filters.bedrooms?.includes(bhk);
-                      return (
-                        <button
-                          key={bhk}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMultiSelectChange("bedrooms", bhk);
-                          }}
-                          className={`text-center px-4 py-2 border rounded-full font-medium transition-all ${
-                            isActive
-                              ? "bg-purple-600 text-white border-purple-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-purple-400"
-                          }`}
-                        >
-                          {bhk} BHK
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDropdown(null);
-                    }}
-                    className="w-full mt-4 text-center py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors text-sm font-semibold"
-                  >
-                    Done
-                  </button>
-                </div>
-              </Dropdown>
+                <BhkContent
+                  filters={filters}
+                  onMultiSelect={multiSelect}
+                  onClose={() => setActiveDropdown(null)}
+                />
+              </FilterDropdown>
 
-              {/* Price Range for Residential */}
-              <Dropdown
-                label="Price Range"
-                id="price"
+              <FilterDropdown
+                label="Price"
+                id="res-price"
                 count={filters.minPrice || filters.maxPrice ? 1 : 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-3 space-y-1">
-                  {residentialPriceRanges.map((range, idx) => {
-                    const isActive =
-                      filters.minPrice === range.min &&
-                      filters.maxPrice === range.max;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFilterChange(
-                            "minPrice",
-                            isActive ? undefined : range.min,
-                            false,
-                          );
-                          handleFilterChange(
-                            "maxPrice",
-                            isActive ? undefined : range.max,
-                            false,
-                          );
-                          setActiveDropdown(null);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                          isActive
-                            ? "bg-purple-50 text-purple-600 font-semibold"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        {range.label}
-                        {isActive && (
-                          <Check className="w-4 h-4 text-purple-600" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Dropdown>
+                <PriceRangeContent
+                  ranges={RESIDENTIAL_PRICES}
+                  filters={filters}
+                  onChange={setPriceRange}
+                />
+              </FilterDropdown>
             </>
           )}
 
-          {/* COMMERCIAL FILTERS */}
+          {/* COMMERCIAL */}
           {isCommercial && (
             <>
-              {/* Commercial Sub Type */}
-              <Dropdown
-                label="Property Sub Type"
-                id="commercial-subtype"
+              <FilterDropdown
+                label="Sub Type"
+                id="com-subtype"
                 count={filters.subType ? 1 : 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-3 space-y-1">
-                  {availableSubTypes.length > 0 ? (
-                    availableSubTypes.map((subType) => {
-                      const IconComponent = getIconForSubType(subType.name);
-                      const isActive =
-                        filters.subType === subType.id ||
-                        filters.subType === subType.name;
+                <SubTypeContent
+                  subTypes={availableSubTypes}
+                  filters={filters}
+                  onToggle={toggle}
+                />
+              </FilterDropdown>
 
-                      return (
-                        <button
-                          key={subType.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleFilterToggle("subType", subType.id);
-                          }}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                            isActive
-                              ? "bg-purple-50 text-purple-600 font-semibold"
-                              : "hover:bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          <IconComponent className="w-5 h-5" />
-                          <span>
-                            {subType.name.charAt(0) +
-                              subType.name
-                                .slice(1)
-                                .toLowerCase()
-                                .replace("_", " ")}
-                          </span>
-                          {isActive && (
-                            <Check className="w-4 h-4 ml-auto text-purple-600" />
-                          )}
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500">
-                      No subtypes available
-                    </div>
-                  )}
-                </div>
-              </Dropdown>
-
-              {/* Price Range for Commercial */}
-              <Dropdown
-                label="Price Range"
-                id="price"
+              <FilterDropdown
+                label="Price"
+                id="com-price"
                 count={filters.minPrice || filters.maxPrice ? 1 : 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-3 space-y-1">
-                  {commercialPriceRanges.map((range, idx) => {
-                    const isActive =
-                      filters.minPrice === range.min &&
-                      filters.maxPrice === range.max;
-                    return (
-                      <button
-                        key={idx}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFilterChange(
-                            "minPrice",
-                            isActive ? undefined : range.min,
-                            false,
-                          );
-                          handleFilterChange(
-                            "maxPrice",
-                            isActive ? undefined : range.max,
-                            false,
-                          );
-                          setActiveDropdown(null);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                          isActive
-                            ? "bg-purple-50 text-purple-600 font-semibold"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        {range.label}
-                        {isActive && (
-                          <Check className="w-4 h-4 text-purple-600" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Dropdown>
+                <PriceRangeContent
+                  ranges={COMMERCIAL_PRICES}
+                  filters={filters}
+                  onChange={setPriceRange}
+                />
+              </FilterDropdown>
 
-              {/* Furnishing Status */}
-              <Dropdown
+              <FilterDropdown
                 label="Furnishing"
                 id="furnishing"
                 count={filters.furnishingStatus ? 1 : 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-3 space-y-1">
-                  {furnishingStatuses.map((status) => {
-                    const isActive = filters.furnishingStatus === status.value;
-                    return (
-                      <button
-                        key={status.value}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFilterToggle("furnishingStatus", status.value);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                          isActive
-                            ? "bg-purple-50 text-purple-600 font-semibold"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        {status.label}
-                        {isActive && (
-                          <Check className="w-4 h-4 text-purple-600" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Dropdown>
+                <ToggleListContent
+                  options={FURNISHING_STATUSES}
+                  activeValue={filters.furnishingStatus}
+                  onToggle={(v) => toggle("furnishingStatus", v)}
+                />
+              </FilterDropdown>
 
-              {/* Facing Direction */}
-              <Dropdown
+              <FilterDropdown
                 label="Facing"
                 id="facing"
                 count={filters.facingDirection ? 1 : 0}
                 activeDropdown={activeDropdown}
                 setActiveDropdown={setActiveDropdown}
               >
-                <div className="p-3 space-y-1">
-                  {facingDirections.map((direction) => {
-                    const isActive =
-                      filters.facingDirection === direction.value;
-                    return (
-                      <button
-                        key={direction.value}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFilterToggle(
-                            "facingDirection",
-                            direction.value,
-                          );
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                          isActive
-                            ? "bg-purple-50 text-purple-600 font-semibold"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          {direction.label}
-                        </span>
-                        {isActive && (
-                          <Check className="w-4 h-4 text-purple-600" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Dropdown>
+                <ToggleListContent
+                  options={FACING_DIRECTIONS}
+                  activeValue={filters.facingDirection}
+                  onToggle={(v) => toggle("facingDirection", v)}
+                />
+              </FilterDropdown>
             </>
           )}
 
-          {/* COMMON FILTERS */}
-          {/* Sale Type Filter */}
-          <Dropdown
+          {/* COMMON */}
+          <FilterDropdown
             label="Sale Type"
             id="sale-type"
             count={filters.purpose ? 1 : 0}
             activeDropdown={activeDropdown}
             setActiveDropdown={setActiveDropdown}
           >
-            <div className="p-3 space-y-1">
-              {saleTypes.map((type) => {
-                const isActive = filters.purpose === type.value;
-                return (
-                  <button
-                    key={type.value}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterToggle("purpose", type.value);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                      isActive
-                        ? "bg-purple-50 text-purple-600 font-semibold"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    {type.label}
-                    {isActive && <Check className="w-4 h-4 text-purple-600" />}
-                  </button>
-                );
-              })}
-            </div>
-          </Dropdown>
+            <ToggleListContent
+              options={SALE_TYPES}
+              activeValue={filters.purpose}
+              onToggle={(v) => toggle("purpose", v as PropertyPurpose)}
+            />
+          </FilterDropdown>
 
-          {/* Construction Status Filter */}
-          <Dropdown
-            label="Construction Status"
+          <FilterDropdown
+            label="Status"
             id="construction"
             count={filters.possessionStatus ? 1 : 0}
             activeDropdown={activeDropdown}
             setActiveDropdown={setActiveDropdown}
           >
-            <div className="p-3 space-y-1">
-              {constructionStatuses.map((status) => {
-                const isActive = filters.possessionStatus === status;
-                return (
-                  <button
-                    key={status}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterToggle("possessionStatus", status);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                      isActive
-                        ? "bg-purple-50 text-purple-600 font-semibold"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    {status === "READY_TO_MOVE"
-                      ? "Ready to Move"
-                      : "Under Construction"}
-                    {isActive && <Check className="w-4 h-4 text-purple-600" />}
-                  </button>
-                );
-              })}
-            </div>
-          </Dropdown>
+            <ToggleListContent
+              options={CONSTRUCTION_STATUSES}
+              activeValue={filters.possessionStatus}
+              onToggle={(v) => toggle("possessionStatus", v)}
+            />
+          </FilterDropdown>
 
-          {/* Listing Source */}
-          <Dropdown
+          <FilterDropdown
             label="Posted By"
             id="listing-source"
             count={filters.listingSource ? 1 : 0}
             activeDropdown={activeDropdown}
             setActiveDropdown={setActiveDropdown}
           >
-            <div className="p-3 space-y-1">
-              {listingSources.map((source) => {
-                const isActive = filters.listingSource === source.value;
-                return (
-                  <button
-                    key={source.value}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFilterToggle("listingSource", source.value);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors text-sm text-left ${
-                      isActive
-                        ? "bg-purple-50 text-purple-600 font-semibold"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2">
-                      {source.value === "AGENT" && <User className="w-4 h-4" />}
-                      {source.value === "BUILDER" && (
-                        <Building2 className="w-4 h-4" />
-                      )}
-                      {source.value === "OWNER" && <Home className="w-4 h-4" />}
-                      {source.label}
-                    </span>
-                    {isActive && <Check className="w-4 h-4 text-purple-600" />}
-                  </button>
-                );
-              })}
-            </div>
-          </Dropdown>
+            <ToggleListContent
+              options={LISTING_SOURCES}
+              activeValue={filters.listingSource}
+              onToggle={(v) =>
+                toggle("listingSource", v as "AGENT" | "BUILDER" | "OWNER")
+              }
+            />
+          </FilterDropdown>
 
-          {/* Verified Filter */}
-          <Dropdown
+          <FilterDropdown
             label="Verified"
             id="verified"
             count={filters.verified ? 1 : 0}
             activeDropdown={activeDropdown}
             setActiveDropdown={setActiveDropdown}
           >
-            <div className="p-3">
+            <div className="p-2">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleFilterToggle(
-                    "verified",
-                    !filters.verified ? true : undefined,
-                  );
+                  toggle("verified", !filters.verified ? true : undefined);
                 }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-sm ${
-                  filters.verified
-                    ? "bg-purple-50 text-purple-600 font-semibold"
-                    : "hover:bg-gray-50 text-gray-700"
-                }`}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors
+                  ${filters.verified ? "bg-blue-50 text-blue-700 font-semibold" : "hover:bg-gray-50 text-gray-700"}`}
               >
-                <Check className="w-4 h-4" />
-                <span>Verified Properties Only</span>
+                <Check className="w-3.5 h-3.5" />
+                Verified Properties Only
               </button>
             </div>
-          </Dropdown>
+          </FilterDropdown>
 
-          {/* More Filters - Only for Residential */}
           {isResidential && (
-            <Dropdown
-              label="More Filters"
+            <FilterDropdown
+              label="More"
               id="more-filters"
               count={filters.hasBalcony ? 1 : 0}
               activeDropdown={activeDropdown}
               setActiveDropdown={setActiveDropdown}
             >
-              <div className="p-3 space-y-3">
-                <p className="text-gray-900 font-semibold border-b pb-2 mb-2">
-                  Property Features
-                </p>
-
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="flex items-center gap-2 text-sm text-gray-700">
-                    <Maximize className="w-4 h-4 text-gray-500" />
-                    Has Balcony
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={filters.hasBalcony || false}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setFilters((prev) => ({
-                        ...prev,
-                        hasBalcony: e.target.checked ? true : undefined,
-                      }));
-                    }}
-                    className="form-checkbox h-5 w-5 text-purple-600 rounded border-gray-300"
-                  />
-                </label>
-
-                <div className="pt-2 mt-3 border-t">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDropdown(null);
-                    }}
-                    className="w-full text-center py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold"
-                  >
-                    Apply Filters
-                  </button>
-                </div>
-              </div>
-            </Dropdown>
+              <MoreFiltersContent
+                filters={filters}
+                setFilters={setFilters}
+                onClose={() => setActiveDropdown(null)}
+              />
+            </FilterDropdown>
           )}
 
-          {/* Reset Filters Button */}
-          {totalActiveFilters > 0 && (
-            <button
-              onClick={() => {
-                setFilters({
-                  status: "AVAILABLE",
-                  sortBy: "createdAt",
-                  sortOrder: "desc",
-                  cityId: filters.cityId,
-                  city: filters.city,
-                  locality: filters.locality,
-                  localityId: filters.localityId,
-                });
-                setActiveDropdown(null);
+          {/* Divider */}
+          <div className="w-px h-5 bg-gray-200 flex-shrink-0 mx-0.5" />
+
+          {/* Sort */}
+          <div className="inline-flex items-center gap-1 flex-shrink-0">
+            <ArrowUpDown className="w-3 h-3 text-blue-400 flex-shrink-0" />
+            <select
+              value={`${filters.sortBy ?? "createdAt"}-${filters.sortOrder ?? "desc"}`}
+              onChange={(e) => {
+                const [sortBy, sortOrder] = e.target.value.split("-");
+                setFilters((p) => ({
+                  ...p,
+                  sortBy,
+                  sortOrder: sortOrder as "asc" | "desc",
+                }));
               }}
-              className="text-sm text-red-600 hover:text-red-700 font-medium whitespace-nowrap px-3 transition-colors"
+              className="
+                text-[11px] sm:text-xs font-semibold
+                border border-blue-200 bg-blue-50 text-blue-700
+                rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5
+                focus:outline-none focus:ring-2 focus:ring-blue-400
+                cursor-pointer whitespace-nowrap
+              "
             >
-              Reset filters ({totalActiveFilters})
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reset pill */}
+          {activeCount > 0 && (
+            <button
+              onClick={resetAll}
+              className="
+                inline-flex items-center gap-1 flex-shrink-0
+                px-2.5 sm:px-3 py-1.5 sm:py-2
+                border border-red-200 bg-red-50 hover:bg-red-100
+                text-red-600 text-[11px] sm:text-xs font-semibold
+                rounded-full whitespace-nowrap transition-colors
+              "
+            >
+              <X className="w-3 h-3" />
+              Reset ({activeCount})
             </button>
           )}
         </div>

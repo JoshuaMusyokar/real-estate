@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { PropertyFilters } from "./components/PropertyFilters";
+import { usePermissions } from "../../hooks/usePermissions";
 
 export const PropertyManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +26,13 @@ export const PropertyManagement: React.FC = () => {
   const [priceRangeFilter, setPriceRangeFilter] = useState("all");
   const [page, setPage] = useState(1);
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("property.add");
+  const canEdit = can("property.edit");
+  const canDelete = can("property.delete");
+
+  // ── Data ────────────────────────────────────────────────────────────────────
   const { data: propertiesData, isLoading } = useGetUserPropertiesQuery({
     page,
     limit: 20,
@@ -35,9 +43,8 @@ export const PropertyManagement: React.FC = () => {
   const properties = propertiesData?.data || [];
   const stats = statsData?.data;
 
-  const handleEdit = (id: string) => {
-    navigate(`/properties/${id}/edit`);
-  };
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+  const handleEdit = (id: string) => navigate(`/properties/${id}/edit`);
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this property?")) {
@@ -49,15 +56,10 @@ export const PropertyManagement: React.FC = () => {
     }
   };
 
-  const handleView = (slug: string) => {
-    navigate(`/properties/${slug}`);
-  };
+  const handleView = (slug: string) => navigate(`/properties/${slug}`);
+  const handleCreateNew = () => navigate("/properties/new");
 
-  const handleCreateNew = () => {
-    navigate("/properties/new");
-  };
-
-  // Enhanced filtering logic
+  // ── Filtering ────────────────────────────────────────────────────────────────
   const filteredProperties = properties.filter((property) => {
     const matchesSearch =
       property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,24 +68,16 @@ export const PropertyManagement: React.FC = () => {
 
     const matchesStatus =
       statusFilter === "all" || property.status === statusFilter;
-
-    // Add property type filtering logic if you have this field
     const matchesPropertyType = propertyTypeFilter === "all";
-    // || property.propertyType === propertyTypeFilter;
-
-    // Add purpose filtering logic
     const matchesPurpose = purposeFilter === "all";
-    // || property.purpose.toLowerCase() === purposeFilter;
 
-    // Add price range filtering logic
     let matchesPriceRange = true;
-    if (priceRangeFilter === "under-500k") {
+    if (priceRangeFilter === "under-500k")
       matchesPriceRange = property.price < 500000;
-    } else if (priceRangeFilter === "500k-1m") {
+    else if (priceRangeFilter === "500k-1m")
       matchesPriceRange = property.price >= 500000 && property.price <= 1000000;
-    } else if (priceRangeFilter === "over-1m") {
+    else if (priceRangeFilter === "over-1m")
       matchesPriceRange = property.price > 1000000;
-    }
 
     return (
       matchesSearch &&
@@ -105,19 +99,23 @@ export const PropertyManagement: React.FC = () => {
                 Manage and monitor your property listings
               </p>
             </div>
-            <button
-              onClick={handleCreateNew}
-              className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition font-medium text-sm sm:text-base whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-              Add Property
-            </button>
+
+            {/* Add Property button — hidden without property.add */}
+            {canAdd && (
+              <button
+                onClick={handleCreateNew}
+                className="flex items-center gap-2 bg-blue-600 dark:bg-blue-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition font-medium text-sm sm:text-base whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                Add Property
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-        {/* Stats Grid */}
+        {/* Stats — read-only */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
           <StatsCard
             icon={Home}
@@ -149,7 +147,7 @@ export const PropertyManagement: React.FC = () => {
           />
         </div>
 
-        {/* Filters Component */}
+        {/* Filters */}
         <PropertyFilters
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -165,14 +163,10 @@ export const PropertyManagement: React.FC = () => {
           setPriceRangeFilter={setPriceRangeFilter}
         />
 
-        {/* Properties Grid/List */}
+        {/* Property grid / list */}
         {isLoading ? (
           <div
-            className={`grid gap-4 sm:gap-5 md:gap-6 ${
-              viewMode === "grid"
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                : "grid-cols-1"
-            }`}
+            className={`grid gap-4 sm:gap-5 md:gap-6 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}
           >
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
@@ -194,10 +188,11 @@ export const PropertyManagement: React.FC = () => {
               <PropertyCard
                 key={property.id}
                 property={property}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
                 onView={handleView}
-                
+                // Pass handlers as undefined when user lacks the permission —
+                // PropertyCard should hide the button when its handler is undefined.
+                onEdit={canEdit ? handleEdit : undefined}
+                onDelete={canDelete ? handleDelete : undefined}
               />
             ))}
           </div>
@@ -207,15 +202,15 @@ export const PropertyManagement: React.FC = () => {
               <PropertyListItem
                 key={property.id}
                 property={property}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
                 onView={handleView}
+                onEdit={canEdit ? handleEdit : undefined}
+                onDelete={canDelete ? handleDelete : undefined}
               />
             ))}
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty state */}
         {!isLoading && filteredProperties.length === 0 && (
           <div className="text-center py-12 sm:py-16 bg-white rounded-xl border border-gray-200">
             <Home className="w-16 h-16 sm:w-20 sm:h-20 text-gray-300 mx-auto mb-4" />
@@ -223,15 +218,20 @@ export const PropertyManagement: React.FC = () => {
               No properties found
             </h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-              Try adjusting your search or filters
+              {canAdd
+                ? "Try adjusting your search or filters"
+                : "No properties match your current filters"}
             </p>
-            <button
-              onClick={handleCreateNew}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg text-sm sm:text-base"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-              Add Your First Property
-            </button>
+            {/* Empty-state CTA only shown when user can add */}
+            {canAdd && (
+              <button
+                onClick={handleCreateNew}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg text-sm sm:text-base"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                Add Your First Property
+              </button>
+            )}
           </div>
         )}
       </div>

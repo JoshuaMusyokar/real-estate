@@ -57,7 +57,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       }
       onSaved(saved);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const parsed = parseApiError(err);
 
       if (parsed.fieldErrors) {

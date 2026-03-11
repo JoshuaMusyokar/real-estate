@@ -26,6 +26,7 @@ import { UserTable } from "./UserTable";
 import { UserTableSkeleton } from "./UserTableSkeleton";
 import { Pagination } from "./Pagination";
 import { ExportModal } from "./ExportModal";
+import { usePermissions } from "../../hooks/usePermissions";
 
 // ─── Tab Configuration ────────────────────────────────────────────────────────
 
@@ -35,10 +36,10 @@ interface TabConfig {
   icon: React.ElementType;
   description: string;
   roleNames: string[];
-  primaryRole: string; // default role pre-selected in UserForm
+  primaryRole: string;
   canAddStaff: boolean;
   groupByManager: boolean;
-  accentColor: string; // Tailwind color token
+  accentColor: string;
   badgeBg: string;
   badgeText: string;
 }
@@ -127,11 +128,16 @@ const TabPanel: React.FC<TabPanelProps> = ({ tab }) => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const limit = 10;
 
-  const {
-    data: usersData,
-    isLoading,
-    refetch,
-  } = useGetUsersQuery({
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("user.add");
+  const canEdit = can("user.edit");
+  const canDelete = can("user.delete");
+  const canExport = can("user.export");
+  const canBulk = can("user.bulk_action");
+
+  // ── Data ────────────────────────────────────────────────────────────────────
+  const { data: usersData, isLoading } = useGetUsersQuery({
     roleNames: tab.roleNames,
     search: searchQuery || undefined,
     page,
@@ -148,6 +154,7 @@ const TabPanel: React.FC<TabPanelProps> = ({ tab }) => {
   const isAllSelected =
     selectedUsers.length === users.length && users.length > 0;
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSearch = (value: string) => {
     setSearchQuery(value);
     setPage(1);
@@ -211,27 +218,34 @@ const TabPanel: React.FC<TabPanelProps> = ({ tab }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Download size={16} />
-            <span className="hidden sm:block">Export</span>
-          </button>
-          <button
-            onClick={() => {
-              setEditingUser(null);
-              setIsUserFormOpen(true);
-            }}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus size={16} />
-            Add {tab.id === "users" ? "User" : "Member"}
-          </button>
+          {/* Export — hidden without user.export */}
+          {canExport && (
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Download size={16} />
+              <span className="hidden sm:block">Export</span>
+            </button>
+          )}
+
+          {/* Add — hidden without user.add */}
+          {canAdd && (
+            <button
+              onClick={() => {
+                setEditingUser(null);
+                setIsUserFormOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={16} />
+              Add {tab.id === "users" ? "User" : "Member"}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search — always visible (read access) */}
       <div className="relative max-w-md">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -246,8 +260,8 @@ const TabPanel: React.FC<TabPanelProps> = ({ tab }) => {
         />
       </div>
 
-      {/* Bulk Actions */}
-      {selectedUsers.length > 0 && (
+      {/* Bulk Actions — only shown when user has bulk permission AND rows are selected */}
+      {canBulk && selectedUsers.length > 0 && (
         <BulkActions
           selectedCount={selectedUsers.length}
           onBulkAction={handleBulkAction}
@@ -263,18 +277,19 @@ const TabPanel: React.FC<TabPanelProps> = ({ tab }) => {
           <UserTable
             users={users}
             selectedUsers={selectedUsers}
-            onSelectUser={handleSelectUser}
-            onSelectAll={handleSelectAll}
+            // Checkbox column only appears when user can bulk-act or delete
+            onSelectUser={canBulk || canDelete ? handleSelectUser : undefined}
+            onSelectAll={canBulk || canDelete ? handleSelectAll : undefined}
             isAllSelected={isAllSelected}
             onViewUser={setViewingUser}
-            onEditUser={handleEditUser}
-            onDeleteUser={handleDeleteUser}
-            onStatusUpdate={handleStatusUpdate}
+            onEditUser={canEdit ? handleEditUser : undefined}
+            onDeleteUser={canDelete ? handleDeleteUser : undefined}
+            onStatusUpdate={canEdit ? handleStatusUpdate : undefined}
           />
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — always shown */}
       {totalPages > 1 && (
         <Pagination
           currentPage={page}
@@ -283,30 +298,34 @@ const TabPanel: React.FC<TabPanelProps> = ({ tab }) => {
         />
       )}
 
-      {/* Modals */}
-      <UserForm
-        isOpen={isUserFormOpen}
-        onClose={() => {
-          setIsUserFormOpen(false);
-          setEditingUser(null);
-        }}
-        user={editingUser}
-      />
+      {/* Modals — only mounted when user has the corresponding permission */}
+      {(canAdd || canEdit) && (
+        <UserForm
+          isOpen={isUserFormOpen}
+          onClose={() => {
+            setIsUserFormOpen(false);
+            setEditingUser(null);
+          }}
+          user={editingUser}
+        />
+      )}
 
       {viewingUser && (
         <UserDetailsModal
           user={viewingUser}
           isOpen={!!viewingUser}
           onClose={() => setViewingUser(null)}
-          onEdit={handleEditUser}
+          onEdit={canEdit ? handleEditUser : undefined}
         />
       )}
 
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        filters={{ roleNames: tab.roleNames }}
-      />
+      {canExport && (
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          filters={{ roleNames: tab.roleNames }}
+        />
+      )}
     </div>
   );
 };

@@ -6,7 +6,6 @@ import {
   Users,
   Edit,
   Trash2,
-  Loader2,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -23,10 +22,52 @@ import { useAuth } from "../../../hooks/useAuth";
 interface PropertyReviewSectionProps {
   propertyId: string;
   propertyTitle: string;
-  onViewAllClick?: () => void; // Navigate to full reviews page
+  onViewAllClick?: () => void;
 }
 
-const PREVIEW_LIMIT = 3; // Show only 3 reviews in preview
+const PREVIEW_LIMIT = 3;
+
+const Stars = ({
+  rating,
+  size = "w-4 h-4",
+}: {
+  rating: number;
+  size?: string;
+}) => (
+  <div className="flex gap-0.5">
+    {[1, 2, 3, 4, 5].map((s) => (
+      <Star
+        key={s}
+        className={`${size} ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "text-gray-200"}`}
+      />
+    ))}
+  </div>
+);
+
+const InteractiveStars = ({
+  value,
+  onChange,
+  size = "w-7 h-7",
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  size?: string;
+}) => (
+  <div className="flex gap-1">
+    {[1, 2, 3, 4, 5].map((s) => (
+      <button
+        key={s}
+        type="button"
+        onClick={() => onChange(s)}
+        className="transition-transform hover:scale-110"
+      >
+        <Star
+          className={`${size} ${s <= value ? "fill-amber-400 text-amber-400" : "text-gray-200 hover:text-amber-200"}`}
+        />
+      </button>
+    ))}
+  </div>
+);
 
 export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
   propertyId,
@@ -34,17 +75,13 @@ export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
   onViewAllClick,
 }) => {
   const { user, isAuthenticated } = useAuth();
-  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  // Form state
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
-  // Queries
   const { data: statsData, isLoading: statsLoading } =
     useGetPropertyReviewStatsQuery(propertyId);
-
   const { data: reviewsData, isLoading: reviewsLoading } =
     useGetPropertyReviewsQuery({
       propertyId,
@@ -52,20 +89,14 @@ export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
       sortBy: "createdAt",
       sortOrder: "desc",
     });
-
   const { data: userReviewData } = useGetUserPropertyReviewQuery(
-    {
-      propertyId,
-      userId: user?.id || "",
-    },
-    { skip: !isAuthenticated || !user?.id }
+    { propertyId, userId: user?.id || "" },
+    { skip: !isAuthenticated || !user?.id },
   );
-
   const { data: canReviewData } = useCanReviewPropertyQuery(propertyId, {
     skip: !isAuthenticated,
   });
 
-  // Mutations
   const [createReview, { isLoading: creating }] =
     useCreatePropertyReviewMutation();
   const [updateReview, { isLoading: updating }] =
@@ -78,282 +109,214 @@ export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
   const userReview = userReviewData?.data;
   const canReview = canReviewData?.data?.canReview;
 
-  // Initialize form with user's existing review
+  const resetForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setRating(0);
+    setComment("");
+  };
+
   const handleEdit = () => {
-    if (userReview) {
-      setRating(userReview.rating);
-      setComment(userReview.comment || "");
-      setIsEditing(true);
-      setShowReviewForm(true);
-    }
+    if (!userReview) return;
+    setRating(userReview.rating);
+    setComment(userReview.comment || "");
+    setIsEditing(true);
+    setShowForm(true);
   };
 
   const handleSubmit = async () => {
     if (!isAuthenticated) {
-      alert("Please login to review this property");
+      alert("Please login to review");
       return;
     }
-
-    if (rating === 0) {
-      alert("Please provide a rating");
+    if (!rating) {
+      alert("Please select a rating");
       return;
     }
-
     try {
-      const reviewData = {
-        propertyId,
-        rating,
-        comment: comment.trim() || undefined,
-      };
-
       if (isEditing && userReview) {
         await updateReview({
           id: userReview.id,
           data: { rating, comment: comment.trim() || undefined },
         }).unwrap();
-        alert("Review updated successfully!");
+        alert("Review updated!");
       } else {
-        await createReview(reviewData).unwrap();
-        alert("Review submitted successfully!");
+        await createReview({
+          propertyId,
+          rating,
+          comment: comment.trim() || undefined,
+        }).unwrap();
+        alert("Review submitted!");
       }
-
-      // Reset form
-      setShowReviewForm(false);
-      setIsEditing(false);
-      setRating(0);
-      setComment("");
-    } catch (error: any) {
-      alert(error?.data?.error || "Failed to submit review");
+      resetForm();
+    } catch {
+      // alert(err?.data?.error || "Failed to submit review");
     }
   };
 
   const handleDelete = async () => {
-    if (!userReview) return;
-    if (!confirm("Are you sure you want to delete your review?")) return;
-
+    if (!userReview || !confirm("Delete your review?")) return;
     try {
-      await deleteReview({
-        id: userReview.id,
-        propertyId,
-      }).unwrap();
-      alert("Review deleted successfully!");
-      setShowReviewForm(false);
-      setIsEditing(false);
-    } catch (error: any) {
-      alert(error?.data?.error || "Failed to delete review");
+      await deleteReview({ id: userReview.id, propertyId }).unwrap();
+      alert("Review deleted!");
+      resetForm();
+    } catch {
+      // alert(err?.data?.error || "Failed to delete review");
     }
   };
 
-  const renderStars = (
-    rating: number,
-    size = "w-5 h-5",
-    interactive = false
-  ) => {
+  if (statsLoading || reviewsLoading)
     return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={interactive ? () => setRating(star) : undefined}
-            disabled={!interactive}
-            className={
-              interactive ? "transition-transform hover:scale-110" : ""
-            }
-          >
-            <Star
-              className={`${size} ${
-                star <= rating
-                  ? "fill-yellow-400 text-yellow-400"
-                  : interactive
-                  ? "text-gray-300 hover:text-yellow-200"
-                  : "text-gray-300"
-              }`}
-            />
-          </button>
-        ))}
+      <div className="flex justify-center py-10">
+        <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  };
 
-  const renderStaticStars = (rating: number, size = "w-5 h-5") => {
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`${size} ${
-              star <= Math.round(rating)
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  if (statsLoading || reviewsLoading) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  // Don't show section if no reviews and user can't review
-  if (!stats?.totalReviews && !canReview && !userReview) {
-    return null;
-  }
+  if (!stats?.totalReviews && !canReview && !userReview) return null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
-        <div className="flex items-start justify-between">
+    <div className="bg-white">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-blue-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-blue-500" />
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="w-5 h-5" />
-              <h2 className="text-2xl font-bold">Property Reviews</h2>
-            </div>
-            <p className="text-purple-100">{propertyTitle}</p>
+            <span className="text-sm font-bold text-gray-900">
+              Property Reviews
+            </span>
+            <span className="text-[11px] text-gray-400 ml-2 truncate hidden sm:inline">
+              {propertyTitle}
+            </span>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
           {isAuthenticated && canReview && !userReview && (
             <button
-              onClick={() => setShowReviewForm(!showReviewForm)}
-              className="px-4 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition-colors flex items-center gap-2"
+              onClick={() => setShowForm((s) => !s)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-xl transition-colors shadow-sm shadow-blue-200"
             >
-              <Star className="w-4 h-4" />
-              Write Review
+              <Star className="w-3 h-3" /> Write Review
             </button>
           )}
           {userReview && (
             <button
               onClick={handleEdit}
-              className="px-4 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition-colors flex items-center gap-2"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[11px] font-bold rounded-xl transition-colors"
             >
-              <Edit className="w-4 h-4" />
-              Edit Review
+              <Edit className="w-3 h-3" /> Edit
             </button>
           )}
         </div>
       </div>
 
-      {/* Overall Stats */}
+      {/* ── Overall stats ──────────────────────────────────────────────────── */}
       {stats && stats.totalReviews > 0 && (
-        <div className="p-6 border-b border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                {renderStaticStars(stats.averageRating, "w-7 h-7")}
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+        <div className="px-4 sm:px-5 py-4 border-b border-blue-50">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="text-center py-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+              <Stars rating={stats.averageRating} size="w-3 h-3" />
+              <div className="text-xl font-black text-gray-900 mt-1">
                 {stats.averageRating.toFixed(1)}
               </div>
-              <div className="text-sm text-gray-600">Average Rating</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-3">
-                <Users className="w-8 h-8 text-purple-600" />
+              <div className="text-[10px] text-gray-400 font-medium">
+                Average
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+            </div>
+            <div className="text-center py-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+              <Users className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+              <div className="text-xl font-black text-gray-900">
                 {stats.totalReviews}
               </div>
-              <div className="text-sm text-gray-600">Total Reviews</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-3">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+              <div className="text-[10px] text-gray-400 font-medium">
+                Reviews
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+            </div>
+            <div className="text-center py-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+              <div className="text-xl font-black text-gray-900">
                 {stats.ratingDistribution[4]?.percentage || 0}%
               </div>
-              <div className="text-sm text-gray-600">5-Star Reviews</div>
+              <div className="text-[10px] text-gray-400 font-medium">
+                5-Star
+              </div>
             </div>
           </div>
 
-          {/* Rating Distribution - Compact */}
-          <div className="mt-6">
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((ratingValue) => {
-                const data = stats.ratingDistribution.find(
-                  (d) => d.rating === ratingValue
-                );
-                const percentage = data?.percentage || 0;
-                return (
-                  <div key={ratingValue} className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 w-16">
-                      <span className="text-sm font-medium text-gray-700">
-                        {ratingValue}
-                      </span>
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-yellow-400 transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-gray-600 w-12 text-right">
-                      {percentage}%
-                    </span>
+          {/* Distribution bars */}
+          <div className="space-y-1.5">
+            {[5, 4, 3, 2, 1].map((r) => {
+              const pct =
+                stats.ratingDistribution.find((d) => d.rating === r)
+                  ?.percentage || 0;
+              return (
+                <div key={r} className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-gray-500 w-8 flex items-center gap-0.5">
+                    {r}
+                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                  </span>
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
-                );
-              })}
-            </div>
+                  <span className="text-[11px] text-gray-400 w-8 text-right">
+                    {pct}%
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Review Form */}
-      {showReviewForm && isAuthenticated && (
-        <div className="p-6 bg-purple-50 border-b border-purple-100">
-          <h3 className="font-bold text-gray-900 mb-4 text-lg">
+      {/* ── Review form ────────────────────────────────────────────────────── */}
+      {showForm && isAuthenticated && (
+        <div className="px-4 sm:px-5 py-4 bg-blue-50/40 border-b border-blue-100">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-3">
             {isEditing ? "Edit Your Review" : "Write a Review"}
           </h3>
 
-          {/* Rating Stars */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* Star picker */}
+          <div className="mb-3">
+            <label className="text-[11px] font-semibold text-gray-600 mb-1.5 block">
               Your Rating
             </label>
-            {renderStars(rating, "w-8 h-8", true)}
+            <InteractiveStars value={rating} onChange={setRating} />
             {rating > 0 && (
-              <span className="text-sm text-gray-600 mt-2 block">
+              <span className="text-[11px] text-gray-500 mt-1 block">
                 {rating}/5 Stars
               </span>
             )}
           </div>
 
           {/* Comment */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Review (Optional)
+          <div className="mb-3">
+            <label className="text-[11px] font-semibold text-gray-600 mb-1 block">
+              Your Review (optional)
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              rows={4}
+              rows={3}
               maxLength={500}
-              placeholder="Share your experience with this property..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              placeholder="Share your experience with this property…"
+              className="w-full px-3 py-2 text-xs border border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
-            <div className="text-xs text-gray-500 mt-1 text-right">
-              {comment.length}/500 characters
+            <div className="text-[10px] text-gray-400 text-right mt-0.5">
+              {comment.length}/500
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
+          {/* Form actions */}
+          <div className="flex gap-2">
             <button
               onClick={handleSubmit}
-              disabled={creating || updating || rating === 0}
-              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+              disabled={creating || updating || !rating}
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center"
             >
               {creating || updating ? (
-                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : isEditing ? (
                 "Update Review"
               ) : (
@@ -361,13 +324,8 @@ export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
               )}
             </button>
             <button
-              onClick={() => {
-                setShowReviewForm(false);
-                setIsEditing(false);
-                setRating(0);
-                setComment("");
-              }}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              onClick={resetForm}
+              className="px-4 py-2.5 bg-white border border-blue-200 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -375,12 +333,12 @@ export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+                className="px-3 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center"
               >
                 {deleting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 )}
               </button>
             )}
@@ -388,104 +346,102 @@ export const PropertyReviewSection: React.FC<PropertyReviewSectionProps> = ({
         </div>
       )}
 
-      {/* Reviews List - Preview (Limited) */}
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
+      {/* ── Reviews list ───────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-1.5">
+            <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
             Recent Reviews
           </h3>
           {stats && stats.totalReviews > PREVIEW_LIMIT && (
             <button
               onClick={onViewAllClick}
-              className="text-purple-600 font-semibold text-sm hover:text-purple-700 flex items-center gap-1 transition-colors"
+              className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
             >
-              View All {stats.totalReviews} Reviews
-              <ChevronRight className="w-4 h-4" />
+              View All <ChevronRight className="w-3 h-3" />
             </button>
           )}
         </div>
 
         {reviews.length === 0 ? (
           <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 mb-2">No reviews yet</p>
-            <p className="text-sm text-gray-500">
+            <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-gray-500">
+              No reviews yet
+            </p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
               Be the first to review this property!
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <div
-                key={review.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-semibold text-sm">
-                      {review.user.firstName[0]}
-                      {review.user.lastName[0]}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">
-                        {review.user.firstName} {review.user.lastName}
+          <>
+            <div className="space-y-2">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="p-3 bg-gray-50/70 hover:bg-blue-50/30 border border-gray-100 hover:border-blue-100 rounded-xl transition-all"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center text-[11px] font-black flex-shrink-0">
+                        {review.user.firstName[0]}
+                        {review.user.lastName[0]}
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        {renderStaticStars(review.rating, "w-4 h-4")}
-                        <span className="text-sm text-gray-600">
-                          {review.rating}/5
-                        </span>
+                      <div>
+                        <div className="text-xs font-bold text-gray-900">
+                          {review.user.firstName} {review.user.lastName}
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Stars rating={review.rating} size="w-3 h-3" />
+                          <span className="text-[10px] text-gray-500">
+                            {review.rating}/5
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <span className="text-[10px] text-gray-400 flex-shrink-0">
+                      {new Date(review.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(review.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </div>
+                  {review.comment && (
+                    <p className="text-[11px] sm:text-xs text-gray-600 leading-relaxed">
+                      {review.comment}
+                    </p>
+                  )}
                 </div>
-
-                {review.comment && (
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {review.comment}
-                  </p>
-                )}
+              ))}
+            </div>
+            {stats && stats.totalReviews > PREVIEW_LIMIT && (
+              <div className="mt-3 text-center">
+                <button
+                  onClick={onViewAllClick}
+                  className="px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-600 text-xs font-bold rounded-xl transition-colors inline-flex items-center gap-1"
+                >
+                  View All {stats.totalReviews} Reviews{" "}
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* View All Button - Bottom */}
-        {stats && stats.totalReviews > PREVIEW_LIMIT && (
-          <div className="mt-6 text-center">
-            <button
-              onClick={onViewAllClick}
-              className="px-6 py-3 bg-purple-50 text-purple-600 rounded-lg font-semibold hover:bg-purple-100 transition-colors inline-flex items-center gap-2"
-            >
-              View All {stats.totalReviews} Reviews
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Login Prompt */}
+      {/* ── Login prompt ───────────────────────────────────────────────────── */}
       {!isAuthenticated && (
-        <div className="p-6 bg-purple-50 border-t border-purple-100">
-          <div className="text-center">
-            <p className="text-purple-900 font-medium mb-2">
-              Want to review this property?
-            </p>
-            <p className="text-sm text-purple-700 mb-4">
-              Sign in to share your experience
-            </p>
-            <button className="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors">
-              Sign In to Review
-            </button>
-          </div>
+        <div className="px-4 sm:px-5 py-3.5 bg-blue-50/60 border-t border-blue-100 text-center">
+          <p className="text-xs font-semibold text-gray-700 mb-0.5">
+            Want to review this property?
+          </p>
+          <p className="text-[11px] text-gray-400 mb-2">
+            Sign in to share your experience
+          </p>
+          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm shadow-blue-200">
+            Sign In to Review
+          </button>
         </div>
       )}
     </div>

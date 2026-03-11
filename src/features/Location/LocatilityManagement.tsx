@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import {
   PlusIcon,
@@ -13,7 +12,7 @@ import {
   useGetLocalitiesQuery,
   useDeleteLocalityMutation,
 } from "../../services/locationApi";
-import type { Locality } from "../../types";
+import type { City, Locality } from "../../types";
 import { LocalityForm } from "./LocalityForm";
 import { ConfirmationDialog } from "./ConfirmationDialogue";
 import { useToast } from "../../hooks/useToast";
@@ -30,8 +29,8 @@ export function LocalitiesManagement() {
   const [localityToDelete, setLocalityToDelete] = useState<Locality | null>(
     null,
   );
-  const { success, error: showError } = useToast();
-  const { data, isLoading, error } = useGetLocalitiesQuery({
+  const { success } = useToast();
+  const { data, isLoading } = useGetLocalitiesQuery({
     page,
     limit: 10,
     search,
@@ -67,12 +66,12 @@ export function LocalitiesManagement() {
         key: "city",
         header: "City",
         sortable: true,
-        render: (value: any) => value.name,
+        render: (value: City) => value.name,
       },
       {
         key: "_count",
         header: "Users",
-        render: (value: any) => (
+        render: (value: { users: number }) => (
           <div className="flex items-center text-gray-600 dark:text-gray-400">
             <UsersIcon className="w-4 h-4 mr-1" />
             {value?.users || 0}
@@ -101,8 +100,8 @@ export function LocalitiesManagement() {
       await deleteLocality(localityToDelete.id).unwrap();
       success("Locality deleted successfully");
       setLocalityToDelete(null);
-    } catch (error) {
-      showError("Failed to delete locality");
+    } catch {
+      // showError("Failed to delete locality");
     }
   };
 

@@ -1,3 +1,4 @@
+// PropertyResultCard.tsx
 import React, { useState } from "react";
 import {
   Heart,
@@ -12,6 +13,7 @@ import {
   ParkingCircle,
   MoveVertical,
   Calendar,
+  Eye,
 } from "lucide-react";
 import type { Property } from "../../types";
 import { PropertyImageCarousel } from "./PropertyImageCarousel";
@@ -34,20 +36,10 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
   const [showSchedule, setShowSchedule] = useState(false);
   const [showContactOptions, setShowContactOptions] = useState(false);
 
-  // const coverImage =
-  //   property.images.find((img) => img.isCover)?.viewableUrl ||
-  //   property.images[0]?.viewableUrl;
-
   const formatPrice = (price: number) => {
-    if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
-    if (price >= 100000) return `₹${(price / 100000).toFixed(2)} L`;
+    if (price >= 10_000_000) return `₹${(price / 10_000_000).toFixed(2)} Cr`;
+    if (price >= 100_000) return `₹${(price / 100_000).toFixed(2)} L`;
     return `₹${price.toLocaleString()}`;
-  };
-
-  const handleCardClick = () => {
-    window.open(`/property-detail/${property.id}`, "_blank");
-
-    // navigate(`/property-detail/${property.id}`);
   };
 
   const avgPricePerSqFt = property.carpetArea
@@ -58,319 +50,293 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
     property.possessionStatus === "READY_TO_MOVE"
       ? "Ready to Move"
       : property.possessionStatus === "UNDER_CONSTRUCTION"
-      ? `Possession: ${
-          property.possessionDate
-            ? new Date(property.possessionDate).toLocaleDateString("en-US", {
-                month: "short",
-                year: "numeric",
-              })
-            : "Upcoming"
-        }`
-      : "";
-  const formatPostedDate = () => {
-    if (!property.postedDate) return "";
-    return new Date(property.postedDate).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-  const getReraInfo = () => {
-    if (property.reraNumber) {
-      return {
-        label: "RERA Registered Property",
-        number: property.reraNumber,
-        type: "property",
-      };
-    }
+        ? `Possession: ${
+            property.possessionDate
+              ? new Date(property.possessionDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  year: "numeric",
+                })
+              : "Upcoming"
+          }`
+        : "";
 
-    if (property.advertiserReraNumber) {
-      return {
-        label:
-          property.postedBy === "DEVELOPER"
-            ? "RERA Registered Developer"
-            : "RERA Registered Agent",
-        number: property.advertiserReraNumber,
-        type: "advertiser",
-      };
-    }
+  const postedDate = property.postedDate
+    ? new Date(property.postedDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 
-    return null;
-  };
-
-  const getGstInfo = () => {
-    if (property.advertiserGstNumber) {
-      return property.advertiserGstNumber;
-    }
-    return null;
-  };
+  const rera = property.reraNumber
+    ? { label: "RERA Approved Property", number: property.reraNumber }
+    : property.advertiserReraNumber
+      ? {
+          label:
+            property.postedBy === "DEVELOPER" ? "RERA Developer" : "RERA Agent",
+          number: property.advertiserReraNumber,
+        }
+      : null;
 
   return (
-    <div className="bg-white border border-gray-300 rounded-lg overflow-hidden hover:shadow-xl transition-shadow group flex mb-4">
-      {/* 🖼️ Image Section */}
+    <>
       <div
-        className="relative w-72 h-64 flex-shrink-0 bg-gray-100"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="
+          bg-white border border-blue-100 hover:border-blue-300
+          rounded-xl sm:rounded-2xl overflow-hidden
+          shadow-sm hover:shadow-lg hover:shadow-blue-100/60
+          transition-all duration-300
+          flex flex-col sm:flex-row
+        "
       >
-        <PropertyImageCarousel
-          images={property.images}
-          showThumbnails={false}
-          autoPlay={isHovered}
-        />
+        {/* ── Image ──────────────────────────────────────────────────────── */}
+        <div
+          className="
+            relative flex-shrink-0
+            w-full h-36
+            sm:w-52 sm:h-auto
+            lg:w-64
+            bg-blue-50
+          "
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <PropertyImageCarousel
+            images={property.images}
+            showThumbnails={false}
+            autoPlay={isHovered}
+          />
 
-        {/* Top Left Badge - Show RERA if available, else Zero Brokerage/Verified */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {property.reraNumber ? (
-            <div className="bg-green-600 text-white text-xs px-2 py-1 rounded-md font-semibold flex items-center gap-1 shadow-lg">
-              <Shield className="w-3 h-3" />
-              <span>RERA Approved</span>
-            </div>
-          ) : (
-            <div className="bg-black/60 text-white text-xs px-2 py-1 rounded-sm font-medium">
-              {property.verified ? "Verified" : "Zero Brokerage"}
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {property.reraNumber ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-bold rounded-md shadow">
+                <Shield className="w-2.5 h-2.5" /> RERA
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-black/60 text-white text-[10px] font-medium rounded-md">
+                {property.verified ? "Verified" : "Zero Brokerage"}
+              </span>
+            )}
+          </div>
+
+          {/* Favourite */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite(property.id);
+            }}
+            className={`
+              absolute top-2 right-2 p-1.5 rounded-lg backdrop-blur-sm shadow transition-all z-10
+              ${
+                isFavorite
+                  ? "bg-red-500 text-white"
+                  : "bg-white/90 text-gray-500 hover:text-red-500 hover:bg-white"
+              }
+            `}
+          >
+            <Heart
+              className={`w-3.5 h-3.5 ${isFavorite ? "fill-current" : ""}`}
+            />
+          </button>
+
+          {/* Image dots */}
+          {property.images.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {property.images.slice(0, 5).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white/80"
+                />
+              ))}
             </div>
           )}
         </div>
 
-        {/* Favorite Button (Top Right) */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleFavorite(property.id);
-          }}
-          className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors shadow-lg z-10"
+        {/* ── Content ────────────────────────────────────────────────────── */}
+        <div
+          className="flex-1 p-3 sm:p-4 flex flex-col justify-between cursor-pointer min-w-0"
+          onClick={() =>
+            window.open(`/property-detail/${property.id}`, "_blank")
+          }
         >
-          <Heart
-            className={`w-4 h-4 ${
-              isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"
-            }`}
-          />
-        </button>
+          <div>
+            {/* Price */}
+            <div className="text-lg sm:text-2xl font-black text-blue-700 mb-0.5">
+              {formatPrice(property.price)}
+            </div>
 
-        {/* Image indicator dots (Bottom Center) */}
-        {property.images.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-            {property.images.slice(0, 5).map((_, idx) => (
-              <div
-                key={idx}
-                className="w-1.5 h-1.5 rounded-full bg-white/80 border border-gray-600"
-              />
-            ))}
-          </div>
-        )}
-      </div>
+            {/* Title */}
+            <p className="text-sm sm:text-base font-bold text-gray-900 line-clamp-1 mb-1">
+              {property.title}
+            </p>
 
-      {/* 📝 Content Section */}
-      <div
-        className="flex-1 p-4 flex flex-col justify-between cursor-pointer"
-        onClick={handleCardClick}
-      >
-        <div>
-          {/* Price Range / Main Price */}
-          <h3 className="font-extrabold text-2xl text-purple-700 mb-1">
-            {formatPrice(property.price)}
-          </h3>
+            {/* Location */}
+            <div className="flex items-center gap-1 text-gray-500 mb-2.5 sm:mb-3">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 text-blue-400" />
+              <span className="text-[11px] sm:text-sm truncate">
+                {property.locality}, {property.city.name}
+              </span>
+            </div>
 
-          {/* Title / Project Name */}
-          <p className="text-lg font-semibold text-gray-800 line-clamp-1 mb-1">
-            {property.title}
-          </p>
-
-          {/* Locality and City */}
-          <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
-            <MapPin className="w-4 h-4 flex-shrink-0 text-purple-500" />
-            <span className="truncate">
-              {property.locality}, {property.city.name}
-            </span>
-          </div>
-
-          {/* Property Feature Icons (BHK, Bath, Area) */}
-          <div className="flex items-center gap-6 text-sm text-gray-700 mb-4">
-            {property.bedrooms && (
-              <div className="flex items-center gap-1">
-                <Bed className="w-4 h-4 text-gray-600" />
-                <span className="font-medium">{property.bedrooms} BHK</span>
-              </div>
-            )}
-            {property.bathrooms && (
-              <div className="flex items-center gap-1">
-                <Bath className="w-4 h-4 text-gray-600" />
-                <span className="font-medium">{property.bathrooms} Bath</span>
-              </div>
-            )}
-            {property.superBuiltArea && (
-              <div className="flex items-center gap-1">
-                <Maximize className="w-4 h-4 text-gray-600" />
-                <span className="font-medium">
-                  {property.superBuiltArea} sq.ft
+            {/* Feature chips */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2.5 sm:mb-3">
+              {property.bedrooms && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-md text-[10px] sm:text-xs font-semibold text-blue-700">
+                  <Bed className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  {property.bedrooms} BHK
                 </span>
-              </div>
-            )}
-            {property.carpetArea && (
-              <div className="flex items-center gap-1">
-                <Maximize className="w-4 h-4 text-gray-600" />
-                <span className="font-medium">{property.carpetArea} sq.ft</span>
-              </div>
-            )}
-          </div>
+              )}
+              {property.bathrooms && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-md text-[10px] sm:text-xs font-semibold text-blue-700">
+                  <Bath className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  {property.bathrooms} Bath
+                </span>
+              )}
+              {(property.superBuiltArea || property.carpetArea) && (
+                <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-md text-[10px] sm:text-xs font-semibold text-blue-700">
+                  <Maximize className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  {property.superBuiltArea || property.carpetArea} sq.ft
+                </span>
+              )}
+              {possessionText && (
+                <span className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md text-[10px] sm:text-xs font-semibold text-emerald-700">
+                  {possessionText}
+                </span>
+              )}
+            </div>
 
-          {/* RERA / GST Display */}
-          {(() => {
-            const rera = getReraInfo();
-            const gst = getGstInfo();
-
-            if (!rera && !gst) return null;
-
-            return (
-              <div className="mb-3 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  <div className="flex-1">
-                    {rera && (
-                      <>
-                        <p className="text-xs text-green-700 font-semibold">
-                          {rera.label}
-                        </p>
-                        <p className="text-xs text-green-600 font-mono">
-                          {rera.number}
-                        </p>
-                      </>
-                    )}
-
-                    {gst && (
-                      <p className="text-xs text-gray-700 font-medium mt-1">
-                        GST: <span className="font-mono">{gst}</span>
-                      </p>
-                    )}
-                  </div>
+            {/* RERA strip */}
+            {rera && (
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 mb-2.5 sm:mb-3">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-xs text-emerald-700 font-bold truncate">
+                    {rera.label}
+                  </p>
+                  <p className="text-[9px] sm:text-[10px] text-emerald-600 font-mono truncate">
+                    {rera.number}
+                  </p>
                 </div>
               </div>
-            );
-          })()}
+            )}
 
-          {/* Avg Price and Possession Status */}
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-3 border-t border-dashed pt-3">
+            {/* Avg price per sqft */}
             {avgPricePerSqFt && (
-              <span className="text-gray-600 font-medium">
-                Avg. Price: <strong>₹{avgPricePerSqFt} K/sq.ft</strong>
-              </span>
-            )}
-            {possessionText && (
-              <span className="text-xs text-gray-500">{possessionText}</span>
-            )}
-          </div>
-        </div>
-
-        {/* 👤 Builder/Agent and Contact Button (Bottom Row) */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-          {/* Agent/Builder Info */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-500" />
-            </div>
-
-            <div>
-              <p className="text-sm font-medium text-gray-800 line-clamp-1">
-                {property.postedBy}
+              <p className="text-[10px] sm:text-xs text-gray-400 border-t border-dashed border-blue-100 pt-2 mb-2.5">
+                Avg.{" "}
+                <span className="font-bold text-gray-600">
+                  ₹{avgPricePerSqFt}K/sq.ft
+                </span>
               </p>
-              <p className="text-xs text-gray-500">Posted by</p>
-            </div>
-          </div>
-          {/* Parking + Lifts */}
-          <div className="flex items-center flex-wrap gap-4 text-xs text-gray-700">
-            {property.coveredParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.coveredParking} Covered</span>
-              </div>
-            ) : null}
-
-            {property.openParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.openParking} Open</span>
-              </div>
-            ) : null}
-
-            {property.publicParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.publicParking} Public</span>
-              </div>
-            ) : null}
-
-            {property.passengerLifts ? (
-              <div className="flex items-center gap-1">
-                <MoveVertical className="w-3 h-3" />
-                <span>{property.passengerLifts} Passenger</span>
-              </div>
-            ) : null}
-
-            {property.serviceLifts ? (
-              <div className="flex items-center gap-1">
-                <MoveVertical className="w-3 h-3 text-gray-500" />
-                <span>{property.serviceLifts} Service</span>
-              </div>
-            ) : null}
+            )}
           </div>
 
-          {/* Posted Date */}
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Calendar className="w-3 h-3" />
-            <span>Posted on {formatPostedDate()}</span>
-          </div>
-          {/* Contact Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowContactOptions(true);
-            }}
-            className="px-6 py-2 bg-purple-600 text-white rounded-md font-semibold hover:bg-purple-700 transition-colors text-sm flex items-center gap-1 shadow-md"
+          {/* ── Footer row ────────────────────────────────────────────── */}
+          <div
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-2.5 sm:pt-3 border-t border-blue-50"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Phone className="w-4 h-4" />
-            Contact
-          </button>
+            {/* Posted by */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-xs font-bold text-gray-800 truncate">
+                  {property.postedBy}
+                </p>
+                <p className="text-[9px] sm:text-[10px] text-gray-400">
+                  Posted by
+                </p>
+              </div>
+            </div>
+
+            {/* Parking + lifts — hidden on small mobile, shows on sm+ */}
+            <div className="hidden sm:flex items-center flex-wrap gap-3 text-[10px] sm:text-xs text-gray-500">
+              {property.coveredParking && (
+                <span className="flex items-center gap-0.5">
+                  <ParkingCircle className="w-3 h-3" />
+                  {property.coveredParking} Covered
+                </span>
+              )}
+              {property.openParking && (
+                <span className="flex items-center gap-0.5">
+                  <ParkingCircle className="w-3 h-3" />
+                  {property.openParking} Open
+                </span>
+              )}
+              {property.passengerLifts && (
+                <span className="flex items-center gap-0.5">
+                  <MoveVertical className="w-3 h-3" />
+                  {property.passengerLifts} Lift
+                </span>
+              )}
+            </div>
+
+            {/* Date — hidden on xs */}
+            {postedDate && (
+              <div className="hidden sm:flex items-center gap-1 text-[10px] text-gray-400 flex-shrink-0">
+                <Calendar className="w-3 h-3" />
+                <span>{postedDate}</span>
+              </div>
+            )}
+
+            {/* Contact CTA */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowContactOptions(true);
+              }}
+              className="flex items-center gap-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold rounded-lg sm:rounded-xl transition-colors shadow-sm flex-shrink-0"
+            >
+              <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              Contact
+            </button>
+          </div>
         </div>
       </div>
-      {/* Contact Options Popup */}
+
+      {/* ── Contact bottom sheet ──────────────────────────────────────── */}
       {showContactOptions && (
         <div
           onClick={() => setShowContactOptions(false)}
-          className="fixed inset-0 bg-black/50 flex items-end justify-center z-50"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-sm p-4 rounded-t-2xl shadow-xl animate-slide-up"
+            className="bg-white w-full max-w-sm rounded-t-2xl shadow-2xl p-5 animate-slide-up"
           >
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">
-              Contact Options
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+            <h3 className="text-sm font-black text-gray-900 mb-1">
+              {property.title}
             </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              {property.locality}, {property.city.name}
+            </p>
 
             <button
               onClick={() => {
                 setShowContactOptions(false);
                 setShowInquiry(true);
               }}
-              className="w-full py-3 mb-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+              className="w-full py-2.5 mb-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              Quick Contact
+              <Phone className="w-4 h-4" /> Quick Contact
             </button>
-
             <button
               onClick={() => {
                 setShowContactOptions(false);
                 setShowSchedule(true);
               }}
-              className="w-full py-3 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition"
+              className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              Schedule Site Visit
+              <Eye className="w-4 h-4" /> Schedule Site Visit
             </button>
-
             <button
               onClick={() => setShowContactOptions(false)}
-              className="w-full py-2 text-sm text-gray-500 mt-2"
+              className="w-full py-2 text-xs text-gray-400 mt-1"
             >
               Cancel
             </button>
@@ -378,7 +344,6 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
         </div>
       )}
 
-      {/* Modals */}
       <InquiryFormModal
         property={property}
         isOpen={showInquiry}
@@ -389,6 +354,11 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
         isOpen={showSchedule}
         onClose={() => setShowSchedule(false)}
       />
-    </div>
+
+      <style>{`
+        @keyframes slide-up { from{transform:translateY(100%)}to{transform:translateY(0)} }
+        .animate-slide-up { animation: slide-up 0.25s ease-out; }
+      `}</style>
+    </>
   );
 };

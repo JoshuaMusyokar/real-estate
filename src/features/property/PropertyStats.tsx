@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   Warehouse,
 } from "lucide-react";
-import type { FC } from "react";
+import type { FC, ComponentType } from "react";
 import type { Property } from "../../types";
 import {
   Card,
@@ -30,60 +30,51 @@ interface PropertyStatsProps {
 }
 
 export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
-  // Determine property type
   const isResidential = property.propertyType?.name === "RESIDENTIAL";
   const isCommercial = property.propertyType?.name === "COMMERCIAL";
   const isIndustrial = property.propertyType?.name === "INDUSTRIAL";
   const isLand = property.propertyType?.name === "LAND";
 
-  // Helper function to format area with unit
-  const formatArea = (area: number | null, unit: string | null): string => {
-    if (!area) return "N/A";
-    const unitDisplay = unit || "sq ft";
-    return `${area.toLocaleString()} ${unitDisplay}`;
-  };
+  const formatArea = (area: number | null, unit: string | null) =>
+    area ? `${area.toLocaleString()} ${unit || "sq ft"}` : "N/A";
 
-  // Helper function to format boolean as Yes/No
-  const formatBoolean = (value: boolean | null | undefined): string => {
-    if (value === null || value === undefined) return "N/A";
-    return value ? "Yes" : "No";
-  };
+  const formatBoolean = (value: boolean | null | undefined) =>
+    value === null || value === undefined ? "N/A" : value ? "Yes" : "No";
 
-  // Get the primary area measurement
   const getPrimaryArea = () => {
-    if (property.carpetArea) {
+    if (property.carpetArea)
       return formatArea(property.carpetArea, property.carpetAreaUnit);
-    } else if (property.builtUpArea) {
+    if (property.builtUpArea)
       return formatArea(property.builtUpArea, property.builtUpAreaUnit);
-    } else if (property.superBuiltArea) {
+    if (property.superBuiltArea)
       return formatArea(property.superBuiltArea, property.superBuiltAreaUnit);
-    } else if (property.squareFeet) {
+    if (property.squareFeet)
       return `${property.squareFeet.toLocaleString()} sq ft`;
-    }
     return "N/A";
   };
 
-  // Build stats array based on property type
-  let stats: Array<{
-    icon: any;
+  type Stat = {
+    icon: ComponentType<{ className?: string }>;
     label: string;
     value: string | number;
     show?: boolean;
-  }> = [];
+  };
+
+  let stats: Stat[] = [];
 
   if (isResidential) {
     stats = [
       {
         icon: Bed,
         label: "Bedrooms",
-        value: property.bedrooms || "N/A",
-        show: property.bedrooms !== null && property.bedrooms !== undefined,
+        value: property.bedrooms ?? "N/A",
+        show: property.bedrooms != null,
       },
       {
         icon: Bath,
         label: "Bathrooms",
-        value: property.bathrooms || "N/A",
-        show: property.bathrooms !== null && property.bathrooms !== undefined,
+        value: property.bathrooms ?? "N/A",
+        show: property.bathrooms != null,
       },
       {
         icon: Square,
@@ -93,25 +84,21 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
       },
       {
         icon: Building2,
-        label: property.floors ? "Floors" : "Floor Number",
+        label: property.floors ? "Floors" : "Floor No.",
         value: property.floors || property.floorNumber || "N/A",
-        show:
-          (property.floors !== null && property.floors !== undefined) ||
-          (property.floorNumber !== null && property.floorNumber !== undefined),
+        show: property.floors != null || property.floorNumber != null,
       },
       {
         icon: Home,
         label: "Furnishing",
-        value: property.furnishingStatus || "N/A",
-        show:
-          property.furnishingStatus !== null &&
-          property.furnishingStatus !== undefined,
+        value: property.furnishingStatus ?? "N/A",
+        show: property.furnishingStatus != null,
       },
       {
         icon: Calendar,
         label: "Year Built",
-        value: property.yearBuilt || "N/A",
-        show: property.yearBuilt !== null && property.yearBuilt !== undefined,
+        value: property.yearBuilt ?? "N/A",
+        show: property.yearBuilt != null,
       },
       {
         icon: ParkingCircle,
@@ -119,27 +106,18 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value:
           (property.coveredParking || 0) + (property.openParking || 0) || "N/A",
         show:
-          (property.coveredParking !== null &&
-            property.coveredParking !== undefined &&
-            property.coveredParking > 0) ||
-          (property.openParking !== null &&
-            property.openParking !== undefined &&
-            property.openParking > 0),
+          (property.coveredParking ?? 0) > 0 || (property.openParking ?? 0) > 0,
       },
       {
         icon: DoorClosed,
         label: "Balconies",
-        value: property.balconies || "N/A",
-        show:
-          property.balconies !== null &&
-          property.balconies !== undefined &&
-          property.balconies > 0,
+        value: property.balconies ?? "N/A",
+        show: (property.balconies ?? 0) > 0,
       },
     ];
   } else if (isCommercial) {
-    const officeSubType = property.subType?.name === "OFFICE";
-    const retailSubType = property.subType?.name === "RETAIL";
-
+    const isOffice = property.subType?.name === "OFFICE";
+    const isRetail = property.subType?.name === "RETAIL";
     stats = [
       {
         icon: Square,
@@ -150,52 +128,38 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
       {
         icon: Home,
         label: "Furnishing",
-        value: property.furnishingStatus || "N/A",
-        show:
-          property.furnishingStatus !== null &&
-          property.furnishingStatus !== undefined,
+        value: property.furnishingStatus ?? "N/A",
+        show: property.furnishingStatus != null,
       },
       {
         icon: Building2,
         label: "Floor",
-        value: property.floorNumber || "N/A",
-        show:
-          property.floorNumber !== null && property.floorNumber !== undefined,
+        value: property.floorNumber ?? "N/A",
+        show: property.floorNumber != null,
       },
       {
         icon: Navigation,
         label: "Facing",
-        value: property.facingDirection || "N/A",
-        show:
-          property.facingDirection !== null &&
-          property.facingDirection !== undefined,
+        value: property.facingDirection ?? "N/A",
+        show: property.facingDirection != null,
       },
       {
         icon: DoorClosed,
         label: "Cabins",
-        value: property.cabins || "N/A",
-        show:
-          officeSubType &&
-          property.cabins !== null &&
-          property.cabins !== undefined,
+        value: property.cabins ?? "N/A",
+        show: isOffice && property.cabins != null,
       },
       {
         icon: Users,
         label: "Seats",
-        value: property.seats || "N/A",
-        show:
-          officeSubType &&
-          property.seats !== null &&
-          property.seats !== undefined,
+        value: property.seats ?? "N/A",
+        show: isOffice && property.seats != null,
       },
       {
         icon: Briefcase,
         label: "Meeting Rooms",
-        value: property.meetingRooms || "N/A",
-        show:
-          officeSubType &&
-          property.meetingRooms !== null &&
-          property.meetingRooms !== undefined,
+        value: property.meetingRooms ?? "N/A",
+        show: isOffice && property.meetingRooms != null,
       },
       {
         icon: ParkingCircle,
@@ -203,41 +167,31 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value:
           (property.coveredParking || 0) + (property.openParking || 0) || "N/A",
         show:
-          (property.coveredParking !== null &&
-            property.coveredParking !== undefined &&
-            property.coveredParking > 0) ||
-          (property.openParking !== null &&
-            property.openParking !== undefined &&
-            property.openParking > 0),
+          (property.coveredParking ?? 0) > 0 || (property.openParking ?? 0) > 0,
       },
       {
         icon: CheckCircle2,
         label: "Pre-Rented",
         value: formatBoolean(property.preRented),
-        show: property.preRented !== null && property.preRented !== undefined,
+        show: property.preRented != null,
       },
       {
         icon: Ruler,
-        label: "Frontage Width",
+        label: "Frontage",
         value: property.frontageWidth ? `${property.frontageWidth} ft` : "N/A",
-        show:
-          retailSubType &&
-          property.frontageWidth !== null &&
-          property.frontageWidth !== undefined,
+        show: isRetail && property.frontageWidth != null,
       },
       {
         icon: Building,
         label: "Main Road",
         value: formatBoolean(property.mainRoadFacing),
-        show:
-          property.mainRoadFacing !== null &&
-          property.mainRoadFacing !== undefined,
+        show: property.mainRoadFacing != null,
       },
       {
         icon: Calendar,
         label: "Year Built",
-        value: property.yearBuilt || "N/A",
-        show: property.yearBuilt !== null && property.yearBuilt !== undefined,
+        value: property.yearBuilt ?? "N/A",
+        show: property.yearBuilt != null,
       },
     ];
   } else if (isIndustrial) {
@@ -254,8 +208,7 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value: property.coveredArea
           ? `${property.coveredArea.toLocaleString()} sq ft`
           : "N/A",
-        show:
-          property.coveredArea !== null && property.coveredArea !== undefined,
+        show: property.coveredArea != null,
       },
       {
         icon: Package,
@@ -263,35 +216,31 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value: property.openArea
           ? `${property.openArea.toLocaleString()} sq ft`
           : "N/A",
-        show: property.openArea !== null && property.openArea !== undefined,
+        show: property.openArea != null,
       },
       {
         icon: Building2,
         label: "Ceiling Height",
-        value: property.ceilingHeight || "N/A",
-        show:
-          property.ceilingHeight !== null &&
-          property.ceilingHeight !== undefined,
+        value: property.ceilingHeight ?? "N/A",
+        show: property.ceilingHeight != null,
       },
       {
         icon: DoorClosed,
         label: "Loading Docks",
-        value: property.loadingDocks || "N/A",
-        show:
-          property.loadingDocks !== null && property.loadingDocks !== undefined,
+        value: property.loadingDocks ?? "N/A",
+        show: property.loadingDocks != null,
       },
       {
         icon: Briefcase,
         label: "Power Load",
-        value: property.powerLoad || "N/A",
-        show: property.powerLoad !== null && property.powerLoad !== undefined,
+        value: property.powerLoad ?? "N/A",
+        show: property.powerLoad != null,
       },
       {
         icon: Square,
         label: "Flooring",
-        value: property.flooringType || "N/A",
-        show:
-          property.flooringType !== null && property.flooringType !== undefined,
+        value: property.flooringType ?? "N/A",
+        show: property.flooringType != null,
       },
       {
         icon: ParkingCircle,
@@ -299,18 +248,13 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value:
           (property.coveredParking || 0) + (property.openParking || 0) || "N/A",
         show:
-          (property.coveredParking !== null &&
-            property.coveredParking !== undefined &&
-            property.coveredParking > 0) ||
-          (property.openParking !== null &&
-            property.openParking !== undefined &&
-            property.openParking > 0),
+          (property.coveredParking ?? 0) > 0 || (property.openParking ?? 0) > 0,
       },
       {
         icon: Calendar,
         label: "Year Built",
-        value: property.yearBuilt || "N/A",
-        show: property.yearBuilt !== null && property.yearBuilt !== undefined,
+        value: property.yearBuilt ?? "N/A",
+        show: property.yearBuilt != null,
       },
     ];
   } else if (isLand) {
@@ -321,62 +265,55 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
         value: property.plotArea
           ? formatArea(property.plotArea, property.plotAreaUnit)
           : "N/A",
-        show: property.plotArea !== null && property.plotArea !== undefined,
+        show: property.plotArea != null,
       },
       {
         icon: Ruler,
         label: "Dimensions",
-        value: property.plotDimensions || "N/A",
-        show:
-          property.plotDimensions !== null &&
-          property.plotDimensions !== undefined,
+        value: property.plotDimensions ?? "N/A",
+        show: property.plotDimensions != null,
       },
       {
         icon: Navigation,
         label: "Facing",
-        value: property.facingDirection || "N/A",
-        show:
-          property.facingDirection !== null &&
-          property.facingDirection !== undefined,
+        value: property.facingDirection ?? "N/A",
+        show: property.facingDirection != null,
       },
       {
         icon: Building,
         label: "Boundary Wall",
         value: formatBoolean(property.boundaryWall),
-        show:
-          property.boundaryWall !== null && property.boundaryWall !== undefined,
+        show: property.boundaryWall != null,
       },
       {
         icon: CheckCircle2,
         label: "Corner Plot",
         value: formatBoolean(property.cornerPlot),
-        show: property.cornerPlot !== null && property.cornerPlot !== undefined,
+        show: property.cornerPlot != null,
       },
       {
         icon: Building2,
         label: "Road Width",
-        value: property.roadWidth || "N/A",
-        show: property.roadWidth !== null && property.roadWidth !== undefined,
+        value: property.roadWidth ?? "N/A",
+        show: property.roadWidth != null,
       },
       {
         icon: Home,
         label: "Clear Title",
         value: formatBoolean(property.clearTitle),
-        show: property.clearTitle !== null && property.clearTitle !== undefined,
+        show: property.clearTitle != null,
       },
       {
         icon: Calendar,
         label: "Zoning",
-        value: property.zoningType || "N/A",
-        show: property.zoningType !== null && property.zoningType !== undefined,
+        value: property.zoningType ?? "N/A",
+        show: property.zoningType != null,
       },
     ];
   }
 
-  // Filter out stats that should not be shown
-  const visibleStats = stats.filter((stat) => stat.show !== false);
+  const visibleStats = stats.filter((s) => s.show !== false);
 
-  // Show message if no stats available
   if (visibleStats.length === 0) {
     return (
       <Card>
@@ -393,35 +330,36 @@ export const PropertyStats: FC<PropertyStatsProps> = ({ property }) => {
   return (
     <Card>
       <CardHeader className="p-4 sm:p-5 md:p-6">
-        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
           Property Specifications
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 sm:p-5 md:p-6 pt-0">
-        <div
-          className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${
-            visibleStats.length >= 8
-              ? "lg:grid-cols-5 xl:grid-cols-6"
-              : visibleStats.length >= 6
-                ? "lg:grid-cols-4 xl:grid-cols-5"
-                : "lg:grid-cols-3 xl:grid-cols-4"
-          } gap-3 sm:gap-4`}
-        >
+        {/*
+          Horizontal row layout: icon · label on top · value below.
+          Min-width on each cell prevents truncation; the grid auto-fills
+          so it adapts to however many stats there are.
+        */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {visibleStats.map((stat, idx) => {
             const Icon = stat.icon;
             return (
               <div
                 key={idx}
-                className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 text-center hover:shadow-md hover:border-blue-300 hover:from-blue-50 hover:to-white transition-all duration-200"
+                className="flex items-center gap-3 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all duration-200"
               >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center mx-auto mb-2 sm:mb-3">
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                {/* Icon pill */}
+                <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-0.5 sm:mb-1 truncate">
-                  {stat.value}
-                </div>
-                <div className="text-[10px] sm:text-xs text-gray-600 font-medium uppercase tracking-wide line-clamp-1">
-                  {stat.label}
+                {/* Text */}
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium leading-tight mb-0.5">
+                    {stat.label}
+                  </p>
+                  <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white truncate">
+                    {stat.value}
+                  </p>
                 </div>
               </div>
             );

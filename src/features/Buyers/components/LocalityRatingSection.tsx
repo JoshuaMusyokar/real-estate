@@ -15,7 +15,6 @@ import {
   MessageSquare,
   Edit,
   Trash2,
-  Loader2,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -38,63 +37,62 @@ interface LocalityRatingSectionProps {
 
 const PREVIEW_LIMIT = 3;
 
-// Rating categories with icons and colors
 const RATING_CATEGORIES = [
   {
     key: "safety",
     label: "Safety",
     icon: Shield,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50 border-emerald-100",
   },
   {
     key: "electricity",
     label: "Electricity",
     icon: Zap,
-    color: "text-yellow-600",
-    bgColor: "bg-yellow-50",
+    color: "text-amber-600",
+    bgColor: "bg-amber-50 border-amber-100",
   },
   {
     key: "waterSupply",
     label: "Water Supply",
     icon: Droplet,
     color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    bgColor: "bg-blue-50 border-blue-100",
   },
   {
     key: "internet",
     label: "Internet",
     icon: Wifi,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50 border-indigo-100",
   },
   {
     key: "transportation",
-    label: "Transportation",
+    label: "Transport",
     icon: Bus,
     color: "text-orange-600",
-    bgColor: "bg-orange-50",
+    bgColor: "bg-orange-50 border-orange-100",
   },
   {
     key: "cleanliness",
     label: "Cleanliness",
     icon: Sparkles,
-    color: "text-pink-600",
-    bgColor: "bg-pink-50",
+    color: "text-sky-600",
+    bgColor: "bg-sky-50 border-sky-100",
   },
   {
     key: "noiseLevel",
     label: "Noise Level",
     icon: Volume2,
-    color: "text-red-600",
-    bgColor: "bg-red-50",
+    color: "text-red-500",
+    bgColor: "bg-red-50 border-red-100",
   },
   {
     key: "greenery",
     label: "Greenery",
     icon: Trees,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
+    color: "text-green-600",
+    bgColor: "bg-green-50 border-green-100",
   },
 ] as const;
 
@@ -105,6 +103,57 @@ const RATING_AS_OPTIONS = [
   { value: "business_owner", label: "Business Owner" },
 ];
 
+const initRatings = () => ({
+  safety: 0,
+  electricity: 0,
+  waterSupply: 0,
+  internet: 0,
+  transportation: 0,
+  cleanliness: 0,
+  noiseLevel: 0,
+  greenery: 0,
+});
+
+const Stars = ({
+  rating,
+  size = "w-4 h-4",
+}: {
+  rating: number;
+  size?: string;
+}) => (
+  <div className="flex gap-0.5">
+    {[1, 2, 3, 4, 5].map((s) => (
+      <Star
+        key={s}
+        className={`${size} ${s <= Math.round(rating) ? "fill-amber-400 text-amber-400" : "text-gray-200"}`}
+      />
+    ))}
+  </div>
+);
+
+const InteractiveStars = ({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) => (
+  <div className="flex gap-1">
+    {[1, 2, 3, 4, 5].map((s) => (
+      <button
+        key={s}
+        type="button"
+        onClick={() => onChange(s)}
+        className="transition-transform hover:scale-110"
+      >
+        <Star
+          className={`w-6 h-6 ${s <= value ? "fill-amber-400 text-amber-400" : "text-gray-200 hover:text-amber-200"}`}
+        />
+      </button>
+    ))}
+  </div>
+);
+
 export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
   localityId,
   localityName,
@@ -112,37 +161,21 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
   onViewAllClick,
 }) => {
   const { user, isAuthenticated } = useAuth();
-  const [showRatingForm, setShowRatingForm] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const { success, error: showError } = useToast();
-  // Form state
+  const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [ratingAs, setRatingAs] = useState("resident");
-  const [ratings, setRatings] = useState({
-    safety: 0,
-    electricity: 0,
-    waterSupply: 0,
-    internet: 0,
-    transportation: 0,
-    cleanliness: 0,
-    noiseLevel: 0,
-    greenery: 0,
-  });
+  const [ratings, setRatings] = useState(initRatings());
   const [comment, setComment] = useState("");
 
-  // Queries
   const { data: statsData, isLoading: statsLoading } =
     useGetLocalityRatingStatsQuery(localityId);
   const { data: ratingsData, isLoading: ratingsLoading } =
     useGetLocalityRatingsQuery(localityId);
   const { data: userRatingData } = useGetUserLocalityRatingQuery(
-    {
-      localityId,
-      userId: user?.id || "",
-    },
-    { skip: !isAuthenticated || !user?.id }
+    { localityId, userId: user?.id || "" },
+    { skip: !isAuthenticated || !user?.id },
   );
-
-  // Mutations
   const [createRating, { isLoading: creating }] =
     useCreateLocalityRatingMutation();
   const [updateRating, { isLoading: updating }] =
@@ -153,29 +186,32 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
   const stats = statsData?.data;
   const allRatings = ratingsData?.data || [];
   const userRating = userRatingData?.data;
+  const preview = allRatings.slice(0, PREVIEW_LIMIT);
+  const hasMore = allRatings.length > PREVIEW_LIMIT;
 
-  // Limit ratings for preview
-  const displayedRatings = allRatings.slice(0, PREVIEW_LIMIT);
-  const hasMoreRatings = allRatings.length > PREVIEW_LIMIT;
+  const resetForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setRatings(initRatings());
+    setComment("");
+  };
 
-  // Initialize form with user's existing rating
   const handleEdit = () => {
-    if (userRating) {
-      setRatingAs(userRating.ratingAs);
-      setRatings({
-        safety: userRating.safety || 0,
-        electricity: userRating.electricity || 0,
-        waterSupply: userRating.waterSupply || 0,
-        internet: userRating.internet || 0,
-        transportation: userRating.transportation || 0,
-        cleanliness: userRating.cleanliness || 0,
-        noiseLevel: userRating.noiseLevel || 0,
-        greenery: userRating.greenery || 0,
-      });
-      setComment(userRating.comment || "");
-      setIsEditing(true);
-      setShowRatingForm(true);
-    }
+    if (!userRating) return;
+    setRatingAs(userRating.ratingAs);
+    setRatings({
+      safety: userRating.safety || 0,
+      electricity: userRating.electricity || 0,
+      waterSupply: userRating.waterSupply || 0,
+      internet: userRating.internet || 0,
+      transportation: userRating.transportation || 0,
+      cleanliness: userRating.cleanliness || 0,
+      noiseLevel: userRating.noiseLevel || 0,
+      greenery: userRating.greenery || 0,
+    });
+    setComment(userRating.comment || "");
+    setIsEditing(true);
+    setShowForm(true);
   };
 
   const handleSubmit = async () => {
@@ -183,265 +219,137 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
       showError("Please login to rate this locality");
       return;
     }
-
-    // Check if at least one rating is provided
-    const hasRating = Object.values(ratings).some((r) => r > 0);
-    if (!hasRating) {
+    if (!Object.values(ratings).some((r) => r > 0)) {
       showError("Please provide at least one rating");
       return;
     }
-
     try {
-      const ratingData = {
+      const payload = {
         localityId,
         ratingAs,
         ...Object.fromEntries(
-          Object.entries(ratings).map(([key, value]) => [
-            key,
-            value > 0 ? value : undefined,
-          ])
+          Object.entries(ratings).map(([k, v]) => [k, v > 0 ? v : undefined]),
         ),
         comment: comment.trim() || undefined,
       };
-
       if (isEditing && userRating) {
-        await updateRating({
-          id: userRating.id,
-          data: ratingData,
-        }).unwrap();
-        success("Rating updated successfully!");
+        await updateRating({ id: userRating.id, data: payload }).unwrap();
+        success("Rating updated!");
       } else {
-        await createRating(ratingData).unwrap();
-        success("Rating submitted successfully!");
+        await createRating(payload).unwrap();
+        success("Rating submitted!");
       }
-
-      // Reset form
-      setShowRatingForm(false);
-      setIsEditing(false);
-      setRatings({
-        safety: 0,
-        electricity: 0,
-        waterSupply: 0,
-        internet: 0,
-        transportation: 0,
-        cleanliness: 0,
-        noiseLevel: 0,
-        greenery: 0,
-      });
-      setComment("");
-    } catch (error: any) {
-      showError(error?.data?.error || "Failed to submit rating");
+      resetForm();
+    } catch {
+      // showError(err?.data?.error || "Failed to submit rating");
     }
   };
 
   const handleDelete = async () => {
-    if (!userRating) return;
-    if (!confirm("Are you sure you want to delete your rating?")) return;
-
+    if (!userRating || !confirm("Delete your rating?")) return;
     try {
       await deleteRating(userRating.id).unwrap();
-      success("Rating deleted successfully!");
-    } catch (error: any) {
-      showError(error?.data?.error || "Failed to delete rating");
+      success("Rating deleted!");
+    } catch {
+      // showError(err?.data?.error || "Failed to delete rating");
     }
   };
 
-  const renderStars = (rating: number, size = "w-5 h-5") => {
+  if (statsLoading || ratingsLoading)
     return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`${size} ${
-              star <= Math.round(rating)
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
-            }`}
-          />
-        ))}
+      <div className="flex justify-center py-10">
+        <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  };
-
-  const renderInteractiveStars = (
-    category: keyof typeof ratings,
-    size = "w-6 h-6"
-  ) => {
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => setRatings({ ...ratings, [category]: star })}
-            className="transition-transform hover:scale-110"
-          >
-            <Star
-              className={`${size} ${
-                star <= ratings[category]
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "text-gray-300 hover:text-yellow-200"
-              }`}
-            />
-          </button>
-        ))}
-      </div>
-    );
-  };
-
-  if (statsLoading || ratingsLoading) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-        <div className="flex items-start justify-between">
+    <div className="bg-white">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-blue-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-blue-500" />
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-5 h-5" />
-              <h2 className="text-2xl font-bold">Locality Ratings</h2>
-            </div>
-            <p className="text-blue-100">
+            <span className="text-sm font-bold text-gray-900">
+              Locality Ratings
+            </span>
+            <span className="text-[11px] text-gray-400 ml-2">
               {localityName}, {cityName}
-            </p>
+            </span>
           </div>
-          {isAuthenticated && (
-            <button
-              onClick={() => {
-                if (userRating) {
-                  handleEdit();
-                } else {
-                  setShowRatingForm(!showRatingForm);
-                }
-              }}
-              className="px-4 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
-            >
-              {userRating ? (
-                <>
-                  <Edit className="w-4 h-4" />
-                  Edit Your Rating
-                </>
-              ) : (
-                <>
-                  <Star className="w-4 h-4" />
-                  Rate Locality
-                </>
-              )}
-            </button>
-          )}
         </div>
+        {isAuthenticated && (
+          <button
+            onClick={userRating ? handleEdit : () => setShowForm((s) => !s)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-xl transition-colors shadow-sm shadow-blue-200"
+          >
+            {userRating ? (
+              <>
+                <Edit className="w-3 h-3" /> Edit
+              </>
+            ) : (
+              <>
+                <Star className="w-3 h-3" /> Rate
+              </>
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Overall Stats */}
+      {/* ── Overall stats ──────────────────────────────────────────────────── */}
       {stats && stats.totalRatings > 0 && (
-        <div className="p-6 border-b border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                {renderStars(stats.overallAverageRating, "w-7 h-7")}
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+        <div className="px-4 sm:px-5 py-4 border-b border-blue-50">
+          {/* Big 3 */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="text-center py-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+              <Stars rating={stats.overallAverageRating} size="w-3 h-3" />
+              <div className="text-xl font-black text-gray-900 mt-1">
                 {stats.overallAverageRating.toFixed(1)}
               </div>
-              <div className="text-sm text-gray-600">Overall Rating</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-3">
-                <Users className="w-8 h-8 text-blue-600" />
+              <div className="text-[10px] text-gray-400 font-medium">
+                Overall
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+            </div>
+            <div className="text-center py-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+              <Users className="w-5 h-5 text-blue-500 mx-auto mb-1" />
+              <div className="text-xl font-black text-gray-900">
                 {stats.totalRatings}
               </div>
-              <div className="text-sm text-gray-600">Total Ratings</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-3">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+              <div className="text-[10px] text-gray-400 font-medium">
+                Ratings
               </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
+            </div>
+            <div className="text-center py-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+              <TrendingUp className="w-5 h-5 text-emerald-500 mx-auto mb-1" />
+              <div className="text-xl font-black text-gray-900">
                 {stats.ratingDistribution[4]?.percentage || 0}%
               </div>
-              <div className="text-sm text-gray-600">5-Star Ratings</div>
+              <div className="text-[10px] text-gray-400 font-medium">
+                5-Star
+              </div>
             </div>
           </div>
 
-          {/* Rating Distribution */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-gray-900 mb-3">
-              Rating Distribution
-            </h3>
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((rating) => {
-                const data = stats.ratingDistribution.find(
-                  (d) => d.rating === rating
-                );
-                const percentage = data?.percentage || 0;
-                return (
-                  <div key={rating} className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700 w-12">
-                      {rating} star
-                    </span>
-                    <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-yellow-400 transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-gray-600 w-12 text-right">
-                      {percentage}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Category Ratings */}
-      {stats && stats.totalRatings > 0 && (
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="font-bold text-gray-900 mb-4 text-lg">
-            Category Ratings
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {RATING_CATEGORIES.map((category) => {
-              const avgRating =
-                stats.categoryAverages[
-                  category.key as keyof typeof stats.categoryAverages
-                ];
-              const Icon = category.icon;
+          {/* Distribution bars */}
+          <div className="space-y-1.5">
+            {[5, 4, 3, 2, 1].map((r) => {
+              const pct =
+                stats.ratingDistribution.find((d) => d.rating === r)
+                  ?.percentage || 0;
               return (
-                <div
-                  key={category.key}
-                  className={`${category.bgColor} rounded-lg p-4`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-5 h-5 ${category.color}`} />
-                      <span className="font-semibold text-gray-900">
-                        {category.label}
-                      </span>
-                    </div>
-                    {avgRating && (
-                      <span className="text-lg font-bold text-gray-900">
-                        {avgRating.toFixed(1)}
-                      </span>
-                    )}
+                <div key={r} className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-gray-500 w-8 flex items-center gap-0.5">
+                    {r}
+                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                  </span>
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
-                  {avgRating ? (
-                    renderStars(avgRating, "w-4 h-4")
-                  ) : (
-                    <span className="text-sm text-gray-500">Not rated yet</span>
-                  )}
+                  <span className="text-[11px] text-gray-400 w-8 text-right">
+                    {pct}%
+                  </span>
                 </div>
               );
             })}
@@ -449,79 +357,123 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
         </div>
       )}
 
-      {/* Rating Form */}
-      {showRatingForm && isAuthenticated && (
-        <div className="p-6 bg-gray-50 border-b border-gray-200">
-          <h3 className="font-bold text-gray-900 mb-4 text-lg">
+      {/* ── Category ratings ───────────────────────────────────────────────── */}
+      {stats && stats.totalRatings > 0 && (
+        <div className="px-4 sm:px-5 py-4 border-b border-blue-50">
+          <h3 className="text-xs font-bold text-gray-900 mb-3">
+            Category Ratings
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            {RATING_CATEGORIES.map(
+              ({ key, label, icon: Icon, color, bgColor }) => {
+                const avg =
+                  stats.categoryAverages[
+                    key as keyof typeof stats.categoryAverages
+                  ];
+                return (
+                  <div
+                    key={key}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${bgColor}`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${color}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-semibold text-gray-700 truncate">
+                        {label}
+                      </div>
+                      {avg ? (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Stars rating={avg} size="w-2.5 h-2.5" />
+                          <span className="text-[10px] font-bold text-gray-600 ml-0.5">
+                            {avg.toFixed(1)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-gray-400">
+                          Not rated
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              },
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Rating form ────────────────────────────────────────────────────── */}
+      {showForm && isAuthenticated && (
+        <div className="px-4 sm:px-5 py-4 bg-blue-50/40 border-b border-blue-100">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-3">
             {isEditing ? "Edit Your Rating" : "Rate This Locality"}
           </h3>
 
-          {/* Rating As Selector */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Rate as
+          {/* Rate as */}
+          <div className="mb-3">
+            <label className="text-[11px] font-semibold text-gray-600 mb-1 block">
+              I am a
             </label>
             <select
               value={ratingAs}
               onChange={(e) => setRatingAs(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-xs border border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {RATING_AS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {RATING_AS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Category Ratings */}
-          <div className="space-y-4 mb-6">
-            {RATING_CATEGORIES.map((category) => {
-              const Icon = category.icon;
-              return (
-                <div key={category.key}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-5 h-5 ${category.color}`} />
-                      <span className="font-medium text-gray-900">
-                        {category.label}
-                      </span>
-                    </div>
-                    {ratings[category.key as keyof typeof ratings] > 0 && (
-                      <span className="text-sm font-semibold text-gray-700">
-                        {ratings[category.key as keyof typeof ratings]}/5
-                      </span>
-                    )}
+          {/* Category sliders */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            {RATING_CATEGORIES.map(({ key, label, icon: Icon, color }) => (
+              <div key={key}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <Icon className={`w-3.5 h-3.5 ${color}`} />
+                    <span className="text-[11px] font-semibold text-gray-700">
+                      {label}
+                    </span>
                   </div>
-                  {renderInteractiveStars(category.key as keyof typeof ratings)}
+                  {ratings[key as keyof typeof ratings] > 0 && (
+                    <span className="text-[10px] font-bold text-gray-500">
+                      {ratings[key as keyof typeof ratings]}/5
+                    </span>
+                  )}
                 </div>
-              );
-            })}
+                <InteractiveStars
+                  value={ratings[key as keyof typeof ratings]}
+                  onChange={(v) => setRatings((r) => ({ ...r, [key]: v }))}
+                />
+              </div>
+            ))}
           </div>
 
           {/* Comment */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Comment (Optional)
+          <div className="mb-3">
+            <label className="text-[11px] font-semibold text-gray-600 mb-1 block">
+              Comment (optional)
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              rows={3}
-              placeholder="Share your experience about this locality..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              rows={2}
+              placeholder="Share your experience about this locality…"
+              className="w-full px-3 py-2 text-xs border border-blue-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
+          {/* Form actions */}
+          <div className="flex gap-2">
             <button
               onClick={handleSubmit}
               disabled={creating || updating}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center"
             >
               {creating || updating ? (
-                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : isEditing ? (
                 "Update Rating"
               ) : (
@@ -529,11 +481,8 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
               )}
             </button>
             <button
-              onClick={() => {
-                setShowRatingForm(false);
-                setIsEditing(false);
-              }}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              onClick={resetForm}
+              className="px-4 py-2.5 bg-white border border-blue-200 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
@@ -541,12 +490,12 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+                className="px-3 py-2.5 bg-red-50 border border-red-200 text-red-600 rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center"
               >
                 {deleting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 )}
               </button>
             )}
@@ -554,113 +503,107 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
         </div>
       )}
 
-      {/* User Ratings List */}
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
+      {/* ── Reviews list ───────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-900 flex items-center gap-1.5">
+            <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
             Community Reviews ({allRatings.length})
           </h3>
-          {hasMoreRatings && (
+          {hasMore && (
             <button
               onClick={onViewAllClick}
-              className="text-blue-600 font-semibold text-sm hover:text-blue-700 flex items-center gap-1 transition-colors"
+              className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-0.5 transition-colors"
             >
-              View All {allRatings.length} Ratings
-              <ChevronRight className="w-4 h-4" />
+              View All <ChevronRight className="w-3 h-3" />
             </button>
           )}
         </div>
 
         {allRatings.length === 0 ? (
           <div className="text-center py-8">
-            <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 mb-2">No ratings yet</p>
-            <p className="text-sm text-gray-500">
+            <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-gray-500">
+              No ratings yet
+            </p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
               Be the first to rate this locality!
             </p>
           </div>
         ) : (
           <>
-            <div className="space-y-4">
-              {displayedRatings.map((rating) => (
+            <div className="space-y-2">
+              {preview.map((r) => (
                 <div
-                  key={rating.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                  key={r.id}
+                  className="p-3 bg-gray-50/70 hover:bg-blue-50/30 border border-gray-100 hover:border-blue-100 rounded-xl transition-all"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-semibold">
-                        {rating.user.firstName[0]}
-                        {rating.user.lastName[0]}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl flex items-center justify-center text-[11px] font-black flex-shrink-0">
+                        {r.user.firstName[0]}
+                        {r.user.lastName[0]}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">
-                          {rating.user.firstName} {rating.user.lastName}
+                        <div className="text-xs font-bold text-gray-900">
+                          {r.user.firstName} {r.user.lastName}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {rating.ratingAs.replace("_", " ")}
+                        <div className="text-[10px] text-gray-400 capitalize">
+                          {r.ratingAs.replace("_", " ")}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {rating.overallRating && (
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-bold text-gray-900">
-                            {rating.overallRating.toFixed(1)}
+                    <div className="text-right flex-shrink-0">
+                      {r.overallRating && (
+                        <div className="flex items-center gap-0.5 justify-end">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span className="text-xs font-black text-gray-900">
+                            {r.overallRating.toFixed(1)}
                           </span>
                         </div>
                       )}
-                      <div className="text-xs text-gray-500">
-                        {new Date(rating.createdAt).toLocaleDateString()}
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        {new Date(r.createdAt).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
-
-                  {rating.comment && (
-                    <p className="text-gray-700 text-sm mb-3 leading-relaxed">
-                      {rating.comment}
+                  {r.comment && (
+                    <p className="text-[11px] text-gray-600 leading-relaxed mb-2">
+                      {r.comment}
                     </p>
                   )}
-
-                  {/* Individual Category Ratings */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {RATING_CATEGORIES.map((category) => {
-                      const value = rating[
-                        category.key as keyof typeof rating
-                      ] as number | null;
-                      if (!value) return null;
-                      const Icon = category.icon;
-                      return (
-                        <div
-                          key={category.key}
-                          className="flex items-center gap-2 text-xs"
-                        >
-                          <Icon className={`w-3 h-3 ${category.color}`} />
-                          <span className="text-gray-600">
-                            {category.label}:
-                          </span>
-                          <span className="font-semibold text-gray-900">
-                            {value}/5
-                          </span>
-                        </div>
-                      );
-                    })}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                    {RATING_CATEGORIES.map(
+                      ({ key, label, icon: Icon, color }) => {
+                        const val = r[key as keyof typeof r] as number | null;
+                        if (!val) return null;
+                        return (
+                          <div key={key} className="flex items-center gap-1">
+                            <Icon
+                              className={`w-2.5 h-2.5 flex-shrink-0 ${color}`}
+                            />
+                            <span className="text-[10px] text-gray-500 truncate">
+                              {label}:
+                            </span>
+                            <span className="text-[10px] font-bold text-gray-700">
+                              {val}/5
+                            </span>
+                          </div>
+                        );
+                      },
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* View All Button - Bottom */}
-            {hasMoreRatings && (
-              <div className="mt-6 text-center">
+            {hasMore && (
+              <div className="mt-3 text-center">
                 <button
                   onClick={onViewAllClick}
-                  className="px-6 py-3 bg-blue-50 text-blue-600 rounded-lg font-semibold hover:bg-blue-100 transition-colors inline-flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-600 text-xs font-bold rounded-xl transition-colors inline-flex items-center gap-1"
                 >
-                  View All {allRatings.length} Ratings
-                  <ChevronRight className="w-4 h-4" />
+                  View All {allRatings.length} Ratings{" "}
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
@@ -668,20 +611,18 @@ export const LocalityRatingSection: React.FC<LocalityRatingSectionProps> = ({
         )}
       </div>
 
-      {/* Login Prompt */}
+      {/* ── Login prompt ───────────────────────────────────────────────────── */}
       {!isAuthenticated && (
-        <div className="p-6 bg-blue-50 border-t border-blue-100">
-          <div className="text-center">
-            <p className="text-blue-900 font-medium mb-2">
-              Want to rate this locality?
-            </p>
-            <p className="text-sm text-blue-700 mb-4">
-              Sign in to share your experience with the community
-            </p>
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-              Sign In to Rate
-            </button>
-          </div>
+        <div className="px-4 sm:px-5 py-3.5 bg-blue-50/60 border-t border-blue-100 text-center">
+          <p className="text-xs font-semibold text-gray-700 mb-0.5">
+            Want to rate this locality?
+          </p>
+          <p className="text-[11px] text-gray-400 mb-2">
+            Sign in to share your experience
+          </p>
+          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors shadow-sm shadow-blue-200">
+            Sign In to Rate
+          </button>
         </div>
       )}
     </div>

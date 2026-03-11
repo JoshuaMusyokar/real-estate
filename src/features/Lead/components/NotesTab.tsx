@@ -20,6 +20,7 @@ import {
   useDeleteNoteMutation,
 } from "../../../services/noteApi";
 import type { NoteResponse } from "../../../types";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 interface NotesTabProps {
   leadId: string;
@@ -30,13 +31,24 @@ interface NoteFormData {
   isInternal: boolean;
 }
 
+// ─── NoteCard ─────────────────────────────────────────────────────────────────
+// Receives permission flags from parent — avoids calling usePermissions() per card.
+
 interface NoteCardProps {
   note: NoteResponse;
+  canEdit: boolean;
+  canDelete: boolean;
   onEdit: (note: NoteResponse) => void;
   onDelete: (id: string) => void;
 }
 
-const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
+const NoteCard: React.FC<NoteCardProps> = ({
+  note,
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+}) => {
   const formatDate = (dateString: string | Date): string => {
     const date = new Date(dateString);
     const now = new Date();
@@ -57,16 +69,14 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
     });
   };
 
+  const showActions = canEdit || canDelete;
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all group">
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex items-center gap-3">
           <div
-            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              note.isInternal
-                ? "bg-amber-100 text-amber-600"
-                : "bg-blue-100 text-blue-600"
-            }`}
+            className={`w-10 h-10 rounded-lg flex items-center justify-center ${note.isInternal ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"}`}
           >
             {note.isInternal ? (
               <Lock className="w-5 h-5" />
@@ -80,11 +90,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
                 {note.user.firstName} {note.user.lastName}
               </span>
               <span
-                className={`px-2 py-0.5 rounded-md text-xs font-semibold ${
-                  note.isInternal
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
+                className={`px-2 py-0.5 rounded-md text-xs font-semibold ${note.isInternal ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}
               >
                 {note.isInternal ? "Internal" : "Visible"}
               </span>
@@ -99,22 +105,30 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
             </div>
           </div>
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onEdit(note)}
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Edit note"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onDelete(note.id)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete note"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+
+        {/* Action buttons — only rendered when user has at least one action */}
+        {showActions && (
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {canEdit && (
+              <button
+                onClick={() => onEdit(note)}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Edit note"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => onDelete(note.id)}
+                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Delete note"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
@@ -123,6 +137,9 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, onEdit, onDelete }) => {
     </div>
   );
 };
+
+// ─── NoteEditor ───────────────────────────────────────────────────────────────
+// Pure form — no permission checks inside. Parent controls when it renders.
 
 interface NoteEditorProps {
   initialData?: NoteFormData;
@@ -140,7 +157,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   isLoading,
 }) => {
   const [formData, setFormData] = useState<NoteFormData>(
-    initialData || { content: "", isInternal: false }
+    initialData || { content: "", isInternal: false },
   );
 
   const handleSubmit = async (): Promise<void> => {
@@ -213,13 +230,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
+                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" />
-                {isEditing ? "Update" : "Add Note"}
+                <Save className="w-4 h-4" /> {isEditing ? "Update" : "Add Note"}
               </>
             )}
           </button>
@@ -229,10 +244,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   );
 };
 
+// ─── NotesTab ─────────────────────────────────────────────────────────────────
+
 export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
   const [showEditor, setShowEditor] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteResponse | null>(null);
   const [showInternal, setShowInternal] = useState(true);
+
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("lead.add_note");
+  const canEdit = can("lead.edit_note");
+  const canDelete = can("lead.delete_note");
 
   const { data, isLoading, refetch } = useGetLeadNotesQuery({
     leadId,
@@ -261,7 +284,6 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
 
   const handleUpdateNote = async (formData: NoteFormData): Promise<void> => {
     if (!editingNote) return;
-
     try {
       await updateNote({
         id: editingNote.id,
@@ -276,7 +298,6 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
 
   const handleDeleteNote = async (noteId: string): Promise<void> => {
     if (!confirm("Are you sure you want to delete this note?")) return;
-
     try {
       await deleteNote(noteId).unwrap();
       refetch();
@@ -300,6 +321,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h3 className="text-xl font-bold text-gray-900">Notes</h3>
@@ -308,6 +330,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Internal toggle — always available to anyone who can view notes */}
           <button
             onClick={() => setShowInternal(!showInternal)}
             className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
@@ -323,7 +346,9 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
             )}
             {showInternal ? "Show All" : "Show Visible Only"}
           </button>
-          {!showEditor && !editingNote && (
+
+          {/* Add Note button — hidden without lead.add_note */}
+          {canAdd && !showEditor && !editingNote && (
             <button
               onClick={() => setShowEditor(true)}
               className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg"
@@ -335,7 +360,8 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
         </div>
       </div>
 
-      {showEditor && !editingNote && (
+      {/* Create editor — only when canAdd */}
+      {canAdd && showEditor && !editingNote && (
         <NoteEditor
           isEditing={false}
           onSubmit={handleCreateNote}
@@ -344,7 +370,8 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
         />
       )}
 
-      {editingNote && (
+      {/* Edit editor — only when canEdit */}
+      {canEdit && editingNote && (
         <NoteEditor
           initialData={{
             content: editingNote.content,
@@ -357,6 +384,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
         />
       )}
 
+      {/* Note list */}
       {notes.length === 0 ? (
         <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl">
           <StickyNote className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -364,15 +392,19 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
             No notes yet
           </h4>
           <p className="text-gray-600 mb-6">
-            Start documenting your interactions and observations
+            {canAdd
+              ? "Start documenting your interactions and observations"
+              : "No notes have been added for this lead yet"}
           </p>
-          <button
-            onClick={() => setShowEditor(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Add First Note
-          </button>
+          {canAdd && (
+            <button
+              onClick={() => setShowEditor(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Add First Note
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -380,6 +412,8 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
             <NoteCard
               key={note.id}
               note={note}
+              canEdit={canEdit}
+              canDelete={canDelete}
               onEdit={handleEditNote}
               onDelete={handleDeleteNote}
             />

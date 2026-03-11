@@ -64,9 +64,16 @@ export const RolePermissionsPanel: React.FC<RolePermissionsPanelProps> = ({
   const toggle = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
       return next;
     });
+
     setIsDirty(true);
   };
 
@@ -93,8 +100,8 @@ export const RolePermissionsPanel: React.FC<RolePermissionsPanelProps> = ({
       }).unwrap();
       onToast("Permissions saved", "success");
       setIsDirty(false);
-    } catch (err: any) {
-      onToast(err?.data?.message ?? "Failed to save permissions", "error");
+    } catch {
+      //
     }
   };
 

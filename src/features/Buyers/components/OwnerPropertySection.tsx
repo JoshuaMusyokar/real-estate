@@ -1,3 +1,4 @@
+// OwnerPropertySection.tsx  (OwnerPropertiesSlider)
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef, useEffect } from "react";
 import {
@@ -20,6 +21,13 @@ interface OwnerPropertiesSectionProps {
   currentPropertyId: string;
 }
 
+const formatPrice = (price: number, currency: string) => {
+  const sym = getCurrencySymbol(currency);
+  if (price >= 1_000_000) return `${sym}${(price / 1_000_000).toFixed(2)}M`;
+  if (price >= 1_000) return `${sym}${(price / 1_000).toFixed(0)}K`;
+  return `${sym}${price.toLocaleString()}`;
+};
+
 export const OwnerPropertiesSlider: React.FC<OwnerPropertiesSectionProps> = ({
   ownerId,
   ownerName,
@@ -27,9 +35,8 @@ export const OwnerPropertiesSlider: React.FC<OwnerPropertiesSectionProps> = ({
 }) => {
   const navigate = useNavigate();
   const sliderRef = useRef<HTMLDivElement>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(true);
 
   const { data, isLoading, error } = useGetPropertiesByOwnerQuery({
     ownerId,
@@ -37,87 +44,58 @@ export const OwnerPropertiesSlider: React.FC<OwnerPropertiesSectionProps> = ({
     excludePropertyId: currentPropertyId,
   });
 
-  const updateScrollButtons = () => {
-    if (sliderRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  const scrollLeft = () => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({ left: -300, behavior: "smooth" });
-    }
-  };
-
-  const scrollRight = () => {
-    if (sliderRef.current) {
-      sliderRef.current.scrollBy({ left: 300, behavior: "smooth" });
-    }
+  const updateScroll = () => {
+    if (!sliderRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+    setCanLeft(scrollLeft > 0);
+    setCanRight(scrollLeft < scrollWidth - clientWidth - 10);
   };
 
   useEffect(() => {
-    const slider = sliderRef.current;
-    if (slider) {
-      slider.addEventListener("scroll", updateScrollButtons);
-      updateScrollButtons();
-      return () => slider.removeEventListener("scroll", updateScrollButtons);
-    }
+    const el = sliderRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScroll);
+    updateScroll();
+    return () => el.removeEventListener("scroll", updateScroll);
   }, [data]);
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-              {ownerName.charAt(0)}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                More from {ownerName}
-              </h2>
-              <p className="text-sm text-gray-600">Loading properties...</p>
-            </div>
+      <div className="bg-white border border-blue-100 rounded-xl p-4 sm:p-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-md shadow-blue-200">
+            {ownerName.charAt(0)}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-900">
+              More from {ownerName}
+            </p>
+            <p className="text-[11px] text-gray-400">Loading…</p>
           </div>
         </div>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <div className="flex justify-center py-6">
+          <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
-  }
 
-  if (error || !data?.data || data.data.length === 0) {
-    return null;
-  }
-
-  const formatPrice = (price: number, currency: string): string => {
-    if (price >= 1000000) {
-      return `$${(price / 1000000).toFixed(2)}M`;
-    }
-    if (price >= 1000) {
-      return `${getCurrencySymbol(currency)}${(price / 1000).toFixed(0)}K`;
-    }
-    return `${getCurrencySymbol(currency)}${price.toLocaleString()}`;
-  };
+  if (error || !data?.data?.length) return null;
 
   const properties = data.data;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
-      {/* Header with Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+    <div className="bg-white border border-blue-100 rounded-xl p-4 sm:p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-md shadow-blue-200">
             {ownerName.charAt(0)}
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-sm sm:text-base font-bold text-gray-900">
               More from {ownerName}
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-[11px] text-gray-400">
               {data.pagination.total}{" "}
               {data.pagination.total === 1 ? "property" : "properties"}{" "}
               available
@@ -125,65 +103,66 @@ export const OwnerPropertiesSlider: React.FC<OwnerPropertiesSectionProps> = ({
           </div>
         </div>
 
-        {/* Navigation Arrows */}
         {properties.length > 2 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={scrollLeft}
-              disabled={!canScrollLeft}
-              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
-                canScrollLeft
-                  ? "border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-600"
-                  : "border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={scrollRight}
-              disabled={!canScrollRight}
-              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
-                canScrollRight
-                  ? "border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-600"
-                  : "border-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          <div className="flex items-center gap-1">
+            {[
+              {
+                can: canLeft,
+                act: () =>
+                  sliderRef.current?.scrollBy({
+                    left: -280,
+                    behavior: "smooth",
+                  }),
+                Icon: ChevronLeft,
+              },
+              {
+                can: canRight,
+                act: () =>
+                  sliderRef.current?.scrollBy({
+                    left: 280,
+                    behavior: "smooth",
+                  }),
+                Icon: ChevronRight,
+              },
+            ].map(({ can, act, Icon }, i) => (
+              <button
+                key={i}
+                onClick={act}
+                disabled={!can}
+                className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all
+                    ${can ? "border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-blue-500" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Horizontal Slider */}
+      {/* Slider */}
       <div className="relative">
         <div
           ref={sliderRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 -mx-2 px-2"
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2 -mx-1 px-1"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {properties.map((property: Property) => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              formatPrice={formatPrice}
-            />
+          {properties.map((p: Property) => (
+            <OwnerCard key={p.id} property={p} />
           ))}
         </div>
-
-        {/* Gradient Overlays */}
-        <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-white to-transparent pointer-events-none" />
       </div>
 
-      {/* View All Button */}
+      {/* View all */}
       {data.pagination.total > properties.length && (
-        <div className="text-center mt-6">
+        <div className="text-center mt-4">
           <button
-            className="inline-flex items-center gap-2 px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-all hover:shadow-md"
             onClick={() => navigate("/")}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl text-xs font-bold transition-colors"
           >
-            <span>View All {data.pagination.total} Properties</span>
-            <ChevronRight className="w-4 h-4" />
+            View All {data.pagination.total} Properties{" "}
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -191,97 +170,70 @@ export const OwnerPropertiesSlider: React.FC<OwnerPropertiesSectionProps> = ({
   );
 };
 
-/* HORIZONTAL PROPERTY CARD */
-const PropertyCard = ({
-  property,
-  formatPrice,
-}: {
-  property: Property;
-  formatPrice: (price: number, currency: string) => string;
-}) => {
-  return (
-    <Link
-      to={`/property-detail/${property.id}`}
-      className="group flex-shrink-0 w-80 bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-    >
-      {/* Image Section */}
-      <div className="relative h-48 bg-gray-200 overflow-hidden">
-        {property.images && property.images.length > 0 ? (
-          <img
-            src={property.images[0].viewableUrl}
-            alt={property.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-            <Building2 className="w-12 h-12 text-gray-400" />
-          </div>
-        )}
-
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-lg text-xs font-semibold shadow-lg">
-          {property.status}
+const OwnerCard = ({ property }: { property: Property }) => (
+  <Link
+    to={`/property-detail/${property.id}`}
+    className="group flex-shrink-0 w-60 sm:w-72 bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
+  >
+    {/* Image */}
+    <div className="relative h-36 sm:h-40 bg-blue-50 overflow-hidden">
+      {property.images?.length > 0 ? (
+        <img
+          src={property.images[0].viewableUrl}
+          alt={property.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <Building2 className="w-10 h-10 text-blue-200" />
         </div>
+      )}
 
-        {/* Price Overlay */}
-        <div className="absolute bottom-3 left-3 bg-black/70 text-white px-3 py-1.5 rounded-lg text-sm font-bold backdrop-blur-sm">
-          {formatPrice(property.price, property.currency)}
-        </div>
+      {/* Status */}
+      <div className="absolute top-2.5 left-2.5 bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm">
+        {property.status}
       </div>
 
-      {/* Content Section */}
-      <div className="p-4">
-        <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
-          {property.title}
-        </h3>
+      {/* Price */}
+      <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-lg text-[11px] font-black backdrop-blur-sm">
+        {formatPrice(property.price, property.currency)}
+      </div>
+    </div>
 
-        <p className="text-sm text-gray-600 mb-3 line-clamp-1">
-          {property.locality}, {property.city.name}
-        </p>
+    {/* Content */}
+    <div className="p-3">
+      <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight mb-1.5">
+        {property.title}
+      </h3>
+      <p className="text-[11px] text-gray-400 mb-2 truncate">
+        {property.locality}, {property.city.name}
+      </p>
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 text-sm text-gray-700 mb-3">
-          {property.bedrooms && (
-            <div className="flex items-center gap-1.5">
-              <Bed className="w-4 h-4 text-gray-500" />
-              <span className="font-medium">{property.bedrooms}</span>
-            </div>
-          )}
-          {property.bathrooms && (
-            <div className="flex items-center gap-1.5">
-              <Bath className="w-4 h-4 text-gray-500" />
-              <span className="font-medium">{property.bathrooms}</span>
-            </div>
-          )}
-          {property.squareFeet && (
-            <div className="flex items-center gap-1.5">
-              <Maximize className="w-4 h-4 text-gray-500" />
-              <span className="font-medium">
-                {property.squareFeet.toLocaleString()} ft²
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* CTA Arrow */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-            View Details
+      <div className="flex items-center gap-3 text-[11px] text-gray-600 mb-2">
+        {property.bedrooms && (
+          <span className="flex items-center gap-1">
+            <Bed className="w-3 h-3 text-blue-400" /> {property.bedrooms}
           </span>
-          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-        </div>
+        )}
+        {property.bathrooms && (
+          <span className="flex items-center gap-1">
+            <Bath className="w-3 h-3 text-blue-400" /> {property.bathrooms}
+          </span>
+        )}
+        {property.squareFeet && (
+          <span className="flex items-center gap-1">
+            <Maximize className="w-3 h-3 text-blue-400" />{" "}
+            {property.squareFeet.toLocaleString()}ft²
+          </span>
+        )}
       </div>
-    </Link>
-  );
-};
 
-// Add this CSS to your global styles for hiding scrollbar
-const scrollbarHide = `
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-`;
+      <div className="flex items-center justify-between pt-2 border-t border-blue-50">
+        <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+          View Details
+        </span>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
+      </div>
+    </div>
+  </Link>
+);

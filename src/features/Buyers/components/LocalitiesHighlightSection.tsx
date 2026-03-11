@@ -1,4 +1,4 @@
-// components/NearbyPlacesSection.tsx
+// LocalitiesHighlightSection.tsx  (NearbyPlacesSection)
 import React, { useState, useEffect } from "react";
 import {
   MapPin,
@@ -16,22 +16,21 @@ import {
   ChevronUp,
   User,
   Database,
-  RefreshCw,
 } from "lucide-react";
 import type { LocalityHighlight, NearbyPlace } from "../../../types";
 
 interface NearbyPlacesSectionProps {
   localityName: string;
   cityName: string;
-  localityHighlights?: LocalityHighlight[]; // From locality database
-  nearbyPlaces?: NearbyPlace[]; // From property (user input)
+  localityHighlights?: LocalityHighlight[];
+  nearbyPlaces?: NearbyPlace[];
 }
 
 interface MergedPlace {
   id: string;
   name: string;
-  distance: number; // In km for consistent comparison
-  distanceDisplay: string; // Original display format
+  distance: number;
+  distanceDisplay: string;
   category: string;
   categoryType: "locality" | "user";
   icon: string | null;
@@ -40,126 +39,113 @@ interface MergedPlace {
 
 const CATEGORY_CONFIG: Record<
   string,
-  { icon: React.ElementType; gradient: string; label: string }
+  { icon: React.ElementType; color: string; label: string }
 > = {
-  // Match locality highlight types
   school: {
     icon: School,
-    gradient: "from-blue-500 to-indigo-600",
+    color: "text-blue-600 bg-blue-50 border-blue-100",
     label: "Schools",
   },
   hospital: {
     icon: Heart,
-    gradient: "from-red-500 to-rose-600",
+    color: "text-red-600 bg-red-50 border-red-100",
     label: "Hospitals",
   },
   restaurant: {
     icon: Utensils,
-    gradient: "from-green-500 to-emerald-600",
+    color: "text-emerald-600 bg-emerald-50 border-emerald-100",
     label: "Restaurants",
+  },
+  cafe: {
+    icon: Utensils,
+    color: "text-emerald-600 bg-emerald-50 border-emerald-100",
+    label: "Cafes",
   },
   shopping: {
     icon: ShoppingCart,
-    gradient: "from-purple-500 to-pink-600",
+    color: "text-indigo-600 bg-indigo-50 border-indigo-100",
     label: "Shopping",
+  },
+  mall: {
+    icon: ShoppingCart,
+    color: "text-indigo-600 bg-indigo-50 border-indigo-100",
+    label: "Malls",
+  },
+  supermarket: {
+    icon: ShoppingCart,
+    color: "text-indigo-600 bg-indigo-50 border-indigo-100",
+    label: "Supermarkets",
   },
   park: {
     icon: Trees,
-    gradient: "from-emerald-500 to-teal-600",
+    color: "text-green-600 bg-green-50 border-green-100",
     label: "Parks",
   },
   transport: {
     icon: Bus,
-    gradient: "from-orange-500 to-amber-600",
+    color: "text-amber-600 bg-amber-50 border-amber-100",
     label: "Transport",
+  },
+  metro: {
+    icon: Bus,
+    color: "text-amber-600 bg-amber-50 border-amber-100",
+    label: "Metro",
+  },
+  bus: {
+    icon: Bus,
+    color: "text-amber-600 bg-amber-50 border-amber-100",
+    label: "Bus",
   },
   worship: {
     icon: Church,
-    gradient: "from-indigo-500 to-purple-600",
+    color: "text-violet-600 bg-violet-50 border-violet-100",
     label: "Worship",
   },
   bank: {
     icon: PiggyBank,
-    gradient: "from-lime-500 to-green-600",
+    color: "text-lime-600 bg-lime-50 border-lime-100",
     label: "Banks",
   },
   entertainment: {
     icon: Film,
-    gradient: "from-pink-500 to-fuchsia-600",
+    color: "text-pink-600 bg-pink-50 border-pink-100",
     label: "Entertainment",
   },
-  // User input categories
-  School: {
-    icon: School,
-    gradient: "from-blue-500 to-indigo-600",
-    label: "Schools",
-  },
-  Hospital: {
-    icon: Heart,
-    gradient: "from-red-500 to-rose-600",
-    label: "Hospitals",
-  },
-  Mall: {
-    icon: ShoppingCart,
-    gradient: "from-purple-500 to-pink-600",
-    label: "Shopping Malls",
-  },
-  Metro: {
-    icon: Bus,
-    gradient: "from-orange-500 to-amber-600",
-    label: "Metro Stations",
-  },
-  Cafe: {
-    icon: Utensils,
-    gradient: "from-green-500 to-emerald-600",
-    label: "Cafes",
-  },
-  Restaurant: {
-    icon: Utensils,
-    gradient: "from-green-500 to-emerald-600",
-    label: "Restaurants",
-  },
-  Bank: {
-    icon: PiggyBank,
-    gradient: "from-lime-500 to-green-600",
-    label: "Banks/ATMs",
-  },
-  Park: {
-    icon: Trees,
-    gradient: "from-emerald-500 to-teal-600",
-    label: "Parks",
-  },
-  Supermarket: {
-    icon: ShoppingCart,
-    gradient: "from-purple-500 to-pink-600",
-    label: "Supermarkets",
-  },
-  Gym: {
+  cinema: {
     icon: Film,
-    gradient: "from-pink-500 to-fuchsia-600",
-    label: "Gyms",
-  },
-  Pharmacy: {
-    icon: Heart,
-    gradient: "from-red-500 to-rose-600",
-    label: "Pharmacies",
-  },
-  Cinema: {
-    icon: Film,
-    gradient: "from-pink-500 to-fuchsia-600",
+    color: "text-pink-600 bg-pink-50 border-pink-100",
     label: "Cinemas",
   },
-  Bus: {
-    icon: Bus,
-    gradient: "from-orange-500 to-amber-600",
-    label: "Bus Stations",
+  gym: {
+    icon: Film,
+    color: "text-pink-600 bg-pink-50 border-pink-100",
+    label: "Gyms",
   },
-  Other: {
+  pharmacy: {
+    icon: Heart,
+    color: "text-red-600 bg-red-50 border-red-100",
+    label: "Pharmacies",
+  },
+  other: {
     icon: MapPin,
-    gradient: "from-gray-500 to-gray-600",
+    color: "text-gray-500 bg-gray-50 border-gray-200",
     label: "Other",
   },
 };
+
+const getCfg = (cat: string) =>
+  CATEGORY_CONFIG[cat.toLowerCase()] || CATEGORY_CONFIG.other;
+
+const parseDistanceToKm = (s: string): number => {
+  if (!s) return 0;
+  const m = s.toLowerCase().match(/(\d+(?:\.\d+)?)\s*(m|km|mi)/);
+  if (!m) return 0;
+  const v = parseFloat(m[1]);
+  return m[2] === "m" ? v / 1000 : m[2] === "mi" ? v * 1.60934 : v;
+};
+
+const distColor = (d: number) =>
+  d <= 1 ? "text-emerald-600" : d <= 3 ? "text-amber-600" : "text-gray-500";
 
 export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   localityName,
@@ -168,356 +154,259 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
   nearbyPlaces = [],
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const [mergedPlaces, setMergedPlaces] = useState<MergedPlace[]>([]);
-  const [groupedPlaces, setGroupedPlaces] = useState<
-    Record<string, MergedPlace[]>
-  >({});
-  const [showUserPlaces, setShowUserPlaces] = useState(true);
-  const [showLocalityPlaces, setShowLocalityPlaces] = useState(true);
+  const [merged, setMerged] = useState<MergedPlace[]>([]);
+  const [grouped, setGrouped] = useState<Record<string, MergedPlace[]>>({});
+  const [showUser, setShowUser] = useState(true);
+  const [showLocality, setShowLocality] = useState(true);
 
-  // Parse distance string to km
-  const parseDistanceToKm = (distanceStr: string): number => {
-    if (!distanceStr) return 0;
-
-    const lowerStr = distanceStr.toLowerCase();
-    const match = lowerStr.match(/(\d+(?:\.\d+)?)\s*(m|km|mi)/);
-
-    if (!match) return 0;
-
-    const value = parseFloat(match[1]);
-    const unit = match[2];
-
-    switch (unit) {
-      case "m":
-        return value / 1000; // meters to km
-      case "mi":
-        return value * 1.60934; // miles to km
-      default:
-        return value; // already in km
-    }
-  };
-
-  // Merge and normalize data
   useEffect(() => {
-    const merged: MergedPlace[] = [];
+    const m: MergedPlace[] = [];
 
-    // Add locality highlights
-    localityHighlights.forEach((highlight, index) => {
-      merged.push({
-        id: `locality-${index}`,
-        name: highlight.name,
-        distance: highlight.distance_km,
+    localityHighlights.forEach((h, i) =>
+      m.push({
+        id: `loc-${i}`,
+        name: h.name,
+        distance: h.distance_km,
         distanceDisplay:
-          highlight.distance_km < 1
-            ? `${(highlight.distance_km * 1000).toFixed(0)}m`
-            : `${highlight.distance_km.toFixed(1)}km`,
-        category: highlight.type,
+          h.distance_km < 1
+            ? `${(h.distance_km * 1000).toFixed(0)}m`
+            : `${h.distance_km.toFixed(1)}km`,
+        category: h.type,
         categoryType: "locality",
-        source: "Local Database",
+        source: "DB",
         icon: null,
-      });
-    });
+      }),
+    );
 
-    // Add user input nearby places
-    nearbyPlaces.forEach((place, index) => {
-      const distanceKm = parseDistanceToKm(place.distance);
-      merged.push({
-        id: `user-${index}`,
-        name: place.name,
-        distance: distanceKm,
-        distanceDisplay: place.distance, // Keep original display format
-        category: place.category,
+    const np: NearbyPlace[] =
+      typeof nearbyPlaces === "string"
+        ? JSON.parse(nearbyPlaces)
+        : nearbyPlaces || [];
+    np.forEach((p, i) =>
+      m.push({
+        id: `usr-${i}`,
+        name: p.name,
+        distance: parseDistanceToKm(p.distance),
+        distanceDisplay: p.distance,
+        category: p.category,
         categoryType: "user",
-        icon: place.icon,
-        source: "Property Owner",
-      });
-    });
+        icon: p.icon,
+        source: "Owner",
+      }),
+    );
 
-    // Sort by distance
-    merged.sort((a, b) => a.distance - b.distance);
-    setMergedPlaces(merged);
+    m.sort((a, b) => a.distance - b.distance);
+    setMerged(m);
 
-    // Group by category
-    const grouped = merged.reduce((acc, place) => {
-      const categoryKey = place.category.toLowerCase();
-      if (!acc[categoryKey]) {
-        acc[categoryKey] = [];
-      }
-      acc[categoryKey].push(place);
-      return acc;
-    }, {} as Record<string, MergedPlace[]>);
-
-    // Sort each group by distance
-    Object.keys(grouped).forEach((category) => {
-      grouped[category].sort((a, b) => a.distance - b.distance);
-    });
-
-    setGroupedPlaces(grouped);
+    const g = m.reduce(
+      (acc, p) => {
+        const k = p.category.toLowerCase();
+        acc[k] = acc[k] || [];
+        acc[k].push(p);
+        return acc;
+      },
+      {} as Record<string, MergedPlace[]>,
+    );
+    Object.values(g).forEach((arr) =>
+      arr.sort((a, b) => a.distance - b.distance),
+    );
+    setGrouped(g);
   }, [localityHighlights, nearbyPlaces]);
 
-  // Filter places based on toggle
-  const filteredPlaces = mergedPlaces.filter((place) => {
-    if (!showUserPlaces && place.categoryType === "user") return false;
-    if (!showLocalityPlaces && place.categoryType === "locality") return false;
-    return true;
-  });
+  const filtered = merged.filter(
+    (p) =>
+      (showUser || p.categoryType !== "user") &&
+      (showLocality || p.categoryType !== "locality"),
+  );
+  const topPlaces = filtered.slice(0, 5);
+  const extras = filtered.slice(5);
+  const catKeys = Object.keys(grouped).slice(0, 5);
 
-  // Get categories for chips
-  const categories = Object.keys(groupedPlaces).slice(0, 4);
-  const moreCategories = Object.keys(groupedPlaces).length - 4;
-
-  // Get top 5 nearest places
-  const topPlaces = filteredPlaces.slice(0, 5);
-
-  const getDistanceColor = (distance: number) => {
-    if (distance <= 1) return "text-green-600";
-    if (distance <= 3) return "text-amber-600";
-    return "text-gray-600";
-  };
-
-  const getCategoryConfig = (category: string) => {
-    const normalizedCategory =
-      category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
-    return CATEGORY_CONFIG[normalizedCategory] || CATEGORY_CONFIG.Other;
-  };
-
-  if (mergedPlaces.length === 0) {
+  if (merged.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-blue-50/50 border border-gray-200 rounded-xl p-6 text-center">
-        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
-          <MapPin className="w-6 h-6 text-gray-400" />
+      <div className="bg-white border border-blue-100 rounded-xl p-5 text-center">
+        <div className="w-9 h-9 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+          <MapPin className="w-4 h-4 text-blue-300" />
         </div>
-        <h3 className="text-lg font-bold text-gray-900 mb-2">Nearby Places</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          No nearby places information available for {localityName}, {cityName}
+        <p className="text-xs font-bold text-gray-900 mb-1">Nearby Places</p>
+        <p className="text-[11px] text-gray-400">
+          No places found for {localityName}, {cityName}
         </p>
-        <div className="text-xs text-gray-500">
-          Add nearby places in the property form or check back later
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      {/* Header with Filters */}
-      <div className="p-5 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-white" />
+    <div className="bg-white border border-blue-100 rounded-xl overflow-hidden">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-blue-50">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+              <MapPin className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900">
-                Nearby Places & Amenities
+              <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                Nearby Places
               </h3>
-              <p className="text-sm text-gray-600">
-                {localityName}, {cityName}
+              <p className="text-[11px] text-gray-400">
+                {localityName}, {cityName} · {merged.length} places
               </p>
             </div>
           </div>
-          <div className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
-            {mergedPlaces.length} total
-          </div>
+          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">
+            {merged.length}
+          </span>
         </div>
 
-        {/* Filter Toggles */}
-        <div className="flex items-center gap-4">
+        {/* Source toggles */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => setShowUserPlaces(!showUserPlaces)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              showUserPlaces
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-gray-100 text-gray-600"
-            }`}
+            onClick={() => setShowUser((s) => !s)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors
+              ${showUser ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-400 border-gray-200"}`}
           >
-            <User className="w-4 h-4" />
-            User Added ({nearbyPlaces.length})
+            <User className="w-3 h-3" /> Owner ({nearbyPlaces.length})
           </button>
           <button
-            onClick={() => setShowLocalityPlaces(!showLocalityPlaces)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              showLocalityPlaces
-                ? "bg-blue-50 text-blue-700 border border-blue-200"
-                : "bg-gray-100 text-gray-600"
-            }`}
+            onClick={() => setShowLocality((s) => !s)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors
+              ${showLocality ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-50 text-gray-400 border-gray-200"}`}
           >
-            <Database className="w-4 h-4" />
-            Local Data ({localityHighlights.length})
+            <Database className="w-3 h-3" /> Database (
+            {localityHighlights.length})
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-5">
-        {/* Category Chips */}
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((category) => {
-            const config = getCategoryConfig(category);
-            const Icon = config.icon;
-            const count = groupedPlaces[category].length;
-
+      <div className="p-4 sm:p-5">
+        {/* Category chips */}
+        <div className="flex items-center gap-1.5 mb-3.5 overflow-x-auto pb-1 scrollbar-hide">
+          {catKeys.map((cat) => {
+            const cfg = getCfg(cat);
+            const Icon = cfg.icon;
             return (
               <div
-                key={category}
-                className="flex-shrink-0 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 hover:bg-gray-100 transition-colors"
+                key={cat}
+                className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${cfg.color}`}
               >
-                <div
-                  className={`w-6 h-6 bg-gradient-to-br ${config.gradient} rounded-full flex items-center justify-center`}
-                >
-                  <Icon className="w-3 h-3 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-gray-700">
-                  {config.label}
-                </span>
-                <span className="text-xs font-bold text-gray-500">{count}</span>
+                <Icon className="w-3 h-3" /> {cfg.label}
+                <span className="opacity-50 ml-0.5">{grouped[cat].length}</span>
               </div>
             );
           })}
-          {moreCategories > 0 && (
-            <div className="flex-shrink-0 text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-              +{moreCategories} more
-            </div>
+          {Object.keys(grouped).length > 5 && (
+            <span className="flex-shrink-0 text-[11px] font-semibold text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-full">
+              +{Object.keys(grouped).length - 5} more
+            </span>
           )}
         </div>
 
-        {/* Top Places */}
-        <div className="space-y-3 mb-4">
+        {/* Top 5 places */}
+        <div className="space-y-1.5 mb-3">
           {topPlaces.map((place) => {
-            const config = getCategoryConfig(place.category);
-            const Icon = config.icon;
-            const isUserPlace = place.categoryType === "user";
-
+            const cfg = getCfg(place.category);
+            const Icon = cfg.icon;
+            const isUser = place.categoryType === "user";
             return (
               <div
                 key={place.id}
-                className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl hover:bg-white hover:shadow-sm transition-all"
+                className="flex items-center gap-3 px-3 py-2.5 bg-gray-50/70 hover:bg-blue-50/40 border border-gray-100 hover:border-blue-100 rounded-xl transition-all"
               >
-                <div className="relative">
-                  <div
-                    className={`w-9 h-9 bg-gradient-to-br ${config.gradient} rounded-lg flex items-center justify-center`}
-                  >
-                    <Icon className="w-4 h-4 text-white" />
-                  </div>
-                  {isUserPlace && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                <div
+                  className={`relative w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${cfg.color}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {isUser && (
+                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border border-white flex items-center justify-center">
                       <User className="w-2 h-2 text-white" />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-semibold text-gray-900 truncate">
-                      {place.name}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      ({config.label})
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                      <Navigation className="w-3 h-3" />
-                      <span className={getDistanceColor(place.distance)}>
-                        {place.distanceDisplay}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500 flex items-center gap-1">
-                      {isUserPlace ? (
-                        <>
-                          <User className="w-3 h-3" />
-                          <span>Added by owner</span>
-                        </>
-                      ) : (
-                        <>
-                          <Database className="w-3 h-3" />
-                          <span>Local data</span>
-                        </>
-                      )}
-                    </div>
+                  <span className="text-xs sm:text-sm font-semibold text-gray-900 block truncate">
+                    {place.name}
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Navigation className="w-2.5 h-2.5 text-gray-400" />
+                    <span
+                      className={`text-[11px] font-semibold ${distColor(place.distance)}`}
+                    >
+                      {place.distanceDisplay}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      · {isUser ? "owner" : "db"}
+                    </span>
                   </div>
                 </div>
-                <div className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                  {place.distance <= 1 ? "Walkable" : "Driveable"}
-                </div>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 border
+                  ${place.distance <= 1 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
+                >
+                  {place.distance <= 1 ? "Walk" : "Drive"}
+                </span>
               </div>
             );
           })}
         </div>
 
-        {/* Expand/Collapse */}
-        {filteredPlaces.length > 5 && (
+        {/* Expand toggle */}
+        {extras.length > 0 && (
           <button
-            onClick={() => setExpanded(!expanded)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+            onClick={() => setExpanded((s) => !s)}
+            className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-xl text-[11px] font-semibold text-blue-600 transition-colors mb-3"
           >
             {expanded ? (
               <>
-                <ChevronUp className="w-4 h-4" />
-                Show Less
+                <ChevronUp className="w-3.5 h-3.5" /> Show less
               </>
             ) : (
               <>
-                <ChevronDown className="w-4 h-4" />
-                Show All ({filteredPlaces.length - 5} more)
+                <ChevronDown className="w-3.5 h-3.5" /> {extras.length} more
+                places
               </>
             )}
           </button>
         )}
 
-        {/* Expanded View */}
+        {/* Expanded grouped list */}
         {expanded && (
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
-            {Object.entries(groupedPlaces).map(([category, places]) => {
-              const config = getCategoryConfig(category);
-              const Icon = config.icon;
-              const filteredCategoryPlaces = places.filter((place) =>
-                filteredPlaces.includes(place)
-              );
-
-              if (filteredCategoryPlaces.length === 0) return null;
-
+          <div className="space-y-4 pt-3 border-t border-blue-50 mb-3">
+            {Object.entries(grouped).map(([cat, places]) => {
+              const cfg = getCfg(cat);
+              const Icon = cfg.icon;
+              const fp = places.filter((p) => filtered.includes(p));
+              if (!fp.length) return null;
               return (
-                <div key={category} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-6 h-6 bg-gradient-to-br ${config.gradient} rounded-lg flex items-center justify-center`}
-                    >
-                      <Icon className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-sm font-bold text-gray-700">
-                      {config.label} ({filteredCategoryPlaces.length})
-                    </span>
+                <div key={cat}>
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold mb-2 ${cfg.color}`}
+                  >
+                    <Icon className="w-3 h-3" /> {cfg.label} ({fp.length})
                   </div>
-                  <div className="space-y-2 ml-8">
-                    {filteredCategoryPlaces.map((place) => {
-                      const isUserPlace = place.categoryType === "user";
-
-                      return (
-                        <div
-                          key={place.id}
-                          className="flex items-center justify-between text-sm p-2 hover:bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-700">{place.name}</span>
-                            {isUserPlace && (
-                              <span className="text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
-                                Added by owner
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={getDistanceColor(place.distance)}>
-                              {place.distanceDisplay}
+                  <div className="space-y-1">
+                    {fp.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between py-1 px-2 hover:bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs text-gray-700 truncate">
+                            {p.name}
+                          </span>
+                          {p.categoryType === "user" && (
+                            <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                              owner
                             </span>
-                            {place.distance <= 1 && (
-                              <span className="text-xs text-green-600">
-                                🚶 Walk
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
-                      );
-                    })}
+                        <span
+                          className={`text-xs font-semibold ml-2 flex-shrink-0 ${distColor(p.distance)}`}
+                        >
+                          {p.distanceDisplay}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
@@ -525,51 +414,49 @@ export const NearbyPlacesSection: React.FC<NearbyPlacesSectionProps> = ({
           </div>
         )}
 
-        {/* Summary Stats */}
-        <div className="mt-6 pt-4 border-t border-gray-200 grid grid-cols-4 gap-2">
-          <div className="text-center p-2 bg-green-50 rounded-lg">
-            <div className="text-lg font-bold text-green-600">
-              {filteredPlaces.filter((p) => p.distance <= 1).length}
+        {/* Summary stats */}
+        <div className="grid grid-cols-4 gap-1.5 pt-3 border-t border-blue-50">
+          {[
+            {
+              label: "≤1km",
+              value: filtered.filter((p) => p.distance <= 1).length,
+              color: "bg-emerald-50 text-emerald-700 border-emerald-100",
+            },
+            {
+              label: "≤3km",
+              value: filtered.filter((p) => p.distance <= 3).length,
+              color: "bg-amber-50 text-amber-700 border-amber-100",
+            },
+            {
+              label: "Types",
+              value: Object.keys(grouped).length,
+              color: "bg-blue-50 text-blue-700 border-blue-100",
+            },
+            {
+              label: "Owner",
+              value: nearbyPlaces.length,
+              color: "bg-indigo-50 text-indigo-700 border-indigo-100",
+            },
+          ].map(({ label, value, color }) => (
+            <div
+              key={label}
+              className={`text-center py-2 rounded-lg border ${color}`}
+            >
+              <div className="text-sm sm:text-base font-black">{value}</div>
+              <div className="text-[10px] font-medium mt-0.5">{label}</div>
             </div>
-            <div className="text-xs text-green-700 font-medium">Within 1km</div>
-          </div>
-          <div className="text-center p-2 bg-amber-50 rounded-lg">
-            <div className="text-lg font-bold text-amber-600">
-              {filteredPlaces.filter((p) => p.distance <= 3).length}
-            </div>
-            <div className="text-xs text-amber-700 font-medium">Within 3km</div>
-          </div>
-          <div className="text-center p-2 bg-blue-50 rounded-lg">
-            <div className="text-lg font-bold text-blue-600">
-              {Object.keys(groupedPlaces).length}
-            </div>
-            <div className="text-xs text-blue-700 font-medium">Categories</div>
-          </div>
-          <div className="text-center p-2 bg-purple-50 rounded-lg">
-            <div className="text-lg font-bold text-purple-600">
-              {nearbyPlaces.length}
-            </div>
-            <div className="text-xs text-purple-700 font-medium">
-              User Added
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Data Source Info */}
-        <div className="mt-4 text-xs text-gray-500 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>Added by Property Owner</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>From Local Database</span>
-            </div>
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
+            <span className="text-[10px] text-gray-400">Added by owner</span>
           </div>
-          <div className="flex items-center gap-1">
-            <RefreshCw className="w-3 h-3" />
-            <span>Updated {new Date().toLocaleDateString()}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />
+            <span className="text-[10px] text-gray-400">Local database</span>
           </div>
         </div>
       </div>

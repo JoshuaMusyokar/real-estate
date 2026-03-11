@@ -10,20 +10,12 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Property } from "../../../types";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/Card";
-import Button from "../../../components/ui/button/Button";
 
-interface NearbyPlace {
+interface QuickPlace {
   name: string;
-  type: string;
-  distance: number;
   icon: any;
   color: string;
+  distance: number;
 }
 
 export const LocationSection: React.FC<{ property: Property }> = ({
@@ -35,380 +27,283 @@ export const LocationSection: React.FC<{ property: Property }> = ({
   const [mapError, setMapError] = useState(false);
   const [showFullMap, setShowFullMap] = useState(false);
 
-  // Mock nearby places - In production, fetch from your API or Google Places
-  const nearbyPlaces: NearbyPlace[] = [
-    {
-      name: "Schools",
-      type: "school",
-      distance: 0.8,
-      icon: School,
-      color: "#3b82f6",
-    },
-    {
-      name: "Hospitals",
-      type: "hospital",
-      distance: 1.2,
-      icon: Heart,
-      color: "#ef4444",
-    },
-    {
-      name: "Shopping",
-      type: "shopping",
-      distance: 0.5,
-      icon: ShoppingBag,
-      color: "#8b5cf6",
-    },
-    {
-      name: "Transit",
-      type: "transit",
-      distance: 0.3,
-      icon: Bus,
-      color: "#f59e0b",
-    },
-    {
-      name: "Cafes",
-      type: "cafe",
-      distance: 0.4,
-      icon: Coffee,
-      color: "#10b981",
-    },
+  const quickPlaces: QuickPlace[] = [
+    { name: "Schools", icon: School, color: "#3b82f6", distance: 0.8 },
+    { name: "Hospital", icon: Heart, color: "#ef4444", distance: 1.2 },
+    { name: "Shopping", icon: ShoppingBag, color: "#6366f1", distance: 0.5 },
+    { name: "Transit", icon: Bus, color: "#f59e0b", distance: 0.3 },
+    { name: "Cafes", icon: Coffee, color: "#10b981", distance: 0.4 },
   ];
 
   useEffect(() => {
     if (!property.latitude || !property.longitude || !showFullMap) return;
 
-    // Load Leaflet CSS
-    const linkElement = document.createElement("link");
-    linkElement.rel = "stylesheet";
-    linkElement.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-    linkElement.integrity =
-      "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-    linkElement.crossOrigin = "";
-    document.head.appendChild(linkElement);
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+    link.crossOrigin = "";
+    document.head.appendChild(link);
 
-    // Load Leaflet JS
-    const scriptElement = document.createElement("script");
-    scriptElement.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    scriptElement.integrity =
-      "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-    scriptElement.crossOrigin = "";
-    scriptElement.async = true;
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+    script.crossOrigin = "";
+    script.async = true;
 
-    scriptElement.onload = () => {
-      if (mapContainerRef.current && (window as any).L) {
-        try {
-          const L = (window as any).L;
-          const map = L.map(mapContainerRef.current).setView(
-            [property.latitude, property.longitude],
-            14,
+    script.onload = () => {
+      if (!mapContainerRef.current || !(window as any).L) return;
+      try {
+        const L = (window as any).L;
+        const map = L.map(mapContainerRef.current).setView(
+          [property.latitude, property.longitude],
+          14,
+        );
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 19,
+        }).addTo(map);
+
+        const icon = L.divIcon({
+          className: "custom-marker",
+          html: `<div style="background:linear-gradient(135deg,#3b82f6,#2563eb);width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 4px 10px rgba(37,99,235,.4);display:flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" style="transform:rotate(45deg)"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          </div>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 34],
+          popupAnchor: [0, -34],
+        });
+        L.marker([property.latitude, property.longitude], { icon })
+          .addTo(map)
+          .bindPopup(
+            `<div style="padding:8px;min-width:160px;"><div style="font-weight:700;font-size:13px;color:#111">${property.title}</div><div style="font-size:11px;color:#6b7280;margin:2px 0">${property.locality}</div><div style="font-size:13px;font-weight:800;color:#2563eb">${property.currency} ${property.price.toLocaleString()}</div></div>`,
           );
-
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 19,
-          }).addTo(map);
-
-          // Custom marker
-          const customIcon = L.divIcon({
-            className: "custom-marker",
-            html: `
-              <div style="
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                width: 36px;
-                height: 36px;
-                border-radius: 50% 50% 50% 0;
-                transform: rotate(-45deg);
-                border: 3px solid white;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              ">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" style="transform: rotate(45deg);">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                </svg>
-              </div>
-            `,
-            iconSize: [36, 36],
-            iconAnchor: [18, 36],
-            popupAnchor: [0, -36],
-          });
-
-          L.marker([property.latitude, property.longitude], {
-            icon: customIcon,
-          }).addTo(map).bindPopup(`
-            <div style="padding: 8px; min-width: 180px;">
-              <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #111827;">
-                ${property.title}
-              </div>
-              <div style="font-size: 11px; color: #6b7280; margin-bottom: 6px;">
-                ${property.locality}
-              </div>
-              <div style="font-size: 13px; font-weight: 700; color: #2563eb;">
-                ${property.currency} ${property.price.toLocaleString()}
-              </div>
-            </div>
-          `);
-
-          // Add radius circle
-          L.circle([property.latitude, property.longitude], {
-            color: "#3b82f6",
-            fillColor: "#3b82f6",
-            fillOpacity: 0.08,
-            radius: 500,
-            weight: 2,
-          }).addTo(map);
-
-          mapRef.current = map;
-          setMapLoaded(true);
-
-          setTimeout(() => map.invalidateSize(), 100);
-        } catch (error) {
-          console.error("Error initializing map:", error);
-          setMapError(true);
-        }
+        L.circle([property.latitude, property.longitude], {
+          color: "#3b82f6",
+          fillColor: "#3b82f6",
+          fillOpacity: 0.06,
+          radius: 500,
+          weight: 1.5,
+        }).addTo(map);
+        mapRef.current = map;
+        setMapLoaded(true);
+        setTimeout(() => map.invalidateSize(), 100);
+      } catch {
+        setMapError(true);
       }
     };
-
-    scriptElement.onerror = () => setMapError(true);
-    document.head.appendChild(scriptElement);
+    script.onerror = () => setMapError(true);
+    document.head.appendChild(script);
 
     return () => {
       if (mapRef.current) mapRef.current.remove();
-      if (document.head.contains(linkElement))
-        document.head.removeChild(linkElement);
-      if (document.head.contains(scriptElement))
-        document.head.removeChild(scriptElement);
+      if (document.head.contains(link)) document.head.removeChild(link);
+      if (document.head.contains(script)) document.head.removeChild(script);
     };
   }, [property, showFullMap]);
 
-  const openInGoogleMaps = () => {
-    if (property.latitude && property.longitude) {
-      window.open(
-        `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`,
-        "_blank",
-      );
-    }
-  };
-
-  const getDirections = () => {
-    if (property.latitude && property.longitude) {
-      window.open(
-        `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`,
-        "_blank",
-      );
-    }
-  };
+  const openGoogleMaps = () =>
+    window.open(
+      `https://www.google.com/maps/search/?api=1&query=${property.latitude},${property.longitude}`,
+      "_blank",
+    );
+  const getDirections = () =>
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&destination=${property.latitude},${property.longitude}`,
+      "_blank",
+    );
 
   return (
-    <Card className="overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-teal-50/50">
-      <CardHeader className="p-4 sm:p-5 md:p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg sm:rounded-xl blur-md opacity-50" />
-              <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-teal-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
-                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-            </div>
-            <div>
-              <CardTitle className="text-base sm:text-lg md:text-xl">
-                Location
-              </CardTitle>
-              <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">
-                {property.locality}
-              </p>
-            </div>
+    <div className="bg-white border border-blue-100 rounded-xl overflow-hidden">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-blue-50 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+            <MapPin className="w-4 h-4 text-white" />
           </div>
-          <button
-            onClick={openInGoogleMaps}
-            className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full transition-colors"
-          >
-            <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            <span className="hidden sm:inline">Open</span>
-          </button>
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-gray-900">
+              Location
+            </h3>
+            <p className="text-[11px] text-gray-400">
+              {property.locality}, {property.city.name}
+            </p>
+          </div>
         </div>
-      </CardHeader>
+        <button
+          onClick={openGoogleMaps}
+          className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2.5 py-1 rounded-full transition-colors"
+        >
+          <ExternalLink className="w-3 h-3" /> Open
+        </button>
+      </div>
 
-      <CardContent className="p-4 sm:p-5 md:p-6 pt-0">
-        {/* Address */}
-        <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg sm:rounded-xl">
-          <div className="text-xs sm:text-sm text-gray-700 leading-relaxed">
+      <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+        {/* Address pill */}
+        <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+          <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
             {property.address}, {property.locality}
             <br />
-            {property.city.name}, {property.state && `${property.state}, `}
-            {property.country}
-            {property.zipCode && ` - ${property.zipCode}`}
-          </div>
+            {property.city.name}
+            {property.state ? `, ${property.state}` : ""}, {property.country}
+            {property.zipCode ? ` — ${property.zipCode}` : ""}
+          </p>
         </div>
 
-        {/* Nearby Places */}
+        {/* Quick places grid */}
         {property.latitude && property.longitude && (
-          <div className="mb-3 sm:mb-4">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <h4 className="text-xs sm:text-sm font-bold text-gray-900">
-                What's Nearby
-              </h4>
-              <button
-                onClick={() => setShowFullMap(!showFullMap)}
-                className="text-[10px] sm:text-xs font-semibold text-blue-600 hover:text-blue-700"
-              >
-                {showFullMap ? "Hide Map" : "View Map"}
-              </button>
-            </div>
-
-            {/* Nearby Quick Cards - Responsive Grid */}
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {nearbyPlaces.map((place, idx) => {
-                const Icon = place.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="text-center p-2 sm:p-2.5 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg sm:rounded-xl hover:bg-white/80 transition-all"
-                  >
-                    <div
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mx-auto mb-1 shadow-sm"
-                      style={{ backgroundColor: `${place.color}15` }}
-                    >
-                      <Icon
-                        className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                        style={{ color: place.color }}
-                      />
-                    </div>
-                    <div className="text-[9px] sm:text-[10px] font-semibold text-gray-700 leading-tight">
-                      {place.name}
-                    </div>
-                    <div className="text-[8px] sm:text-[9px] text-gray-500 mt-0.5">
-                      {place.distance}km
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Expandable Map */}
-        {showFullMap && property.latitude && property.longitude && (
-          <div className="mb-3 sm:mb-4 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="relative rounded-lg sm:rounded-xl overflow-hidden border border-gray-200/50 shadow-lg">
-              <div
-                ref={mapContainerRef}
-                className="h-48 sm:h-56 md:h-64 bg-gray-200"
-                style={{ zIndex: 1 }}
-              >
-                {!mapLoaded && !mapError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-                    <div className="text-center">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 sm:border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                      <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
-                        Loading map...
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {mapError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-                    <div className="text-center p-3 sm:p-4">
-                      <Navigation className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mx-auto mb-2" />
-                      <span className="text-[10px] sm:text-xs text-gray-600 font-medium">
-                        Map unavailable
-                      </span>
-                    </div>
-                  </div>
-                )}
+          <>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-gray-900">
+                  What's Nearby
+                </span>
+                <button
+                  onClick={() => setShowFullMap((s) => !s)}
+                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full border border-blue-100 transition-colors"
+                >
+                  {showFullMap ? "Hide map" : "View map"}
+                </button>
               </div>
+              <div className="grid grid-cols-5 gap-1.5">
+                {quickPlaces.map((p, i) => {
+                  const Icon = p.icon;
+                  return (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center p-2 bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/40 rounded-xl transition-colors text-center"
+                    >
+                      <div
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mb-1"
+                        style={{ backgroundColor: `${p.color}18` }}
+                      >
+                        <Icon
+                          className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                          style={{ color: p.color }}
+                        />
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] font-semibold text-gray-700 leading-tight">
+                        {p.name}
+                      </span>
+                      <span className="text-[8px] sm:text-[9px] text-gray-400 mt-0.5">
+                        {p.distance}km
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-              {/* Map Controls */}
-              {mapLoaded && (
-                <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex gap-2 z-10">
-                  <button
-                    onClick={() => {
-                      if (mapRef.current) {
-                        mapRef.current.setView(
+            {/* Expandable map */}
+            {showFullMap && (
+              <div className="rounded-xl overflow-hidden border border-blue-100 shadow-sm">
+                <div
+                  ref={mapContainerRef}
+                  className="h-44 sm:h-56 md:h-64 bg-blue-50 relative"
+                  style={{ zIndex: 1 }}
+                >
+                  {!mapLoaded && !mapError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                        <span className="text-[11px] text-gray-500 font-medium">
+                          Loading map…
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {mapError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+                      <div className="text-center">
+                        <Navigation className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        <span className="text-[11px] text-gray-500">
+                          Map unavailable
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {mapLoaded && (
+                    <button
+                      onClick={() =>
+                        mapRef.current?.setView(
                           [property.latitude, property.longitude],
                           14,
-                        );
+                        )
                       }
-                    }}
-                    className="bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 sm:p-2 rounded-lg shadow-md hover:bg-white transition-all"
-                  >
-                    <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
-                  </button>
+                      className="absolute top-2.5 right-2.5 z-10 bg-white border border-blue-100 shadow-sm p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
+
+            {/* CTA buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={getDirections}
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-colors shadow-sm shadow-blue-200"
+              >
+                <Navigation className="w-3.5 h-3.5" /> Directions
+              </button>
+              <button
+                onClick={openGoogleMaps}
+                className="flex items-center justify-center gap-1.5 py-2.5 bg-white hover:bg-blue-50 text-blue-600 text-xs sm:text-sm font-bold rounded-xl border border-blue-200 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Google Maps
+              </button>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Action Buttons */}
-        {property.latitude && property.longitude && (
-          <div className="grid grid-cols-2 gap-2 mb-3 sm:mb-4">
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={getDirections}
-              startIcon={<Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-              className="text-xs sm:text-sm"
-            >
-              <span className="hidden xs:inline">Directions</span>
-              <span className="xs:hidden">Route</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={openInGoogleMaps}
-              startIcon={<ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-              className="text-xs sm:text-sm"
-            >
-              <span className="hidden sm:inline">Google Maps</span>
-              <span className="sm:hidden">Maps</span>
-            </Button>
-          </div>
-        )}
-
-        {/* Fallback when no coordinates */}
+        {/* No coordinates fallback */}
         {(!property.latitude || !property.longitude) && (
-          <div className="bg-gray-50/80 border-2 border-dashed border-gray-300 rounded-lg sm:rounded-xl p-4 sm:p-6 text-center mb-3 sm:mb-4">
-            <MapPin className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mx-auto mb-2" />
-            <div className="text-xs sm:text-sm text-gray-600 font-medium">
+          <div className="border-2 border-dashed border-blue-100 rounded-xl p-5 text-center">
+            <MapPin className="w-8 h-8 text-blue-200 mx-auto mb-2" />
+            <p className="text-xs font-semibold text-gray-600">
               Exact location not available
-            </div>
-            <div className="text-[10px] sm:text-xs text-gray-500 mt-1">
-              Contact owner for details
-            </div>
+            </p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Contact the owner for details
+            </p>
           </div>
         )}
 
-        {/* Location Stats */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="text-center p-2 bg-blue-50/80 rounded-lg">
-            <div className="text-[10px] sm:text-xs font-semibold text-blue-600 truncate">
-              {property.city.name}
+        {/* Location stat pills */}
+        <div className="grid grid-cols-3 gap-1.5">
+          {[
+            {
+              label: "City",
+              value: property.city.name,
+              color: "bg-blue-50 text-blue-700 border-blue-100",
+            },
+            {
+              label: "Locality",
+              value: property.locality,
+              color: "bg-indigo-50 text-indigo-700 border-indigo-100",
+            },
+            {
+              label: "Pincode",
+              value: property.zipCode || "N/A",
+              color: "bg-gray-50 text-gray-600 border-gray-100",
+            },
+          ].map(({ label, value, color }) => (
+            <div
+              key={label}
+              className={`text-center py-2 px-1 rounded-xl border ${color}`}
+            >
+              <div className="text-[11px] sm:text-xs font-bold truncate">
+                {value}
+              </div>
+              <div className="text-[9px] sm:text-[10px] font-medium opacity-70 mt-0.5">
+                {label}
+              </div>
             </div>
-            <div className="text-[8px] sm:text-[10px] text-blue-700 mt-0.5">
-              City
-            </div>
-          </div>
-          <div className="text-center p-2 bg-teal-50/80 rounded-lg">
-            <div className="text-[10px] sm:text-xs font-semibold text-teal-600 truncate">
-              {property.locality}
-            </div>
-            <div className="text-[8px] sm:text-[10px] text-teal-700 mt-0.5">
-              Locality
-            </div>
-          </div>
-          <div className="text-center p-2 bg-purple-50/80 rounded-lg">
-            <div className="text-[10px] sm:text-xs font-semibold text-purple-600 truncate">
-              {property.zipCode || "N/A"}
-            </div>
-            <div className="text-[8px] sm:text-[10px] text-purple-700 mt-0.5">
-              Pincode
-            </div>
-          </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

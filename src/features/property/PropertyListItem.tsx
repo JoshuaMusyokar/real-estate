@@ -11,48 +11,49 @@ import { useState, type FC } from "react";
 import type { Property } from "../../types";
 import { StatusBadge } from "./StatusBadge";
 import { QuickReviewActions } from "./QuickReviewAction";
-import { useAuth } from "../../hooks/useAuth";
 import { getCurrencySymbol } from "../../utils/currency-utils";
 import { FeaturedToggle } from "./components/FeaturedToggle";
 import { Card } from "../../components/ui/Card";
+import { usePermissions } from "../../hooks/usePermissions";
 
 interface PropertyListItemProps {
   property: Property;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
   onView: (id: string) => void;
+  // Optional — parent passes undefined when user lacks the permission
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onFeaturedToggle?: (propertyId: string, isFeatured: boolean) => void;
 }
 
 export const PropertyListItem: FC<PropertyListItemProps> = ({
   property,
+  onView,
   onEdit,
   onDelete,
-  onView,
   onFeaturedToggle,
 }) => {
-  const { user } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
+
+  const { can } = usePermissions();
+  const canReview = can("property.approve");
+  const canFeature = can("property.feature");
+
+  const hasAnyMenuAction = !!onEdit || !!onDelete || canReview || canFeature;
 
   const coverImage =
     property.images?.find((img) => img.isCover)?.viewableUrl ||
     property.images?.[0]?.viewableUrl;
 
-  const isAdmin =
-    user?.role.name === "ADMIN" || user?.role.name === "SUPER_ADMIN";
-
   const handleFeaturedToggle = () => {
-    if (onFeaturedToggle) {
-      onFeaturedToggle(property.id, !property.featured);
-    }
+    onFeaturedToggle?.(property.id, !property.featured);
   };
 
   return (
     <Card className="hover:shadow-lg hover:border-gray-300 transition-all duration-300 overflow-hidden">
-      {/* Mobile Layout */}
+      {/* ── Mobile layout ──────────────────────────────────────────────────── */}
       <div className="md:hidden">
         <div className="flex gap-3 p-3">
-          {/* Image */}
+          {/* Thumbnail */}
           <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
             {coverImage ? (
               <img
@@ -83,51 +84,60 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
               >
                 {property.title}
               </h3>
-              <div className="relative flex-shrink-0">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center justify-center"
-                >
-                  <MoreVertical className="w-4 h-4 text-gray-600" />
-                </button>
-                {showMenu && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setShowMenu(false)}
-                    />
-                    <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20">
-                      <button
-                        onClick={() => {
-                          onView(property.slug);
-                          setShowMenu(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
-                      >
-                        <Eye className="w-4 h-4" /> View
-                      </button>
-                      <button
-                        onClick={() => {
-                          onEdit(property.id);
-                          setShowMenu(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 text-blue-600"
-                      >
-                        <Edit2 className="w-4 h-4" /> Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          onDelete(property.id);
-                          setShowMenu(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+
+              {/* Three-dot menu — only rendered when at least one action exists */}
+              {hasAnyMenuAction && (
+                <div className="relative flex-shrink-0">
+                  <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-600" />
+                  </button>
+                  {showMenu && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowMenu(false)}
+                      />
+                      <div className="absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20">
+                        {/* View — always shown */}
+                        <button
+                          onClick={() => {
+                            onView(property.slug);
+                            setShowMenu(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                        >
+                          <Eye className="w-4 h-4" /> View
+                        </button>
+                        {onEdit && (
+                          <button
+                            onClick={() => {
+                              onEdit(property.id);
+                              setShowMenu(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-blue-50 flex items-center gap-2 text-blue-600"
+                          >
+                            <Edit2 className="w-4 h-4" /> Edit
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={() => {
+                              onDelete(property.id);
+                              setShowMenu(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5 text-gray-600 text-xs mb-2">
@@ -166,7 +176,7 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
           <span className="flex items-center gap-1">
             <Eye className="w-3 h-3" /> {property.viewCount}
           </span>
-          {isAdmin && (
+          {canFeature && (
             <FeaturedToggle
               propertyId={property.id}
               isFeatured={property.featured}
@@ -176,16 +186,17 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
           )}
         </div>
 
-        {isAdmin && (
+        {canReview && (
           <div className="px-3 pb-3">
             <QuickReviewActions property={property} onSuccess={() => {}} />
           </div>
         )}
       </div>
 
-      {/* Desktop Layout */}
+      {/* ── Desktop layout ─────────────────────────────────────────────────── */}
       <div className="hidden md:block">
         <div className="flex gap-4 lg:gap-5 p-4 lg:p-5">
+          {/* Thumbnail */}
           <div className="relative w-40 lg:w-56 h-28 lg:h-36 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
             {coverImage ? (
               <img
@@ -218,7 +229,8 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
                   >
                     {property.title}
                   </h3>
-                  {isAdmin && (
+                  {/* Inline featured toggle — only for users with property.feature */}
+                  {canFeature && (
                     <FeaturedToggle
                       propertyId={property.id}
                       isFeatured={property.featured}
@@ -269,25 +281,33 @@ export const PropertyListItem: FC<PropertyListItemProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
+                {/* View — always shown */}
                 <button
                   onClick={() => onView(property.slug)}
                   className="px-3 lg:px-4 py-2 text-sm text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   View
                 </button>
-                <button
-                  onClick={() => onEdit(property.id)}
-                  className="px-3 lg:px-4 py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDelete(property.id)}
-                  className="px-3 lg:px-4 py-2 text-sm text-red-600 font-medium hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
-                {isAdmin && (
+
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(property.id)}
+                    className="px-3 lg:px-4 py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(property.id)}
+                    className="px-3 lg:px-4 py-2 text-sm text-red-600 font-medium hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
+
+                {canReview && (
                   <QuickReviewActions
                     property={property}
                     onSuccess={() => {}}

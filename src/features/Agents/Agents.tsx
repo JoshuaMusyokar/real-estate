@@ -20,15 +20,26 @@ import {
   useGetTopAgentsQuery,
 } from "../../services/agentApi";
 import type { AgentForAssignment, AgentsFilter } from "../../types";
+import { usePermissions } from "../../hooks/usePermissions";
+import { UserDetailsModal } from "../User/UserDetailModal";
 
 export const Agents: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCity, setSelectedCity] = useState<string>("");
-  const [selectedLocality, setSelectedLocality] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedLocality, setSelectedLocality] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewingAgent, setViewingAgent] = useState<AgentForAssignment | null>(
+    null,
+  );
 
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canViewAgent = can("agent.view");
+  const canEditUser = can("user.edit"); // controls whether Edit button shows in the modal
+
+  // ── Data ─────────────────────────────────────────────────────────────────────
   const filters: AgentsFilter = {
     search: searchTerm || undefined,
     city: selectedCity || undefined,
@@ -44,6 +55,7 @@ export const Agents: React.FC = () => {
   const agents = agentsData?.data || [];
   const topAgents = topAgentsData?.data || [];
 
+  // ── Helpers ───────────────────────────────────────────────────────────────────
   const getWorkloadColor = (workload: string) => {
     switch (workload) {
       case "low":
@@ -83,6 +95,12 @@ export const Agents: React.FC = () => {
     );
   };
 
+  // AgentForAssignment is a subset of UserResponse — cast is safe for modal display
+  const handleViewProfile = (agent: AgentForAssignment) => {
+    if (canViewAgent) setViewingAgent(agent);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <>
       <div className="max-w-full mx-auto">
@@ -97,18 +115,14 @@ export const Agents: React.FC = () => {
                 Connect with top-performing real estate professionals
               </p>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() =>
-                  setViewMode(viewMode === "grid" ? "list" : "grid")
-                }
-                className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-all duration-300"
-              >
-                <span className="text-gray-700 dark:text-gray-300">
-                  {viewMode === "grid" ? "List" : "Grid"} View
-                </span>
-              </button>
-            </div>
+            <button
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-all duration-300"
+            >
+              <span className="text-gray-700 dark:text-gray-300">
+                {viewMode === "grid" ? "List" : "Grid"} View
+              </span>
+            </button>
           </div>
 
           {/* Top Performers Banner */}
@@ -155,7 +169,6 @@ export const Agents: React.FC = () => {
           {/* Search and Filters */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 backdrop-blur-lg transition-colors duration-300">
             <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search */}
               <div className="flex-1 relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 <input
@@ -166,8 +179,6 @@ export const Agents: React.FC = () => {
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
                 />
               </div>
-
-              {/* Filter Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
@@ -175,14 +186,11 @@ export const Agents: React.FC = () => {
                 <Filter className="w-5 h-5" />
                 Filters
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-300 ${
-                    showFilters ? "rotate-180" : ""
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`}
                 />
               </button>
             </div>
 
-            {/* Expanded Filters */}
             {showFilters && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -225,7 +233,7 @@ export const Agents: React.FC = () => {
               </div>
             )}
 
-            {/* Active Filters */}
+            {/* Active filter chips */}
             {(searchTerm ||
               selectedCity ||
               selectedLocality ||
@@ -263,41 +271,59 @@ export const Agents: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Overview */}
+        {/* Stats Overview — read-only, always shown */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <Users className="w-8 h-8 mb-3 opacity-80" />
-            <p className="text-3xl font-bold mb-1">{agents.length}</p>
-            <p className="text-blue-100 text-sm">Total Agents</p>
-          </div>
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <UserCheck className="w-8 h-8 mb-3 opacity-80" />
-            <p className="text-3xl font-bold mb-1">
-              {agents.filter((a) => a.currentWorkload === "low").length}
-            </p>
-            <p className="text-emerald-100 text-sm">Available Now</p>
-          </div>
-          <div className="bg-gradient-to-br from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <TrendingUp className="w-8 h-8 mb-3 opacity-80" />
-            <p className="text-3xl font-bold mb-1">
-              {agents.length > 0
-                ? Math.round(
-                    (agents.reduce((acc, a) => acc + a.conversionRate, 0) /
-                      agents.length) *
-                      100,
-                  )
-                : 0}
-              %
-            </p>
-            <p className="text-amber-100 text-sm">Avg Conversion</p>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <Award className="w-8 h-8 mb-3 opacity-80" />
-            <p className="text-3xl font-bold mb-1">
-              {agents.reduce((acc, a) => acc + a.totalLeadsClosed, 0)}
-            </p>
-            <p className="text-purple-100 text-sm">Total Closed</p>
-          </div>
+          {[
+            {
+              icon: Users,
+              value: agents.length,
+              label: "Total Agents",
+              from: "from-blue-500",
+              to: "to-blue-600",
+              dfrom: "dark:from-blue-600",
+              dto: "dark:to-blue-700",
+              sub: "text-blue-100",
+            },
+            {
+              icon: UserCheck,
+              value: agents.filter((a) => a.currentWorkload === "low").length,
+              label: "Available Now",
+              from: "from-emerald-500",
+              to: "to-emerald-600",
+              dfrom: "dark:from-emerald-600",
+              dto: "dark:to-emerald-700",
+              sub: "text-emerald-100",
+            },
+            {
+              icon: TrendingUp,
+              value: `${agents.length > 0 ? Math.round((agents.reduce((acc, a) => acc + a.conversionRate, 0) / agents.length) * 100) : 0}%`,
+              label: "Avg Conversion",
+              from: "from-amber-500",
+              to: "to-amber-600",
+              dfrom: "dark:from-amber-600",
+              dto: "dark:to-amber-700",
+              sub: "text-amber-100",
+            },
+            {
+              icon: Award,
+              value: agents.reduce((acc, a) => acc + a.totalLeadsClosed, 0),
+              label: "Total Closed",
+              from: "from-purple-500",
+              to: "to-purple-600",
+              dfrom: "dark:from-purple-600",
+              dto: "dark:to-purple-700",
+              sub: "text-purple-100",
+            },
+          ].map(({ icon: Icon, value, label, from, to, dfrom, dto, sub }) => (
+            <div
+              key={label}
+              className={`bg-gradient-to-br ${from} ${to} ${dfrom} ${dto} rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105`}
+            >
+              <Icon className="w-8 h-8 mb-3 opacity-80" />
+              <p className="text-3xl font-bold mb-1">{value}</p>
+              <p className={`${sub} text-sm`}>{label}</p>
+            </div>
+          ))}
         </div>
 
         {/* Agents Grid/List */}
@@ -330,11 +356,11 @@ export const Agents: React.FC = () => {
               const performanceScore = calculatePerformanceScore(agent);
 
               return viewMode === "grid" ? (
+                /* ── Grid Card ── */
                 <div
                   key={agent.id}
                   className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 hover:scale-105"
                 >
-                  {/* Header with gradient */}
                   <div className="h-24 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 relative">
                     <div className="absolute -bottom-10 left-6">
                       <div className="w-20 h-20 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center text-2xl font-bold text-gray-700 dark:text-gray-300 shadow-xl border-4 border-white dark:border-gray-700">
@@ -344,23 +370,18 @@ export const Agents: React.FC = () => {
                     </div>
                     <div className="absolute top-4 right-4 flex gap-2">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                          agent.status,
-                        )}`}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(agent.status)}`}
                       >
                         {agent.status}
                       </span>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getWorkloadColor(
-                          agent.currentWorkload,
-                        )}`}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getWorkloadColor(agent.currentWorkload)}`}
                       >
                         {agent.currentWorkload}
                       </span>
                     </div>
                   </div>
 
-                  {/* Content */}
                   <div className="pt-14 px-6 pb-6">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
                       {agent.firstName} {agent.lastName}
@@ -369,7 +390,6 @@ export const Agents: React.FC = () => {
                       {agent.role?.name}
                     </p>
 
-                    {/* Contact Info */}
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <Mail className="w-4 h-4 text-blue-500" />
@@ -383,7 +403,6 @@ export const Agents: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Performance Score */}
                     <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -401,43 +420,39 @@ export const Agents: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                          Active Leads
-                        </p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {agent.activeLeadsCount}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                          Closed
-                        </p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {agent.totalLeadsClosed}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                          Conversion
-                        </p>
-                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                          {(agent.conversionRate * 100).toFixed(0)}%
-                        </p>
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                          Properties
-                        </p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {agent.ownedPropertiesCount}
-                        </p>
-                      </div>
+                      {[
+                        {
+                          label: "Active Leads",
+                          value: agent.activeLeadsCount,
+                        },
+                        { label: "Closed", value: agent.totalLeadsClosed },
+                        {
+                          label: "Conversion",
+                          value: `${(agent.conversionRate * 100).toFixed(0)}%`,
+                          color: "text-emerald-600 dark:text-emerald-400",
+                        },
+                        {
+                          label: "Properties",
+                          value: agent.ownedPropertiesCount,
+                        },
+                      ].map(({ label, value, color }) => (
+                        <div
+                          key={label}
+                          className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl"
+                        >
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            {label}
+                          </p>
+                          <p
+                            className={`text-lg font-bold ${color ?? "text-gray-900 dark:text-white"}`}
+                          >
+                            {value}
+                          </p>
+                        </div>
+                      ))}
                     </div>
 
-                    {/* Locations */}
                     {agent.cities.length > 0 && (
                       <div className="mb-4">
                         <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1">
@@ -462,26 +477,34 @@ export const Agents: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Action Button */}
-                    <button className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover:scale-105">
-                      <Eye className="w-4 h-4" />
-                      View Profile
-                    </button>
+                    {/* View Profile — only when canViewAgent */}
+                    {canViewAgent ? (
+                      <button
+                        onClick={() => handleViewProfile(agent)}
+                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover:scale-105"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Profile
+                      </button>
+                    ) : (
+                      <div className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl text-sm text-center select-none">
+                        No access
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
+                /* ── List Row ── */
                 <div
                   key={agent.id}
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-300 hover:scale-[1.02]"
                 >
                   <div className="flex items-start gap-6">
-                    {/* Avatar */}
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-2xl font-bold text-white shadow-lg flex-shrink-0">
                       {agent.firstName[0]}
                       {agent.lastName[0]}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-3">
                         <div>
@@ -494,16 +517,12 @@ export const Agents: React.FC = () => {
                         </div>
                         <div className="flex gap-2">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              agent.status,
-                            )}`}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(agent.status)}`}
                           >
                             {agent.status}
                           </span>
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getWorkloadColor(
-                              agent.currentWorkload,
-                            )}`}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getWorkloadColor(agent.currentWorkload)}`}
                           >
                             {agent.currentWorkload}
                           </span>
@@ -511,50 +530,45 @@ export const Agents: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
+                        {[
+                          { label: "Active", value: agent.activeLeadsCount },
+                          { label: "Closed", value: agent.totalLeadsClosed },
+                          {
+                            label: "Conversion",
+                            value: `${(agent.conversionRate * 100).toFixed(0)}%`,
+                            color: "text-emerald-600 dark:text-emerald-400",
+                          },
+                          {
+                            label: "Properties",
+                            value: agent.ownedPropertiesCount,
+                          },
+                          {
+                            label: "Score",
+                            value: performanceScore,
+                            color: "text-blue-600 dark:text-blue-400",
+                          },
+                        ].map(({ label, value, color }) => (
+                          <div key={label}>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              {label}
+                            </p>
+                            <p
+                              className={`text-lg font-bold ${color ?? "text-gray-900 dark:text-white"}`}
+                            >
+                              {value}
+                            </p>
+                          </div>
+                        ))}
                         <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Active
-                          </p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {agent.activeLeadsCount}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Closed
-                          </p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {agent.totalLeadsClosed}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Conversion
-                          </p>
-                          <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                            {(agent.conversionRate * 100).toFixed(0)}%
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Properties
-                          </p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
-                            {agent.ownedPropertiesCount}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Score
-                          </p>
-                          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            {performanceScore}
-                          </p>
-                        </div>
-                        <div>
-                          <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
-                            View
-                          </button>
+                          {/* View button — only when canViewAgent */}
+                          {canViewAgent && (
+                            <button
+                              onClick={() => handleViewProfile(agent)}
+                              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300"
+                            >
+                              View
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -581,6 +595,25 @@ export const Agents: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* View Profile modal — reuses UserDetailsModal; onEdit gated on user.edit */}
+      {viewingAgent && (
+        <UserDetailsModal
+          user={viewingAgent as any}
+          isOpen={!!viewingAgent}
+          onClose={() => setViewingAgent(null)}
+          onEdit={
+            canEditUser
+              ? (u) => {
+                  /* navigate to user edit or open UserForm */ console.log(
+                    "edit",
+                    u,
+                  );
+                }
+              : undefined
+          }
+        />
+      )}
     </>
   );
 };

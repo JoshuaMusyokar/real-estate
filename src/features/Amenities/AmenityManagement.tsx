@@ -39,7 +39,7 @@ export const AmenitiesManagement = () => {
   const canEdit = can("amenity.edit");
   const canDelete = can("amenity.delete");
   const canToggle = can("amenity.toggle_status");
-  const canReorder = can("amenity.reorder");
+  // const canReorder = can("amenity.reorder");
   const isReadOnly = !canAdd && !canEdit && !canDelete && !canToggle;
 
   const openModal = (modal: keyof typeof modalState) =>
@@ -112,7 +112,6 @@ export const AmenitiesManagement = () => {
         ) : viewMode === "grid" ? (
           <AmenityGrid
             amenities={amenities}
-            user={user!}
             onEdit={handleEdit}
             onDelete={handleDelete}
             activeDropdown={activeDropdown}
@@ -121,7 +120,7 @@ export const AmenitiesManagement = () => {
         ) : (
           <AmenityTable
             amenities={amenities}
-            user={user!}
+            // user={user!}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -145,13 +144,15 @@ export const AmenitiesManagement = () => {
         />
       )}
 
-      <EditModal
-        isOpen={modalState.edit}
-        onClose={() => closeModal("edit")}
-        amenity={selectedAmenity}
-        categories={categories}
-        onSuccess={handleEditSuccess}
-      />
+      {canEdit && (
+        <EditModal
+          isOpen={modalState.edit}
+          onClose={() => closeModal("edit")}
+          amenity={selectedAmenity}
+          categories={categories}
+          onSuccess={handleEditSuccess}
+        />
+      )}
 
       <DeleteModal
         isOpen={modalState.delete}

@@ -64,7 +64,7 @@ export interface CreateUserRequest {
   status?: UserStatus;
   avatar?: string;
   permissions?: UserPermissionOverrides;
-
+  managerId: string | null;
   cities: string[] | null;
   localities?: string[];
 }

@@ -50,7 +50,7 @@ import { PublicHeader } from "../../layout/PublicHeader";
 import { useAuth } from "../../hooks/useAuth";
 import { Footer } from "../../layout/Footer";
 import { useDefaultCity } from "../../hooks/useDefaultCity";
-import { SearchComponent } from "./SearchComponent";
+import { SearchComponent } from "./SearchComponentOld";
 import { CategorizedPropertyCard } from "./CategorizedPropertyCard";
 
 interface CategorizedSectionProps {

@@ -11,12 +11,10 @@ import {
   ArrowRight,
   ParkingCircle,
   User,
-  MoveVertical,
   CalendarDays,
 } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
 
-// Premium Property Card for Featured Builders
 interface BuilderPropertyCardProps {
   property: CategorizedProperty;
   index: number;
@@ -29,66 +27,84 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
   const [isFavorited, setIsFavorited] = React.useState(false);
 
   const formatPrice = (price: number) => {
-    if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)} Cr`;
-    if (price >= 100000) return `₹${(price / 100000).toFixed(2)} L`;
+    if (price >= 10_000_000) return `₹${(price / 10_000_000).toFixed(2)} Cr`;
+    if (price >= 100_000) return `₹${(price / 100_000).toFixed(2)} L`;
     return `₹${price.toLocaleString()}`;
   };
 
+  const formattedDate = new Date(property.postedDate).toLocaleDateString(
+    "en-IN",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    },
+  );
+
   return (
     <div
-      className="group relative bg-white rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 flex-shrink-0 w-[340px] border-2 border-gray-100 hover:border-transparent"
-      style={{ animationDelay: `${index * 100}ms` }}
+      className="
+        group relative bg-white flex-shrink-0
+        w-[260px] sm:w-[310px] lg:w-[340px]
+        rounded-xl sm:rounded-2xl lg:rounded-3xl
+        border-2 border-amber-100 hover:border-amber-300
+        shadow-sm hover:shadow-2xl
+        overflow-hidden
+        transition-all duration-300
+      "
+      style={{ animationDelay: `${index * 80}ms` }}
     >
-      {/* Premium Badge */}
-      <div className="absolute top-4 left-4 z-20">
-        <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl text-xs font-black backdrop-blur-sm shadow-lg">
-          <Crown className="w-4 h-4" />
-          <span>BUILDER SPECIAL</span>
-        </div>
-      </div>
-
-      {/* Verified Badge */}
-      <div className="absolute top-4 right-4 z-20">
-        <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-2xl text-xs font-black backdrop-blur-sm shadow-lg">
-          <Shield className="w-3 h-3" />
-          <span>VERIFIED</span>
-        </div>
-      </div>
-
-      {/* Favorite Button */}
-      <button
-        onClick={() => setIsFavorited(!isFavorited)}
-        className={`absolute top-16 right-4 z-20 p-2.5 rounded-2xl backdrop-blur-sm transition-all duration-300 ${
-          isFavorited
-            ? "bg-red-500 text-white shadow-lg scale-110"
-            : "bg-white/90 text-gray-600 hover:bg-white hover:text-red-500 hover:scale-110"
-        }`}
-      >
-        <Heart className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`} />
-      </button>
-
-      {/* Image Container */}
-      <div className="relative h-56 overflow-hidden">
+      {/* ── Image ──────────────────────────────────────────────────────── */}
+      <div className="relative h-40 sm:h-48 lg:h-56 overflow-hidden bg-amber-50">
         <img
           src={property.viewableCoverImage}
           alt={property.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        {/* Top badges */}
+        <div className="absolute top-2 left-2 flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-[10px] sm:text-xs font-black shadow">
+            <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+            <span className="hidden sm:inline">BUILDER</span>
+            <span className="sm:hidden">PRO</span>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white rounded-lg text-[10px] sm:text-xs font-black shadow">
+            <Shield className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+            <span className="hidden sm:inline">VERIFIED</span>
+            <span className="sm:hidden">✓</span>
+          </div>
+        </div>
 
-        {/* Builder Info Overlay */}
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl p-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-white" />
+        {/* Favourite */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFavorited((f) => !f);
+          }}
+          className={`absolute top-2 right-2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-sm transition-all duration-200 ${
+            isFavorited
+              ? "bg-red-500 text-white shadow-lg"
+              : "bg-white/90 text-gray-500 hover:text-red-500 hover:bg-white"
+          }`}
+        >
+          <Heart
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? "fill-current" : ""}`}
+          />
+        </button>
+
+        {/* Builder info strip at bottom of image */}
+        <div className="absolute bottom-2 left-2 right-2">
+          <div className="flex items-center gap-2 bg-white/95 backdrop-blur-sm rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
             </div>
-            <div>
-              <div className="font-black text-gray-900 text-sm">
+            <div className="min-w-0">
+              <div className="font-black text-gray-900 text-[10px] sm:text-xs leading-tight">
                 Premium Builder
               </div>
-              <div className="text-xs text-gray-600 font-semibold">
+              <div className="text-[9px] sm:text-[10px] text-gray-500 font-semibold">
                 Trusted Developer
               </div>
             </div>
@@ -96,131 +112,115 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-6">
+      {/* ── Body ─────────────────────────────────────────────────────────── */}
+      <div className="p-3 sm:p-4 lg:p-5">
         {/* Price */}
-        <div className="mb-4">
-          <div className="text-3xl font-black bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+        <div className="mb-2 sm:mb-3">
+          <div className="text-lg sm:text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent leading-tight">
             {formatPrice(property.price)}
           </div>
-          <div className="text-xs text-gray-500 font-semibold mt-1">
+          <div className="text-[9px] sm:text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
             Exclusive Pricing
           </div>
         </div>
 
         {/* Title */}
-        <h3 className="font-black text-gray-900 mb-3 line-clamp-2 text-lg leading-tight">
+        <h3 className="font-black text-gray-900 text-xs sm:text-sm lg:text-base leading-snug line-clamp-2 mb-2">
           {property.title}
         </h3>
 
         {/* Location */}
-        <div className="flex items-center gap-2 text-gray-600 mb-4 bg-gray-50 rounded-xl p-3">
-          <MapPin className="w-5 h-5 text-amber-600" />
-          <span className="text-sm font-bold truncate">
+        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1.5 mb-3">
+          <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-600 flex-shrink-0" />
+          <span className="text-[10px] sm:text-xs font-bold text-gray-700 truncate">
             {property.locality}, {property.city.name}
           </span>
         </div>
 
-        {/* Property Features */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="flex flex-col items-center gap-1 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3">
-            <Bed className="w-5 h-5 text-blue-600" />
-            <span className="text-xs font-black text-gray-900">
-              {property.bedrooms} Beds
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-1 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-3">
-            <Bath className="w-5 h-5 text-purple-600" />
-            <span className="text-xs font-black text-gray-900">
-              {property.bathrooms} Baths
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-1 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3">
-            <Square className="w-5 h-5 text-green-600" />
-            <span className="text-xs font-black text-gray-900">
-              {property.squareFeet} sqft
-            </span>
-          </div>
-          {property.passengerLifts ? (
-            <div className="flex items-center gap-1">
-              <MoveVertical className="w-3 h-3" />
-              <span>{property.passengerLifts} Passenger</span>
-            </div>
-          ) : null}
-
-          {/* Service Lift */}
-          {property.serviceLifts ? (
-            <div className="flex items-center gap-1">
-              <MoveVertical className="w-3 h-3 text-gray-500" />
-              <span>{property.serviceLifts} Service</span>
-            </div>
-          ) : null}
-        </div>
-        <div className="mt-2 space-y-2 text-xs text-gray-700">
-          {/* Parking */}
-          <div className="flex items-center gap-3">
-            {property.coveredParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.coveredParking} Covered</span>
-              </div>
-            ) : null}
-
-            {property.openParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.openParking} Open</span>
-              </div>
-            ) : null}
-
-            {property.publicParking ? (
-              <div className="flex items-center gap-1">
-                <ParkingCircle className="w-3 h-3" />
-                <span>{property.publicParking} Public</span>
-              </div>
-            ) : null}
-          </div>
-
-          {/* Posted By */}
-          <div className="flex items-center gap-1 text-gray-600">
-            <User className="w-3 h-3" />
-            <span>{property.postedBy}</span>
-            {property.advertiserName && (
-              <span className="font-semibold ml-1">
-                • {property.advertiserName}
+        {/* Feature grid — 3 cols */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
+          {[
+            {
+              icon: Bed,
+              label: "Beds",
+              value: property.bedrooms,
+              bg: "from-blue-50 to-indigo-50",
+              text: "text-blue-600",
+            },
+            {
+              icon: Bath,
+              label: "Baths",
+              value: property.bathrooms,
+              bg: "from-purple-50 to-pink-50",
+              text: "text-purple-600",
+            },
+            {
+              icon: Square,
+              label: "sqft",
+              value: property.squareFeet,
+              bg: "from-emerald-50 to-green-50",
+              text: "text-emerald-600",
+            },
+          ].map(({ icon: Icon, label, value, bg, text }) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center gap-0.5 sm:gap-1 bg-gradient-to-br ${bg} rounded-lg sm:rounded-xl p-2 sm:p-2.5`}
+            >
+              <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${text}`} />
+              <span className="text-[10px] sm:text-xs font-black text-gray-800">
+                {value}
               </span>
-            )}
-          </div>
+              <span className="text-[9px] text-gray-400 hidden sm:block">
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
 
-          {/* Posted Date */}
-          <div className="flex items-center gap-1 text-gray-600">
-            <CalendarDays className="w-3 h-3" />
-            <span>
-              {new Date(property.postedDate).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
+        {/* Parking row */}
+        {(property.coveredParking ||
+          property.openParking ||
+          property.publicParking) && (
+          <div className="flex items-center gap-2 mb-2 text-[10px] sm:text-xs text-gray-500">
+            <ParkingCircle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+            {property.coveredParking ? (
+              <span>{property.coveredParking} Covered</span>
+            ) : null}
+            {property.openParking ? (
+              <span>{property.openParking} Open</span>
+            ) : null}
+            {property.publicParking ? (
+              <span>{property.publicParking} Public</span>
+            ) : null}
+          </div>
+        )}
+
+        {/* Posted by + date */}
+        <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-400 mb-3">
+          <div className="flex items-center gap-1 min-w-0">
+            <User className="w-2.5 h-2.5 flex-shrink-0" />
+            <span className="truncate">
+              {property.postedBy}
+              {property.advertiserName ? ` · ${property.advertiserName}` : ""}
             </span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            <CalendarDays className="w-2.5 h-2.5" />
+            <span>{formattedDate}</span>
           </div>
         </div>
 
-        {/* CTA Button */}
+        {/* CTA */}
         <button
-          className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-2xl font-black text-sm hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-          onClick={() => {
-            window.open(`/property-detail/${property.id}`, "_blank");
-
-            // navigate(`/property-detail/${property.id}`);
-          }}
+          onClick={() =>
+            window.open(`/property-detail/${property.id}`, "_blank")
+          }
+          className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-[10px] sm:text-xs font-black rounded-lg sm:rounded-xl transition-all hover:shadow-lg hover:shadow-amber-200"
         >
-          <span>View Details</span>
-          <ArrowRight className="w-4 h-4" />
+          View Details
+          <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
         </button>
       </div>
-
-      {/* Hover Border Glow */}
-      <div className="absolute inset-0 rounded-3xl border-2 border-transparent bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-clip-padding opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
     </div>
   );
 };

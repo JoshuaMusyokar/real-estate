@@ -120,7 +120,7 @@ export function LocalityForm({
     }
   }, [locality]);
 
-  function parseHighlights(value: any) {
+  function parseHighlights(value: LocalityHighlight[] | string | null) {
     if (!value) return [];
     if (Array.isArray(value)) return value;
     try {
@@ -212,11 +212,11 @@ export function LocalityForm({
           error.message ||
             (locality
               ? "Failed to update locality"
-              : "Failed to create locality")
+              : "Failed to create locality"),
         );
       } else {
         showError(
-          locality ? "Failed to update locality" : "Failed to create locality"
+          locality ? "Failed to update locality" : "Failed to create locality",
         );
       }
     } finally {
@@ -351,7 +351,7 @@ export function LocalityForm({
                       {getTypeExamples(newHighlight.type).map(
                         (example, idx) => (
                           <option key={idx} value={example} />
-                        )
+                        ),
                       )}
                     </datalist>
                   )}
@@ -403,7 +403,7 @@ export function LocalityForm({
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           {HIGHLIGHT_TYPES.find(
-                            (t) => t.value === highlight.type
+                            (t) => t.value === highlight.type,
                           )?.label || highlight.type}{" "}
                           • {highlight.distance_km}km away
                         </div>

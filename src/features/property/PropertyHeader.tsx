@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState, type FC } from "react";
 import type { Property } from "../../types";
-import { useAuth } from "../../hooks/useAuth";
+import { usePermissions } from "../../hooks/usePermissions";
 import { QuickReviewActions } from "./QuickReviewAction";
 import { Card, CardContent } from "../../components/ui/Card";
 import { Dropdown } from "../../components/ui/dropdown/Dropdown";
@@ -21,29 +21,32 @@ import { DropdownItem } from "../../components/ui/dropdown/DropdownItem";
 interface PropertyHeaderProps {
   property: Property;
   isOwner: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
+  // Optional — parent passes undefined when user lacks the permission
+  onEdit?: () => void;
+  onDelete?: () => void;
   onFeaturedToggle?: (propertyId: string, isFeatured: boolean) => void;
 }
 
 export const PropertyHeader: FC<PropertyHeaderProps> = ({
   property,
-  isOwner,
   onEdit,
   onDelete,
   onFeaturedToggle,
 }) => {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const { user } = useAuth();
-  const userRole = user?.role.name || "BUYER";
 
-  const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
-  const canEdit = isOwner || isAdmin;
+  const { can } = usePermissions();
+  const canReview = can("property.approve");
+  const canFeature = can("property.feature");
+
+  // Edit/delete are gated in the parent; here we just honour whether the
+  // handler was passed down. No local re-derivation needed.
+  const hasDesktopActions = !!onEdit || !!onDelete;
+  const hasMobileMenu = !!onEdit || !!onDelete || canFeature;
 
   const handleShare = (type: "link" | "email" | "whatsapp") => {
     const url = window.location.href;
-
     switch (type) {
       case "link":
         navigator.clipboard.writeText(url);
@@ -63,16 +66,14 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
   };
 
   const handleFeaturedToggle = () => {
-    if (onFeaturedToggle) {
-      onFeaturedToggle(property.id, !property.featured);
-    }
+    onFeaturedToggle?.(property.id, !property.featured);
   };
 
   return (
     <Card className="mb-4 sm:mb-6 md:mb-8">
       <CardContent className="p-4 sm:p-5 md:p-6">
         <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
-          {/* Top Section: Badges and Actions */}
+          {/* Top: badges + actions */}
           <div className="flex items-start justify-between gap-3">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2">
@@ -103,29 +104,33 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
               </span>
             </div>
 
-            {/* Actions */}
+            {/* Action buttons */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Desktop Actions */}
-              {canEdit && (
+              {/* Desktop edit / delete */}
+              {hasDesktopActions && (
                 <>
-                  <button
-                    onClick={onEdit}
-                    className="hidden sm:flex w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-blue-600 rounded-lg md:rounded-xl items-center justify-center hover:bg-blue-100 transition-colors"
-                    title="Edit property"
-                  >
-                    <Edit className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
-                  <button
-                    onClick={onDelete}
-                    className="hidden sm:flex w-10 h-10 md:w-12 md:h-12 bg-red-50 text-red-600 rounded-lg md:rounded-xl items-center justify-center hover:bg-red-100 transition-colors"
-                    title="Delete property"
-                  >
-                    <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                  </button>
+                  {onEdit && (
+                    <button
+                      onClick={onEdit}
+                      className="hidden sm:flex w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-blue-600 rounded-lg md:rounded-xl items-center justify-center hover:bg-blue-100 transition-colors"
+                      title="Edit property"
+                    >
+                      <Edit className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={onDelete}
+                      className="hidden sm:flex w-10 h-10 md:w-12 md:h-12 bg-red-50 text-red-600 rounded-lg md:rounded-xl items-center justify-center hover:bg-red-100 transition-colors"
+                      title="Delete property"
+                    >
+                      <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                  )}
                 </>
               )}
 
-              {/* Share Button */}
+              {/* Share — always available */}
               <div className="relative">
                 <button
                   onClick={() => setShowShareMenu(!showShareMenu)}
@@ -153,8 +158,8 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
                 </Dropdown>
               </div>
 
-              {/* Mobile Actions Menu */}
-              {canEdit && (
+              {/* Mobile three-dot menu — only when there's something to show */}
+              {hasMobileMenu && (
                 <div className="relative sm:hidden">
                   <button
                     onClick={() => setShowActionsMenu(!showActionsMenu)}
@@ -169,7 +174,7 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
                     className="w-44"
                   >
                     <div className="py-1">
-                      {isAdmin && (
+                      {canFeature && (
                         <>
                           <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
                             Admin Actions
@@ -182,35 +187,37 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
                             className="text-amber-600 hover:bg-amber-50"
                           >
                             <Star
-                              className={`w-4 h-4 inline mr-2 ${
-                                property.featured ? "fill-current" : ""
-                              }`}
+                              className={`w-4 h-4 inline mr-2 ${property.featured ? "fill-current" : ""}`}
                             />
                             {property.featured ? "Unfeature" : "Feature"}
                           </DropdownItem>
                           <div className="border-t border-gray-100 my-1" />
                         </>
                       )}
-                      <DropdownItem
-                        onClick={() => {
-                          onEdit();
-                          setShowActionsMenu(false);
-                        }}
-                        className="text-blue-600 hover:bg-blue-50"
-                      >
-                        <Edit className="w-4 h-4 inline mr-2" />
-                        Edit
-                      </DropdownItem>
-                      <DropdownItem
-                        onClick={() => {
-                          onDelete();
-                          setShowActionsMenu(false);
-                        }}
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4 inline mr-2" />
-                        Delete
-                      </DropdownItem>
+                      {onEdit && (
+                        <DropdownItem
+                          onClick={() => {
+                            onEdit();
+                            setShowActionsMenu(false);
+                          }}
+                          className="text-blue-600 hover:bg-blue-50"
+                        >
+                          <Edit className="w-4 h-4 inline mr-2" />
+                          Edit
+                        </DropdownItem>
+                      )}
+                      {onDelete && (
+                        <DropdownItem
+                          onClick={() => {
+                            onDelete();
+                            setShowActionsMenu(false);
+                          }}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 inline mr-2" />
+                          Delete
+                        </DropdownItem>
+                      )}
                     </div>
                   </Dropdown>
                 </div>
@@ -218,13 +225,11 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
             </div>
           </div>
 
-          {/* Title */}
+          {/* Title + location */}
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3 leading-tight">
               {property.title}
             </h1>
-
-            {/* Location */}
             <div className="flex items-start gap-1.5 sm:gap-2 text-gray-600">
               <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0 mt-0.5" />
               <span className="text-sm sm:text-base md:text-lg">
@@ -233,7 +238,7 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Metadata strip */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm text-gray-600 pb-4 border-b border-gray-200">
             <span className="flex items-center gap-1.5 sm:gap-2">
               <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
@@ -270,8 +275,8 @@ export const PropertyHeader: FC<PropertyHeaderProps> = ({
             </span>
           </div>
 
-          {/* Admin Quick Review Actions */}
-          {isAdmin && (
+          {/* Quick review actions — gated on property.approve */}
+          {canReview && (
             <div className="pt-2">
               <QuickReviewActions property={property} onSuccess={() => {}} />
             </div>

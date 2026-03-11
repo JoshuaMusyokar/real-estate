@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useMemo } from "react";
 import {
   PlusIcon,
@@ -15,10 +14,11 @@ import {
   useGetCitiesQuery,
   useDeleteCityMutation,
 } from "../../services/locationApi";
-import type { City, CityFilter } from "../../types";
+import type { City, CityCount, CityFilter } from "../../types";
 import { CityForm } from "./CityForm";
 import { ConfirmationDialog } from "./ConfirmationDialogue";
 import { useToast } from "../../hooks/useToast";
+import { usePermissions } from "../../hooks/usePermissions";
 import Button from "../../components/ui/button/Button";
 
 export function CitiesManagement() {
@@ -31,6 +31,14 @@ export function CitiesManagement() {
   const [editingCity, setEditingCity] = useState<City | null>(null);
   const [cityToDelete, setCityToDelete] = useState<City | null>(null);
   const { success, error: showError } = useToast();
+
+  // ── Permissions ─────────────────────────────────────────────────────────────
+  const { can } = usePermissions();
+  const canAdd = can("location.add_city");
+  const canEdit = can("location.edit_city");
+  const canDelete = can("location.delete_city");
+
+  // ── Data ────────────────────────────────────────────────────────────────────
   const { data, isLoading, error } = useGetCitiesQuery({
     page,
     limit: 10,
@@ -40,6 +48,7 @@ export function CitiesManagement() {
 
   const [deleteCity] = useDeleteCityMutation();
 
+  // ── Table columns ────────────────────────────────────────────────────────────
   const columns: Column<City>[] = useMemo(
     () => [
       {
@@ -75,7 +84,7 @@ export function CitiesManagement() {
       {
         key: "_count",
         header: "Statistics",
-        render: (value: any) => (
+        render: (value: CityCount) => (
           <div className="flex space-x-4 text-sm">
             <div className="flex items-center text-gray-600 dark:text-gray-400">
               <HomeIcon className="w-4 h-4 mr-1" />
@@ -91,7 +100,7 @@ export function CitiesManagement() {
       {
         key: "localities",
         header: "Localities",
-        render: (value: any[], city: City) => (
+        render: (_value: unknown, city: City) => (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
             {city._count?.localities || 0} localities
           </span>
@@ -107,6 +116,7 @@ export function CitiesManagement() {
     [],
   );
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleSort = (key: string) => {
     if (sortBy === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
@@ -123,12 +133,11 @@ export function CitiesManagement() {
 
   const handleDelete = async () => {
     if (!cityToDelete) return;
-
     try {
       await deleteCity(cityToDelete.id).unwrap();
       success("City deleted successfully");
       setCityToDelete(null);
-    } catch (error) {
+    } catch {
       showError("Failed to delete city");
     }
   };
@@ -138,6 +147,7 @@ export function CitiesManagement() {
     setEditingCity(null);
   };
 
+  // ── Error state ───────────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -162,13 +172,13 @@ export function CitiesManagement() {
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <>
       <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between gap-3">
-            {/* Title */}
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
                 Cities
@@ -178,23 +188,16 @@ export function CitiesManagement() {
               </p>
             </div>
 
-            {/* Button */}
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              className="
-        flex items-center gap-1.5
-        px-3 py-1.5 sm:px-4 sm:py-2
-        bg-blue-600 dark:bg-blue-500
-        text-white
-        text-xs sm:text-sm font-medium
-        rounded-md
-        hover:bg-blue-700 dark:hover:bg-blue-600
-        transition
-      "
-            >
-              <PlusIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">Add</span>
-            </Button>
+            {/* Add button — hidden if user lacks location.add_city */}
+            {canAdd && (
+              <Button
+                onClick={() => setIsFormOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 dark:bg-blue-500 text-white text-xs sm:text-sm font-medium rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition"
+              >
+                <PlusIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Add</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -256,25 +259,35 @@ export function CitiesManagement() {
             sortOrder={sortOrder}
             onSort={handleSort}
             emptyMessage="No cities found. Try adjusting your search filters."
-            rowActions={(city: City) => (
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleEdit(city)}
-                  className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                >
-                  <PencilIcon className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setCityToDelete(city)}
-                  className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+            rowActions={(city: City) => {
+              // If the user has neither edit nor delete, render nothing
+              if (!canEdit && !canDelete) return null;
+
+              return (
+                <div className="flex space-x-2">
+                  {canEdit && (
+                    <button
+                      onClick={() => handleEdit(city)}
+                      title="Edit city"
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => setCityToDelete(city)}
+                      title="Delete city"
+                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              );
+            }}
           />
 
-          {/* Pagination */}
           {data && data.pagination.totalPages > 1 && (
             <Pagination
               currentPage={page}
@@ -286,7 +299,7 @@ export function CitiesManagement() {
           )}
         </div>
 
-        {/* City Form Modal */}
+        {/* City Form Modal — only reachable if canAdd or canEdit */}
         {isFormOpen && (
           <CityForm
             city={editingCity}
@@ -295,7 +308,7 @@ export function CitiesManagement() {
           />
         )}
 
-        {/* Delete Confirmation */}
+        {/* Delete Confirmation — only reachable if canDelete */}
         <ConfirmationDialog
           isOpen={!!cityToDelete}
           onClose={() => setCityToDelete(null)}

@@ -1,7 +1,14 @@
 import { RefreshCw, Shield, UserCheck, Users } from "lucide-react";
 import { StatCard } from "./StatCard";
 
-export const StatsGrid: React.FC<{ stats: any }> = ({ stats }) => (
+type UsersStats = {
+  total: number;
+  byRole: Record<string, number>;
+  byStatus: Record<string, number>;
+  activeToday: number;
+};
+
+export const StatsGrid: React.FC<{ stats: UsersStats }> = ({ stats }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
     <StatCard
       icon={<Users className="text-blue-600" size={24} />}

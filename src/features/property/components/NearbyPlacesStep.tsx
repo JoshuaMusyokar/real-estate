@@ -136,7 +136,10 @@ export const NearbyPlacesStep: React.FC<NearbyPlacesStepProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const nearbyPlaces: NearbyPlace[] = formData.nearbyPlaces || [];
+  const nearbyPlaces: NearbyPlace[] =
+    typeof formData.nearbyPlaces === "string"
+      ? JSON.parse(formData.nearbyPlaces)
+      : formData.nearbyPlaces || [];
 
   const filteredPlaces = nearbyPlaces.filter(
     (place) =>

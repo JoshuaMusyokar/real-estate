@@ -1,19 +1,15 @@
+// ReviewAndLocality.tsx  (RatingsAndReviewsSection)
 import { useState } from "react";
 import { MapPin, Home } from "lucide-react";
 import { LocalityRatingSection } from "./LocalityRatingSection";
 import { PropertyReviewSection } from "./PropertyReviewSection";
 
 interface RatingsAndReviewsSectionProps {
-  // Locality data
   localityId?: string;
   localityName?: string;
   cityName?: string;
-
-  // Property data
   propertyId: string;
   propertyTitle: string;
-
-  // Navigation callbacks
   onViewAllLocalityRatings?: () => void;
   onViewAllPropertyReviews?: () => void;
 }
@@ -32,72 +28,52 @@ export const RatingsAndReviewsSection: React.FC<
   onViewAllPropertyReviews,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("property");
-
-  // Show tabs only if locality data is available
   const showTabs = localityId && localityName && cityName;
 
+  const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
+    { id: "property", label: "Property Reviews", icon: Home },
+    { id: "locality", label: "Locality Ratings", icon: MapPin },
+  ];
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      {/* Tabs Header */}
+    <div className="bg-white border border-blue-100 rounded-xl overflow-hidden">
+      {/* Tab bar */}
       {showTabs && (
-        <div className="border-b border-gray-200">
-          <div className="flex">
+        <div className="flex border-b border-blue-50">
+          {tabs.map(({ id, label, icon: Icon }) => (
             <button
-              onClick={() => setActiveTab("property")}
-              className={`flex-1 px-6 py-4 font-semibold transition-colors relative ${
-                activeTab === "property"
-                  ? "text-purple-600 bg-purple-50"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex-1 relative flex items-center justify-center gap-1.5 px-4 py-3 text-xs sm:text-sm font-semibold transition-colors
+                ${activeTab === id ? "text-blue-600 bg-blue-50/50" : "text-gray-400 hover:text-gray-700 hover:bg-gray-50/50"}`}
             >
-              <div className="flex items-center justify-center gap-2">
-                <Home className="w-5 h-5" />
-                <span>Property Reviews</span>
-              </div>
-              {activeTab === "property" && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600" />
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {label}
+              {activeTab === id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
               )}
             </button>
-            <button
-              onClick={() => setActiveTab("locality")}
-              className={`flex-1 px-6 py-4 font-semibold transition-colors relative ${
-                activeTab === "locality"
-                  ? "text-blue-600 bg-blue-50"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <MapPin className="w-5 h-5" />
-                <span>Locality Ratings</span>
-              </div>
-              {activeTab === "locality" && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600" />
-              )}
-            </button>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Tab Content */}
+      {/* Content */}
       {showTabs ? (
-        <div>
-          {activeTab === "property" ? (
-            <PropertyReviewSection
-              propertyId={propertyId}
-              propertyTitle={propertyTitle}
-              onViewAllClick={onViewAllPropertyReviews}
-            />
-          ) : (
-            <LocalityRatingSection
-              localityId={localityId!}
-              localityName={localityName!}
-              cityName={cityName!}
-              onViewAllClick={onViewAllLocalityRatings}
-            />
-          )}
-        </div>
+        activeTab === "property" ? (
+          <PropertyReviewSection
+            propertyId={propertyId}
+            propertyTitle={propertyTitle}
+            onViewAllClick={onViewAllPropertyReviews}
+          />
+        ) : (
+          <LocalityRatingSection
+            localityId={localityId!}
+            localityName={localityName!}
+            cityName={cityName!}
+            onViewAllClick={onViewAllLocalityRatings}
+          />
+        )
       ) : (
-        // If no locality data, show only property reviews without tabs
         <PropertyReviewSection
           propertyId={propertyId}
           propertyTitle={propertyTitle}

@@ -12,6 +12,7 @@ import type {
   LeadStage,
 } from "../../../types";
 import { useState } from "react";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 interface OverviewTabProps {
   lead: LeadResponse;
@@ -24,6 +25,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
     stage: lead.stage,
     priority: lead.priority,
   });
+
+  const { can } = usePermissions();
+  const canEdit = can("lead.edit");
 
   const handleSave = async (): Promise<void> => {
     await onUpdate(editData);
@@ -43,18 +47,23 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Lead Status card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-900">Lead Status</h3>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Edit className="w-4 h-4 text-gray-600" />
-            </button>
+            {/* Edit button — hidden without lead.edit */}
+            {canEdit && (
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Edit className="w-4 h-4 text-gray-600" />
+              </button>
+            )}
           </div>
 
-          {isEditing ? (
+          {/* Inline edit form — only when canEdit and user toggled it */}
+          {canEdit && isEditing ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -118,9 +127,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
               <div>
                 <div className="text-sm text-gray-600 mb-2">Stage</div>
                 <span
-                  className={`inline-flex px-4 py-2 rounded-xl text-sm font-semibold ${getStageColor(
-                    lead.stage
-                  )}`}
+                  className={`inline-flex px-4 py-2 rounded-xl text-sm font-semibold ${getStageColor(lead.stage)}`}
                 >
                   {lead.stage.replace(/_/g, " ")}
                 </span>
@@ -128,9 +135,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
               <div>
                 <div className="text-sm text-gray-600 mb-2">Priority</div>
                 <span
-                  className={`inline-flex px-4 py-2 rounded-xl text-sm font-semibold ${getPriorityColor(
-                    lead.priority
-                  )}`}
+                  className={`inline-flex px-4 py-2 rounded-xl text-sm font-semibold ${getPriorityColor(lead.priority)}`}
                 >
                   {lead.priority}
                 </span>
@@ -148,6 +153,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
           )}
         </div>
 
+        {/* Contact Information — read-only, no gating needed */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-6">
             Contact Information
@@ -204,6 +210,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
         </div>
       </div>
 
+      {/* Requirements — read-only */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-6">Requirements</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -254,6 +261,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
         )}
       </div>
 
+      {/* Lead Information — read-only */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-6">
           Lead Information

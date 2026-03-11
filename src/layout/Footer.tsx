@@ -1,7 +1,5 @@
-// components/layout/Footer.tsx
 import { Link } from "react-router-dom";
 import {
-  Building2,
   Phone,
   Mail,
   MapPin,
@@ -10,18 +8,23 @@ import {
   Instagram,
   Linkedin,
   Send,
+  Building2,
+  ShieldCheck,
+  Award,
 } from "lucide-react";
 import { useState } from "react";
-import appLogo from "../assets/logomin.png";
+import appLogo from "../assets/p4i.png";
 
 export const Footer = () => {
   const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle newsletter subscription
     console.log("Newsletter subscription:", email);
     setEmail("");
+    setSubscribed(true);
+    setTimeout(() => setSubscribed(false), 3000);
   };
 
   const quickLinks = [
@@ -45,86 +48,91 @@ export const Footer = () => {
       name: "Facebook",
       icon: Facebook,
       url: "https://facebook.com",
-      color: "hover:text-blue-500",
+      hoverBg: "hover:bg-blue-600",
     },
     {
       name: "Twitter",
       icon: Twitter,
       url: "https://twitter.com",
-      color: "hover:text-sky-400",
+      hoverBg: "hover:bg-sky-500",
     },
     {
       name: "Instagram",
       icon: Instagram,
       url: "https://instagram.com",
-      color: "hover:text-pink-500",
+      hoverBg: "hover:bg-pink-500",
     },
     {
       name: "LinkedIn",
       icon: Linkedin,
       url: "https://linkedin.com",
-      color: "hover:text-blue-600",
+      hoverBg: "hover:bg-blue-700",
     },
   ];
 
+  const trustBadges = [
+    { icon: Building2, label: "Licensed Real Estate" },
+    { icon: ShieldCheck, label: "Verified Properties" },
+    { icon: Award, label: "Award Winning" },
+  ];
+
   return (
-    <footer className="bg-gray-900 text-white">
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-10 md:py-12 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10 lg:gap-12 mb-8 sm:mb-10 md:mb-12">
-          {/* Company Info */}
-          <div className="sm:col-span-2 lg:col-span-5">
-            <Link to="/" className="">
+    <footer className="bg-gray-950 text-white">
+      {/* ── Main content ─────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 mb-8 sm:mb-12">
+          {/* Company info — full width on xs, 2 cols on sm, 5 cols on lg */}
+          <div className="col-span-2 lg:col-span-5">
+            {/* Logo */}
+            <Link to="/" className="inline-block mb-3 sm:mb-4">
               <img
                 src={appLogo}
-                alt="Property4india Property"
-                className="h-42 w-58 object-contain"
+                alt="Property4India"
+                className="h-8 sm:h-10 w-auto object-contain"
+                style={{
+                  filter: "brightness(0) invert(1)",
+                }} /* white on dark bg */
               />
-              {/* <span className="text-xl sm:text-2xl font-black text-blue-500">
-                BENGALPROPERTY
-              </span>
-              <span className="text-lg sm:text-xl font-bold text-gray-300">
-                .COM
-              </span> */}
             </Link>
 
-            <p className="text-gray-400 mb-4 sm:mb-5 md:mb-6 text-sm sm:text-base max-w-md leading-relaxed">
+            <p className="text-gray-400 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5 max-w-sm">
               Your trusted partner in finding the perfect property. We connect
               buyers, sellers, and renters with premium real estate
-              opportunities.
+              opportunities across India.
             </p>
 
-            {/* Contact Info */}
-            <div className="space-y-2.5 sm:space-y-3">
-              <a
-                href="tel:+1234567890"
-                className="flex items-center gap-2 sm:gap-2.5 text-gray-400 hover:text-white transition-colors group"
-              >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-blue-600 transition-colors">
-                  <Phone className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+            {/* Contact details */}
+            <div className="space-y-2 sm:space-y-2.5">
+              {[
+                {
+                  href: "tel:+1234567890",
+                  icon: Phone,
+                  label: "+1 (234) 567-890",
+                },
+                {
+                  href: "mailto:info@property4india.com",
+                  icon: Mail,
+                  label: "info@property4india.com",
+                },
+              ].map(({ href, icon: Icon, label }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
+                >
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-800 group-hover:bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                    <Icon className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium">
+                    {label}
+                  </span>
+                </a>
+              ))}
+              <div className="flex items-start gap-2 text-gray-400">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MapPin className="w-3.5 h-3.5" />
                 </div>
-                <span className="text-sm sm:text-base font-medium">
-                  +1 (234) 567-890
-                </span>
-              </a>
-
-              <a
-                href="mailto:info@bengalproperty.com"
-                className="flex items-center gap-2 sm:gap-2.5 text-gray-400 hover:text-white transition-colors group"
-              >
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-blue-600 transition-colors">
-                  <Mail className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                </div>
-                <span className="text-sm sm:text-base font-medium">
-                  info@bengalproperty.com
-                </span>
-              </a>
-
-              <div className="flex items-start gap-2 sm:gap-2.5 text-gray-400">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                </div>
-                <span className="text-sm sm:text-base font-medium leading-relaxed">
+                <span className="text-xs sm:text-sm font-medium leading-relaxed">
                   123 Property Street, Real Estate City, RE 12345
                 </span>
               </div>
@@ -132,8 +140,8 @@ export const Footer = () => {
           </div>
 
           {/* Quick Links */}
-          <div className="lg:col-span-2">
-            <h4 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-white">
+          <div className="col-span-1 lg:col-span-2">
+            <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider mb-3 sm:mb-4">
               Quick Links
             </h4>
             <ul className="space-y-2 sm:space-y-2.5">
@@ -141,8 +149,11 @@ export const Footer = () => {
                 <li key={item.name}>
                   <Link
                     to={item.path}
-                    className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base font-medium inline-block hover:translate-x-1 duration-200"
+                    className="text-gray-400 hover:text-white text-xs sm:text-sm font-medium transition-colors inline-flex items-center gap-1 group"
                   >
+                    <span className="w-0 group-hover:w-2 overflow-hidden transition-all duration-200 text-blue-400">
+                      ›
+                    </span>
                     {item.name}
                   </Link>
                 </li>
@@ -151,8 +162,8 @@ export const Footer = () => {
           </div>
 
           {/* Resources */}
-          <div className="lg:col-span-2">
-            <h4 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-white">
+          <div className="col-span-1 lg:col-span-2">
+            <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider mb-3 sm:mb-4">
               Resources
             </h4>
             <ul className="space-y-2 sm:space-y-2.5">
@@ -160,8 +171,11 @@ export const Footer = () => {
                 <li key={item.name}>
                   <Link
                     to={item.path}
-                    className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base font-medium inline-block hover:translate-x-1 duration-200"
+                    className="text-gray-400 hover:text-white text-xs sm:text-sm font-medium transition-colors inline-flex items-center gap-1 group"
                   >
+                    <span className="w-0 group-hover:w-2 overflow-hidden transition-all duration-200 text-blue-400">
+                      ›
+                    </span>
                     {item.name}
                   </Link>
                 </li>
@@ -169,130 +183,121 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Newsletter */}
-          <div className="sm:col-span-2 lg:col-span-3">
-            <h4 className="font-bold text-base sm:text-lg mb-3 sm:mb-4 text-white">
+          {/* Newsletter — full width on xs/sm, 3 cols on lg */}
+          <div className="col-span-2 lg:col-span-3">
+            <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider mb-1 sm:mb-2">
               Stay Updated
             </h4>
-            <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
-              Subscribe to our newsletter for the latest properties and updates.
+            <p className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed">
+              Get the latest property listings and market insights.
             </p>
-            <form
-              onSubmit={handleNewsletterSubmit}
-              className="space-y-2.5 sm:space-y-3"
-            >
-              <div className="relative">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  required
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base transition-all"
-                />
-              </div>
+
+            <form onSubmit={handleNewsletterSubmit} className="space-y-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="
+                  w-full px-3 py-2 sm:py-2.5
+                  bg-gray-800 border border-gray-700
+                  text-white placeholder-gray-500
+                  text-xs sm:text-sm rounded-lg
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                  transition-all
+                "
+              />
               <button
                 type="submit"
-                className="w-full px-4 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="
+                  w-full flex items-center justify-center gap-2
+                  py-2 sm:py-2.5
+                  bg-blue-600 hover:bg-blue-700
+                  text-white font-bold text-xs sm:text-sm
+                  rounded-lg transition-colors
+                "
               >
-                <span>Subscribe</span>
-                <Send className="w-4 h-4" />
+                {subscribed ? (
+                  "Subscribed ✓"
+                ) : (
+                  <>
+                    <span>Subscribe</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </form>
+
+            {/* Social icons */}
+            <div className="flex items-center gap-2 mt-4 sm:mt-5">
+              {socialLinks.map(({ name, icon: Icon, url, hoverBg }) => (
+                <a
+                  key={name}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={name}
+                  className={`w-8 h-8 sm:w-9 sm:h-9 bg-gray-800 ${hoverBg} rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all`}
+                >
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-800 pt-6 sm:pt-7 md:pt-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-            {/* Copyright */}
-            <p className="text-gray-400 text-xs sm:text-sm font-medium text-center sm:text-left">
-              © {new Date().getFullYear()} Bengal Property. All rights reserved.
+        {/* ── Bottom bar ───────────────────────────────────────────────────── */}
+        <div className="border-t border-gray-800 pt-5 sm:pt-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+            <p className="text-gray-500 text-[10px] sm:text-xs font-medium text-center sm:text-left">
+              © {new Date().getFullYear()} Property4India. All rights reserved.
             </p>
 
-            {/* Social Links */}
+            {/* Legal links — inline on desktop, shown below on mobile */}
             <div className="flex items-center gap-3 sm:gap-4">
-              {socialLinks.map((social) => {
-                const Icon = social.icon;
-                return (
-                  <a
-                    key={social.name}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`w-9 h-9 sm:w-10 sm:h-10 bg-gray-800 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-700 transition-all ${social.color}`}
-                    aria-label={social.name}
+              {["Privacy", "Terms", "Cookies", "Sitemap"].map(
+                (label, i, arr) => (
+                  <span
+                    key={label}
+                    className="flex items-center gap-3 sm:gap-4"
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </a>
-                );
-              })}
+                    <Link
+                      to="#"
+                      className="text-[10px] sm:text-xs text-gray-500 hover:text-white transition-colors"
+                    >
+                      {label}
+                    </Link>
+                    {i < arr.length - 1 && (
+                      <span className="text-gray-700">·</span>
+                    )}
+                  </span>
+                ),
+              )}
             </div>
-          </div>
-
-          {/* Additional Links (Mobile) */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-gray-800 sm:hidden">
-            <Link
-              to="#"
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Privacy
-            </Link>
-            <span className="text-gray-700">•</span>
-            <Link
-              to="/#"
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Terms
-            </Link>
-            <span className="text-gray-700">•</span>
-            <Link
-              to="/#"
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Cookies
-            </Link>
-            <span className="text-gray-700">•</span>
-            <Link
-              to="/#"
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              Sitemap
-            </Link>
           </div>
         </div>
       </div>
 
-      {/* Trust Badges / Certifications (Optional) */}
-      <div className="border-t border-gray-800 bg-gray-950">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-5 md:py-6">
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8">
-            <div className="flex items-center gap-2 text-gray-500">
-              <div className="w-8 h-8 bg-gray-800 rounded flex items-center justify-center">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <span className="text-xs sm:text-sm font-medium">
-                Licensed Real Estate
+      {/* ── Trust badges ─────────────────────────────────────────────────── */}
+      <div className="border-t border-gray-800 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+            {trustBadges.map(({ icon: Icon, label }, i) => (
+              <span key={label} className="flex items-center">
+                <span className="flex items-center gap-1.5 text-gray-500">
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gray-800 rounded flex items-center justify-center">
+                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  </div>
+                  <span className="text-[10px] sm:text-xs font-medium">
+                    {label}
+                  </span>
+                </span>
+                {i < trustBadges.length - 1 && (
+                  <span className="hidden sm:block w-px h-4 bg-gray-800 ml-4 sm:ml-8" />
+                )}
               </span>
-            </div>
-            <div className="hidden sm:block w-px h-6 bg-gray-800" />
-            <div className="flex items-center gap-2 text-gray-500">
-              <div className="w-8 h-8 bg-gray-800 rounded flex items-center justify-center">
-                ✓
-              </div>
-              <span className="text-xs sm:text-sm font-medium">
-                Verified Properties
-              </span>
-            </div>
-            <div className="hidden sm:block w-px h-6 bg-gray-800" />
-            <div className="flex items-center gap-2 text-gray-500">
-              <div className="w-8 h-8 bg-gray-800 rounded flex items-center justify-center">
-                🏆
-              </div>
-              <span className="text-xs sm:text-sm font-medium">
-                Award Winning
-              </span>
-            </div>
+            ))}
           </div>
         </div>
       </div>

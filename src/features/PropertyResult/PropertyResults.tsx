@@ -1,3 +1,4 @@
+// PropertySearchResults.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,7 +26,6 @@ export const PropertySearchResults = () => {
   const dispatch = useDispatch();
   const { isAuthenticated } = useAuth();
 
-  // Get filters from Redux
   const currentFilters = useSelector(
     (state: RootState) => state.filters.currentFilters,
   );
@@ -33,7 +33,6 @@ export const PropertySearchResults = () => {
   const [selectedLocalities, setSelectedLocalities] = useState<
     Array<{ id: string; name: string }>
   >([]);
-
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,11 +40,10 @@ export const PropertySearchResults = () => {
   // Load filters from hash on mount
   useEffect(() => {
     if (filterHash && !isInitialized) {
-      const decodedFilters = decodeFilters(filterHash);
-      if (decodedFilters) {
-        dispatch(setFilters(decodedFilters));
+      const decoded = decodeFilters(filterHash);
+      if (decoded) {
+        dispatch(setFilters(decoded));
       } else {
-        // Invalid hash, redirect to clean URL
         navigate("/properties/search", { replace: true });
       }
       setIsInitialized(true);
@@ -54,39 +52,27 @@ export const PropertySearchResults = () => {
     }
   }, [filterHash, dispatch, navigate, isInitialized]);
 
-  // Update URL when filters change (debounced)
+  // Sync URL when filters change
   useEffect(() => {
     if (!isInitialized) return;
-
-    const timeoutId = setTimeout(() => {
-      // If filters are default, use clean URL
+    const id = setTimeout(() => {
       if (isDefaultFilters(currentFilters)) {
-        if (filterHash) {
-          navigate("/properties/search", { replace: true });
-        }
+        if (filterHash) navigate("/properties/search", { replace: true });
         return;
       }
-
-      // Encode filters and update URL
       const encoded = encodeFilters(currentFilters);
-      if (encoded && encoded !== filterHash) {
+      if (encoded && encoded !== filterHash)
         navigate(`/properties/search/${encoded}`, { replace: true });
-      }
-    }, 500); // Debounce 500ms
-
-    return () => clearTimeout(timeoutId);
+    }, 500);
+    return () => clearTimeout(id);
   }, [currentFilters, filterHash, navigate, isInitialized]);
 
-  // API Queries
   const { data, isLoading } = useSearchPropertiesQuery(currentFilters, {
     refetchOnMountOrArgChange: true,
     skip: !isInitialized,
   });
-
   const { data: favouriteData, refetch: refetchFavorites } =
-    useGetUserFavoritesQuery(undefined, {
-      skip: !isAuthenticated,
-    });
+    useGetUserFavoritesQuery(undefined, { skip: !isAuthenticated });
   const [toggleFavorite] = useAddToFavoritesMutation();
 
   const properties = data?.data || [];
@@ -94,108 +80,77 @@ export const PropertySearchResults = () => {
   const currentPage = data?.pagination?.page || 1;
   const totalPages = data?.pagination?.totalPages || 1;
 
-  // Sync favorites from API
   useEffect(() => {
-    if (isAuthenticated && favouriteData?.data) {
+    if (isAuthenticated && favouriteData?.data)
       setFavPropertiesIds(favouriteData.data);
-    }
   }, [favouriteData, isAuthenticated]);
 
-  // Refetch favorites when authentication status changes
   useEffect(() => {
-    if (isAuthenticated) {
-      refetchFavorites();
-    }
+    if (isAuthenticated) refetchFavorites();
   }, [isAuthenticated, refetchFavorites]);
 
-  // Update localities display
   useEffect(() => {
     if (currentFilters.localityId && currentFilters.locality) {
       const ids = Array.isArray(currentFilters.localityId)
         ? currentFilters.localityId
         : currentFilters.localityId.split(",");
-      // const names = Array.isArray(currentFilters.locality)
-      //   ? currentFilters.locality
-      //   : currentFilters.locality.split(',');
       const names = currentFilters.locality ?? [];
-
-      const localities = ids
-        .map((id, index) => ({
-          id,
-          name: names[index] || "",
-        }))
-        .filter((loc) => loc.name);
-
-      setSelectedLocalities(localities);
+      setSelectedLocalities(
+        ids
+          .map((id, i) => ({ id, name: names[i] || "" }))
+          .filter((l) => l.name),
+      );
     } else {
       setSelectedLocalities([]);
     }
   }, [currentFilters.localityId, currentFilters.locality]);
 
-  // Handle city change from header
   const handleCityChange = (cityId: string, cityName?: string) => {
-    dispatch(
-      resetFilters({
-        cityId,
-        city: cityName ? [cityName] : undefined,
-      }),
-    );
+    dispatch(resetFilters({ cityId, city: cityName ? [cityName] : undefined }));
   };
 
   const handleLocalityChange = (localityId: string, localityName?: string) => {
     if (localityId && localityName) {
-      const newLocality = { id: localityId, name: localityName };
-      const updatedLocalities = [...selectedLocalities, newLocality];
-
-      const localityIds = updatedLocalities.map((loc) => loc.id).join(",");
-      const localityNames = updatedLocalities.map((loc) => loc.name);
-
+      const updated = [
+        ...selectedLocalities,
+        { id: localityId, name: localityName },
+      ];
       dispatch(
         setFilters({
           ...currentFilters,
-          localityId: localityIds,
-          locality: localityNames,
+          localityId: updated.map((l) => l.id).join(","),
+          locality: updated.map((l) => l.name),
           page: 1,
         }),
       );
-
-      setSelectedLocalities(updatedLocalities);
+      setSelectedLocalities(updated);
     } else {
-      const newFilters = { ...currentFilters };
-      delete newFilters.localityId;
-      delete newFilters.locality;
-
-      dispatch(setFilters({ ...newFilters, page: 1 }));
+      const f = { ...currentFilters };
+      delete f.localityId;
+      delete f.locality;
+      dispatch(setFilters({ ...f, page: 1 }));
       setSelectedLocalities([]);
     }
   };
 
   const handleRemoveLocality = (localityId: string) => {
-    const updatedLocalities = selectedLocalities.filter(
-      (loc) => loc.id !== localityId,
-    );
-
-    if (updatedLocalities.length > 0) {
-      const localityIds = updatedLocalities.map((loc) => loc.id).join(",");
-      const localityNames = updatedLocalities.map((loc) => loc.name);
-
+    const updated = selectedLocalities.filter((l) => l.id !== localityId);
+    if (updated.length > 0) {
       dispatch(
         setFilters({
           ...currentFilters,
-          localityId: localityIds,
-          locality: localityNames,
+          localityId: updated.map((l) => l.id).join(","),
+          locality: updated.map((l) => l.name),
           page: 1,
         }),
       );
     } else {
-      const newFilters = { ...currentFilters };
-      delete newFilters.localityId;
-      delete newFilters.locality;
-
-      dispatch(setFilters({ ...newFilters, page: 1 }));
+      const f = { ...currentFilters };
+      delete f.localityId;
+      delete f.locality;
+      dispatch(setFilters({ ...f, page: 1 }));
     }
-
-    setSelectedLocalities(updatedLocalities);
+    setSelectedLocalities(updated);
   };
 
   const handleToggleFavorite = async (propertyId: string) => {
@@ -206,8 +161,8 @@ export const PropertySearchResults = () => {
     try {
       await toggleFavorite({ propertyId }).unwrap();
       await refetchFavorites();
-    } catch (error) {
-      console.error("Failed to toggle favorite:", error);
+    } catch (e) {
+      console.error("Failed to toggle favourite:", e);
     }
   };
 
@@ -218,14 +173,19 @@ export const PropertySearchResults = () => {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+          <p className="text-sm text-blue-600 font-medium">
+            Loading properties…
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 pt-[114px] sm:pt-[122px] md:pt-[68px]">
       <PublicHeader
         selectedCityId={currentFilters.cityId}
         selectedLocalities={selectedLocalities}
@@ -238,9 +198,9 @@ export const PropertySearchResults = () => {
       <FilterBar
         filters={currentFilters}
         setFilters={(updater) => {
-          const newFilters =
+          const next =
             typeof updater === "function" ? updater(currentFilters) : updater;
-          dispatch(setFilters(newFilters));
+          dispatch(setFilters(next));
         }}
         activeDropdown={activeDropdown}
         setActiveDropdown={setActiveDropdown}
@@ -249,9 +209,9 @@ export const PropertySearchResults = () => {
       <PropertyList
         filters={currentFilters}
         setFilters={(updater) => {
-          const newFilters =
+          const next =
             typeof updater === "function" ? updater(currentFilters) : updater;
-          dispatch(setFilters(newFilters));
+          dispatch(setFilters(next));
         }}
         properties={properties}
         isLoading={isLoading}
@@ -263,6 +223,7 @@ export const PropertySearchResults = () => {
         onToggleFavorite={handleToggleFavorite}
         onPageChange={handlePageChange}
       />
+
       <Footer />
     </div>
   );
