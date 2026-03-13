@@ -143,7 +143,7 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pt-[114px] sm:pt-[122px] md:pt-[68px]">
       {/* ── Breadcrumb ───────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-blue-50 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5">
@@ -176,7 +176,7 @@ export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-full mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 space-y-3">
         {/* ── Showcase / Gallery ───────────────────────────────────────────── */}
         <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl overflow-hidden">
           <PropertyShowcase

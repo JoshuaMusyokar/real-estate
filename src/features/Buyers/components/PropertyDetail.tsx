@@ -112,6 +112,36 @@ const FIELD_ICONS: Record<
   hasBalcony: Building2,
 };
 
+// Fields that should NEVER appear — they are shown elsewhere or are internal units
+const SKIP_FIELDS = new Set([
+  "title",
+  "description",
+  "images",
+  "documents",
+  "amenities",
+  "nearbyPlaces",
+  "youtubeVideoUrl",
+  "virtualTourUrl",
+  "address",
+  "locality",
+  "state",
+  "country",
+  "zipCode",
+  "latitude",
+  "longitude",
+  "cityId",
+  "price",
+  "currency",
+  "status",
+  // Unit-only fields (displayed inline with their area field)
+  "carpetAreaUnit",
+  "builtUpAreaUnit",
+  "superBuiltAreaUnit",
+  "plotAreaUnit",
+  "squareFeetUnit",
+  "squareMetersUnit",
+]);
+
 export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
   property,
 }) => {
@@ -122,21 +152,22 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
     const typeConfig =
       PROPERTY_FIELD_CONFIG[propertyType as keyof typeof PROPERTY_FIELD_CONFIG];
     if (!typeConfig) return [];
-    const commonFields = typeConfig.common || [];
-    const subTypeFields =
+    const common = typeConfig.common || [];
+    const subFields =
       subType && typeConfig[subType as keyof typeof typeConfig]
         ? (typeConfig[subType as keyof typeof typeConfig] as string[])
         : [];
-    return [...commonFields, ...subTypeFields];
+    // De-duplicate — purpose appears in both common and subtype sometimes
+    return [...new Set([...common, ...subFields])];
   };
 
   const formatArea = (area: number | null, unit: string | null) =>
     !area ? null : `${area} ${unit || "sqft"}`;
-  const formatBoolean = (v: boolean | null | undefined) =>
-    v === null || v === undefined ? null : v ? "Yes" : "No";
-  const formatPossessionStatus = (s?: string | null) =>
+  const formatBool = (v: boolean | null | undefined) =>
+    v == null ? null : v ? "Yes" : "No";
+  const formatStatus = (s?: string | null) =>
     !s ? null : s === "READY_TO_MOVE" ? "Ready to Move" : s;
-  const formatPossessionDate = (d?: string | Date | null) => {
+  const formatDate = (d?: string | Date | null) => {
     if (!d) return null;
     return (typeof d === "string" ? new Date(d) : d).toLocaleDateString(
       "en-US",
@@ -173,11 +204,11 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
       case "occupancyCertified":
       case "priceNegotiable":
       case "stampDutyExcluded":
-        return formatBoolean(p[field]);
+        return formatBool(p[field]);
       case "possessionDate":
-        return formatPossessionDate(p.possessionDate);
+        return formatDate(p.possessionDate);
       case "possessionStatus":
-        return formatPossessionStatus(p.possessionStatus);
+        return formatStatus(p.possessionStatus);
       case "propertyTypeId":
         return property.propertyType?.name || null;
       case "subTypeId":
@@ -202,60 +233,48 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
       };
     return null;
   };
-  const getGstInfo = () => property.advertiserGstNumber || null;
 
-  const skipFields = [
-    "title",
-    "description",
-    "images",
-    "documents",
-    "amenities",
-    "nearbyPlaces",
-    "youtubeVideoUrl",
-    "virtualTourUrl",
-    "address",
-    "locality",
-    "state",
-    "country",
-    "zipCode",
-    "latitude",
-    "longitude",
-    "cityId",
-    "price",
-    "currency",
-    "status",
-  ];
+  const rera = getReraInfo();
+  const gst = property.advertiserGstNumber || null;
 
+  // Basic identity specs — shown at top, always
   const basicSpecs = [
     { icon: Home, label: "Type", value: property.propertyType?.name },
     { icon: Layers, label: "Subtype", value: property.subType?.name },
     { icon: Scan, label: "Purpose", value: property.purpose },
   ].filter((s) => s.value);
 
-  const specs = getRelevantFields()
-    .filter((f) => !skipFields.includes(f))
+  // Dynamic specs from config — skip duplicates + unit-only fields
+  const seenLabels = new Set(basicSpecs.map((s) => s.label.toLowerCase()));
+  const dynamicSpecs = getRelevantFields()
+    .filter((f) => !SKIP_FIELDS.has(f))
     .map((f) => ({
       icon: FIELD_ICONS[f] || Home,
       label: FIELD_METADATA[f]?.label || f,
       value: getFieldValue(f),
     }))
-    .filter((s) => s.value !== null && s.value !== undefined && s.value !== "");
+    .filter((s) => {
+      if (s.value === null || s.value === undefined || s.value === "")
+        return false;
+      // Skip if same label already shown in basicSpecs
+      const key = s.label.toLowerCase();
+      if (seenLabels.has(key)) return false;
+      seenLabels.add(key);
+      return true;
+    });
 
-  const allSpecs = [...basicSpecs, ...specs];
-  const rera = getReraInfo();
-  const gst = getGstInfo();
+  const allSpecs = [...basicSpecs, ...dynamicSpecs];
 
   return (
     <div className="bg-white border border-blue-100 rounded-xl p-4 sm:p-5">
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <h3 className="text-sm sm:text-base font-bold text-gray-900">
           Property Details
         </h3>
 
-        {/* RERA / GST badge */}
         {rera || gst ? (
-          <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <div className="inline-flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 self-start">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-[11px] font-bold text-emerald-700">
@@ -267,41 +286,46 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
                 </p>
               )}
               {gst && (
-                <p className="text-[10px] font-mono text-gray-600 mt-0.5">
+                <p className="text-[10px] font-mono text-gray-500 mt-0.5">
                   GST: {gst}
                 </p>
               )}
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-            <XCircle className="w-3.5 h-3.5" /> Not RERA Certified
+          <div className="inline-flex items-center gap-1.5 text-[11px] text-gray-400 self-start">
+            <XCircle className="w-3.5 h-3.5 flex-shrink-0" /> Not RERA Certified
           </div>
         )}
       </div>
 
-      {/* Specs grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-blue-50">
-        {allSpecs.map((item, i) => {
-          const Icon = item.icon;
-          return (
-            <div key={i} className="flex items-center py-2 sm:py-2.5 gap-2.5">
-              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
-              <span className="text-[10px] sm:text-[11px] uppercase tracking-wide text-gray-400 w-16 sm:w-20 flex-shrink-0">
-                {item.label}
-              </span>
-              <span className="text-xs sm:text-sm font-semibold text-gray-800 truncate">
-                {item.value}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {allSpecs.length === 0 && (
+      {/* ── Specs — SINGLE COLUMN always, no wrapping issues ───────────────── */}
+      {allSpecs.length === 0 ? (
         <p className="text-center py-6 text-xs text-gray-400">
           No additional details available
         </p>
+      ) : (
+        <div className="divide-y divide-blue-50">
+          {allSpecs.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div key={i} className="flex items-center gap-3 py-2.5">
+                {/* Icon */}
+                <div className="w-7 h-7 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-3.5 h-3.5 text-blue-500" />
+                </div>
+                {/* Label — fixed width, no wrapping */}
+                <span className="text-[11px] uppercase tracking-wide text-gray-400 font-medium w-28 flex-shrink-0 leading-tight">
+                  {item.label}
+                </span>
+                {/* Value */}
+                <span className="text-xs sm:text-sm font-bold text-gray-800 flex-1 min-w-0 truncate">
+                  {item.value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
