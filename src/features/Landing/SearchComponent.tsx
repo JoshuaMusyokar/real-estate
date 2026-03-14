@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// SearchComponent.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { Search, X, ChevronRight } from "lucide-react";
 import {
@@ -59,11 +58,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
+  const chipsContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const { data: citiesData } = useGetCitiesQuery({
     search: citiesSearch,
-    limit: 1000,
+    limit: 100000,
   });
   const { data: propertyTypesData } = useGetPropertyTypesQuery({
     isActive: true,
@@ -152,16 +152,21 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
       searchLocalitiesData?.data &&
       searchInput.length >= 1
     ) {
-      searchLocalitiesData.data.slice(0, 5).forEach((loc: Locality) =>
-        items.push({
-          id: loc.id,
-          type: "locality",
-          name: loc.name,
-          displayName: `${loc.name}, ${selectedCityName}`,
-          cityId: selectedCityId,
-          cityName: selectedCityName,
-        }),
-      );
+      // Filter out already selected localities from suggestions
+      const selectedIds = new Set(selectedLocalities.map((l) => l.id));
+      searchLocalitiesData.data
+        .filter((loc: Locality) => !selectedIds.has(loc.id))
+        .slice(0, 5)
+        .forEach((loc: Locality) =>
+          items.push({
+            id: loc.id,
+            type: "locality",
+            name: loc.name,
+            displayName: `${loc.name}, ${selectedCityName}`,
+            cityId: selectedCityId,
+            cityName: selectedCityName,
+          }),
+        );
     }
 
     if (searchInput.length >= 2) {
@@ -188,6 +193,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     selectedCityName,
     cities,
     searchLocalitiesData,
+    selectedLocalities, // Add this dependency to filter out selected ones
   ]);
 
   // ── Click outside ──────────────────────────────────────────────────────────
@@ -203,11 +209,26 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+  // useEffect(() => {
+  //   const handler = (e: MouseEvent) => {
+  //     if (
+  //       searchWrapperRef.current &&
+  //       !searchWrapperRef.current.contains(e.target as Node)
+  //     ) {
+  //       setShowSuggestions(false);
+  //     }
+  //   };
+
+  //   document.addEventListener("click", handler);
+
+  //   return () => document.removeEventListener("click", handler);
+  // }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleCityChange = (id: string, name: string) => {
     setSelectedCityId(id);
     setSelectedCityName(name);
+    setSelectedLocalities([]); // Clear localities when city changes
     setSearchInput("");
     setShowSuggestions(false);
     // Bubble up so PublicHeader (and any other consumer) stays in sync
@@ -252,7 +273,10 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         prev.some((l) => l.id === item.id) ? prev : [...prev, item],
       );
       setSearchInput("");
-      setShowSuggestions(false);
+      // Keep dropdown open to allow selecting more localities
+      setShowSuggestions(true);
+      // Focus back on input for continuous selection
+      setTimeout(() => inputRef.current?.focus(), 50);
       return;
     }
     navigateToSearch({
@@ -382,6 +406,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 onChange={(e) => setSearchInput(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onClick={() => setShowSuggestions(true)}
                 placeholder="Locality, project..."
                 className="w-full pl-9 pr-8 py-3 text-sm bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
               />
@@ -465,6 +490,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
+                onClick={() => setShowSuggestions(true)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search city, locality, project..."
                 className="w-full pl-10 pr-4 py-3.5 text-sm bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
@@ -532,7 +558,7 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
         </div>
 
         {/* Search bar */}
-        <div ref={searchWrapperRef} className="relative">
+        <div ref={searchWrapperRef} className="relative z-[9999]">
           <div className="flex items-stretch bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 transition-colors overflow-hidden shadow-sm">
             {/* City selector */}
             <CitySelector
@@ -543,13 +569,17 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
               onCityChange={handleCityChange}
             />
 
-            {/* Selected locality chips */}
+            {/* Selected locality chips - Now with better overflow handling */}
             {selectedLocalities.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-r border-gray-200 dark:border-gray-600 max-w-[200px]">
+              <div
+                ref={chipsContainerRef}
+                className="flex items-center gap-1 px-2 py-1.5 border-r border-gray-200 dark:border-gray-600 max-w-[280px] lg:max-w-[350px] overflow-x-auto no-scrollbar"
+                style={{ scrollbarWidth: "none" }}
+              >
                 {selectedLocalities.map((loc) => (
                   <span
                     key={loc.id}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium"
+                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium whitespace-nowrap"
                   >
                     {loc.name}
                     <button
@@ -564,6 +594,11 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                     </button>
                   </span>
                 ))}
+                {selectedLocalities.length > 5 && (
+                  <span className="text-xs text-gray-400 whitespace-nowrap">
+                    +{selectedLocalities.length - 5} more
+                  </span>
+                )}
               </div>
             )}
 
@@ -577,7 +612,12 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 onChange={(e) => setSearchInput(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search locality, landmark, project or builder"
+                onClick={() => setShowSuggestions(true)}
+                placeholder={
+                  selectedLocalities.length > 0
+                    ? "Add more localities..."
+                    : "Search locality, landmark, project or builder"
+                }
                 className="w-full pl-11 pr-10 py-4 text-sm sm:text-base bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
               />
               {searchInput && (

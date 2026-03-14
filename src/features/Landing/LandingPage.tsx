@@ -211,7 +211,7 @@ export const PropertyLandingPage = () => {
             </p>
 
             {/* SearchComponent — seeded with shared city, writes back via onCityChange */}
-            <div className="max-w-6xl mx-auto animate-slide-up-delay">
+            <div className="relative z-[1000] max-w-6xl mx-auto animate-slide-up-delay">
               <SearchComponent
                 onPurposeChange={(p) => setSelectedPurpose(p)}
                 initialPurpose={selectedPurpose}

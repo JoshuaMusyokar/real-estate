@@ -94,7 +94,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       : `Popular in ${selectedCityName}`;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+    <div className="absolute top-full left-0 right-0 mt-1.5 z-[9999] isolate bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Selected localities chips */}
       {selectedLocalities.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">

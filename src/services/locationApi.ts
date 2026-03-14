@@ -117,7 +117,7 @@ export const locationApi = baseApi.injectEndpoints({
           cityName: params.cityName,
         },
       }),
-      providesTags: ["Locality"],
+      // providesTags: ["Locality"],
     }),
 
     getLocality: builder.query<ApiResponse<Locality>, string>({
@@ -157,7 +157,7 @@ export const locationApi = baseApi.injectEndpoints({
           body: data,
         }),
         invalidatesTags: ["User", "City"],
-      }
+      },
     ),
 
     assignLocalitiesToUser: builder.mutation<

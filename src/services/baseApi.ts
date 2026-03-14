@@ -11,10 +11,10 @@ import type {
 import { parseApiError } from "../utils/Apierror";
 
 const baseQuery = fetchBaseQuery({
-  // baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
-  baseUrl:
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://api.property4india.com/api/v1",
+  baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
+  // baseUrl:
+  //   import.meta.env.VITE_API_BASE_URL ||
+  //   "https://api.property4india.com/api/v1",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
     if (token) {

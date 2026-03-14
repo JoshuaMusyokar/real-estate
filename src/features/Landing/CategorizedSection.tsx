@@ -1,63 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  ArrowRight,
-  Filter,
-  Home,
-  Search,
-  X,
-  Building2,
-  Sparkles,
-  TrendingUp,
-  Shield,
-  Users,
-  Award,
-  MapPin,
-  ChevronRight,
-  Bath,
-  Bed,
-  Check,
-  Eye,
-  Heart,
-  Share2,
-  Square,
-  Menu,
-  Star,
-  Clock,
-  ChevronDown,
-  Zap,
-  Phone,
-  Mail,
-  Trophy,
-  User,
-  Briefcase,
-  Building,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { FilterPanel } from "./FilterPanel";
-import { LandingPropertyCard } from "./LandingPropertyCard";
-import {
-  type PropertySearchFilters,
-  type PropertySubType,
-  type PropertyType,
-} from "../../types";
-import {
-  useGetCategorizedPropertiesQuery,
-  useGetUserFavoritesQuery,
-  useSearchPropertiesQuery,
-} from "../../services/propertyApi";
-import { Link, useNavigate } from "react-router-dom";
-import { PublicHeader } from "../../layout/PublicHeader";
-import { useAuth } from "../../hooks/useAuth";
-import { Footer } from "../../layout/Footer";
-import { useDefaultCity } from "../../hooks/useDefaultCity";
-import { SearchComponent } from "./SearchComponentOld";
+import { Home, ChevronRight } from "lucide-react";
+
+import { useNavigate } from "react-router-dom";
+
 import { CategorizedPropertyCard } from "./CategorizedPropertyCard";
+import type { CategorizedProperty } from "../../types";
 
 interface CategorizedSectionProps {
   title: string;
   description: string;
   icon: React.ReactNode;
-  properties: any[];
+  properties: CategorizedProperty[];
   color: string;
   index: number;
 }
