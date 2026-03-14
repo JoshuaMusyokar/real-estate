@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Shield, TrendingUp, Users } from "lucide-react";
+import appLogo from "../../assets/p4i.png";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -42,7 +43,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         {/* Logo */}
         <Link to="/" className="relative z-10 flex items-center gap-2 w-fit">
           <img
-            src="/src/assets/p4i.png"
+            src={appLogo}
             alt="property4india"
             className="h-8 brightness-0 invert"
           />
