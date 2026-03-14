@@ -7,7 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import UserDropdown from "../components/header/UserDropdown";
 import NotificationDropdown from "../components/header/NotificationDropdown";
-import appLogo from "../assets/logo.png";
+import appLogo from "../assets/p4i.png";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);

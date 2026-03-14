@@ -23,7 +23,7 @@ import type { Content, ContentType } from "../../types";
 import Button from "../../components/ui/button/Button";
 import { Skeleton } from "../../components/ui/skeleton";
 
-import appLogo from "../../assets/logo.png";
+import appLogo from "../../assets/p4i.png";
 
 // Import specialized card components
 import { ArticleCard } from "./ArticleCard";
