@@ -8,6 +8,7 @@ import { useGetPropertyAmenitiesQuery } from "../../services/AmenityApi";
 import {
   useDeletePropertyMutation,
   useGetPropertyBySlugQuery,
+  useGetPropertyQuery,
 } from "../../services/propertyApi";
 import { useToast } from "../../hooks/useToast";
 import { OwnerInfoSection } from "./components/OwnerInfoSection";
@@ -39,15 +40,15 @@ import {
 import Button from "../../components/ui/button/Button";
 
 interface PropertyDetailProps {
-  slug: string;
+  id: string;
   userId?: string;
 }
 
 export const PropertyDetail: React.FC<PropertyDetailProps> = ({
-  slug,
+  id,
   userId,
 }) => {
-  const { data, isLoading, error } = useGetPropertyBySlugQuery(slug);
+  const { data, isLoading, error } = useGetPropertyQuery(id);
   const [deleteProperty] = useDeletePropertyMutation();
   const { success, error: showError } = useToast();
 

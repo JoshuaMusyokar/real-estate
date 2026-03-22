@@ -112,7 +112,7 @@ export default function App() {
 
             {/* Properties - Different access levels */}
             <Route path="/property" element={<Property />} />
-            <Route path="/properties/:slug" element={<PropertyDetailPage />} />
+            <Route path="/properties/:id" element={<PropertyDetailPage />} />
 
             {/* Property Creation - Property owners, agents, and admins */}
             <Route

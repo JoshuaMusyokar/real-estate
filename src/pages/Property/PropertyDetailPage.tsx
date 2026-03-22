@@ -6,19 +6,19 @@ import { useAuth } from "../../hooks/useAuth";
 
 // Define the expected URL params
 interface RouteParams {
-  slug: string;
+  id: string;
   [key: string]: string | undefined; // Add index signature
 }
 
 const PropertyDetailPage: FC = () => {
   const { user } = useAuth();
-  const { slug } = useParams<RouteParams>();
+  const { id } = useParams<RouteParams>();
 
   // Handle invalid or missing slug
-  if (!slug) {
+  if (!id) {
     return (
       <div className="p-8 text-center text-red-500 font-medium">
-        Invalid property URL — missing slug.
+        Invalid property URL — missing id.
       </div>
     );
   }
@@ -41,7 +41,7 @@ const PropertyDetailPage: FC = () => {
 
       <div className="container mx-auto px-4 py-6">
         <PropertyDetail
-          slug={slug}
+          id={id}
           // userRole={user.role.name ?? "guest"}
           userId={user?.id ?? ""}
         />

@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { Home, Search, Menu, X, AlignLeft, Command } from "lucide-react";
+import {
+  Home,
+  Search,
+  Menu,
+  X,
+  AlignLeft,
+  Command,
+  ExternalLink,
+} from "lucide-react";
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../hooks/useAuth";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
@@ -23,13 +31,9 @@ const AppHeader: React.FC = () => {
     }
   };
 
-  const toggleApplicationMenu = () => {
+  const toggleApplicationMenu = () =>
     setApplicationMenuOpen(!isApplicationMenuOpen);
-  };
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const toggleMobileMenu = () => setMobileMenuOpen(!isMobileMenuOpen);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,12 +44,11 @@ const AppHeader: React.FC = () => {
         inputRef.current?.focus();
       }
     };
-
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Public header for unauthenticated users
+  // ── Public header (unauthenticated) ─────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-800">
@@ -61,15 +64,9 @@ const AppHeader: React.FC = () => {
                 alt="property4india Logo"
                 className="w-8 h-8 sm:w-10 sm:h-10"
               />
-              {/* <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-blue-600 dark:text-blue-500">
-                BENGALPROPERTY
-              </span>
-              <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-700 dark:text-gray-300">
-                .COM
-              </span> */}
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Nav */}
             <div className="items-center hidden gap-4 md:gap-6 lg:gap-8 md:flex">
               <Link
                 to="/"
@@ -99,26 +96,24 @@ const AppHeader: React.FC = () => {
               </Link>
             </div>
 
-            {/* Desktop Auth Actions */}
+            {/* Desktop Auth */}
             <div className="items-center hidden gap-2 sm:gap-3 md:flex">
               <ThemeToggleButton />
-
               <Link
                 to="/login"
                 className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 transition-colors rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Login
               </Link>
-
               <Link
                 to="/register"
-                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
               >
                 Get Started
               </Link>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile toggle */}
             <button
               onClick={toggleMobileMenu}
               className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-gray-700 rounded-lg md:hidden hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -138,54 +133,52 @@ const AppHeader: React.FC = () => {
               <div className="flex flex-col space-y-3 sm:space-y-4">
                 <Link
                   to="/"
-                  className="flex items-center gap-2 text-sm sm:text-base font-medium text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300"
                   onClick={toggleMobileMenu}
                 >
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Home className="w-4 h-4" />
                   Home
                 </Link>
                 <Link
                   to="/properties"
-                  className="flex items-center gap-2 text-sm sm:text-base font-medium text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300"
                   onClick={toggleMobileMenu}
                 >
-                  <Search className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Search className="w-4 h-4" />
                   Browse Properties
                 </Link>
                 <Link
                   to="/about"
-                  className="text-sm sm:text-base font-medium text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
+                  className="text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300"
                   onClick={toggleMobileMenu}
                 >
                   About
                 </Link>
                 <Link
                   to="/contact"
-                  className="text-sm sm:text-base font-medium text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-500"
+                  className="text-sm font-medium text-gray-700 hover:text-blue-600 dark:text-gray-300"
                   onClick={toggleMobileMenu}
                 >
                   Contact
                 </Link>
-
-                <div className="pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-gray-200 dark:border-gray-800">
-                  <div className="flex items-center gap-3 mb-3 sm:mb-4">
-                    <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-800">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
                       Theme:
                     </span>
                     <ThemeToggleButton />
                   </div>
-
-                  <div className="flex flex-col gap-2 sm:gap-3">
+                  <div className="flex flex-col gap-2">
                     <Link
                       to="/login"
-                      className="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-center text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                      className="w-full px-4 py-2.5 text-sm font-semibold text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
                       onClick={toggleMobileMenu}
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
-                      className="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-center text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+                      className="w-full px-4 py-2.5 text-sm font-semibold text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                       onClick={toggleMobileMenu}
                     >
                       Get Started
@@ -200,12 +193,13 @@ const AppHeader: React.FC = () => {
     );
   }
 
-  // Authenticated user header
+  // ── Authenticated header (admin / staff) ─────────────────────────────────────
   return (
     <header className="sticky top-0 flex w-full bg-white border-b border-gray-200 z-50 dark:border-gray-800 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-4 xl:px-6">
+        {/* Top row */}
         <div className="flex items-center justify-between w-full gap-2 px-3 py-2.5 sm:py-3 lg:justify-normal lg:px-0 lg:py-3 xl:py-4">
-          {/* Sidebar Toggle */}
+          {/* Sidebar toggle */}
           <button
             className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 text-gray-500 border border-gray-200 rounded-lg dark:border-gray-800 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             onClick={handleToggle}
@@ -218,26 +212,16 @@ const AppHeader: React.FC = () => {
             )}
           </button>
 
-          {/* Mobile Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-0 lg:hidden flex-shrink-0"
-          >
+          {/* Mobile logo */}
+          <Link to="/" className="flex items-center lg:hidden flex-shrink-0">
             <img
               src={appLogo}
               alt="Property4India Logo"
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
-            {/* <span className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-500">
-              BENGALPROPERTY
-            </span>
-            <span className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300"
-            >
-              .COM
-            </span> */}
           </Link>
 
-          {/* Mobile App Menu Toggle */}
+          {/* Mobile app-menu toggle */}
           <button
             onClick={toggleApplicationMenu}
             className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 lg:hidden transition-colors"
@@ -245,7 +229,7 @@ const AppHeader: React.FC = () => {
             <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
-          {/* Desktop Search */}
+          {/* Desktop search */}
           <div className="hidden lg:block">
             <form>
               <div className="relative">
@@ -267,7 +251,7 @@ const AppHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* User Actions */}
+        {/* Action bar */}
         <div
           className={`${
             isApplicationMenuOpen ? "flex" : "hidden"
@@ -276,7 +260,29 @@ const AppHeader: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggleButton />
             <NotificationDropdown />
+
+            {/* ── View public site ── */}
+            <Link
+              to="/"
+              title="View public site"
+              className="
+                flex items-center gap-1.5
+                px-2.5 sm:px-3 py-1.5 sm:py-2
+                text-xs sm:text-sm font-semibold
+                text-blue-600 dark:text-blue-400
+                border border-blue-200 dark:border-blue-700
+                rounded-lg
+                hover:bg-blue-50 dark:hover:bg-blue-900/30
+                transition-colors
+                whitespace-nowrap
+              "
+            >
+              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">Public Site</span>
+              <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-60" />
+            </Link>
           </div>
+
           <UserDropdown />
         </div>
       </div>

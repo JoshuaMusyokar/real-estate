@@ -32,7 +32,6 @@ import {
   useGetLocalitiesQuery,
 } from "../../services/locationApi";
 import { usePropertyValidation } from "../../hooks/usePropertyValidation";
-import { useLocationSearch } from "../../hooks/useLocationSearch";
 import { usePropertyImages } from "../../hooks/usePropertyImage";
 import { usePropertyDocuments } from "../../hooks/usePropertyDocument";
 import { NearbyPlacesStep } from "./components/NearbyPlacesStep";
@@ -67,7 +66,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     "Documents",
   ];
 
-  // API Hooks
+  // ── API hooks ──────────────────────────────────────────────────────────────
   const [createProperty, { isLoading: isCreating }] =
     useCreatePropertyMutation();
   const [updateProperty, { isLoading: isUpdating }] =
@@ -82,7 +81,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const amenities = amenitiesData?.data || [];
   const categories = categoriesData?.data || [];
 
-  // Form State
+  // ── Form state ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState<PropertyCreateRequest>({
     // Basic Information
     title: "",
@@ -219,13 +218,20 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     // Related Data
     amenities: [],
     images: [],
+
+    // ── PATCH 1: Owner contact (captured in BasicInfoStep) ─────────────────
+    // These flow through to createProperty/updateProperty automatically via
+    // the { ...formData } spread in handleSubmit.
+    ownerName: "",
+    ownerEmail: "",
+    ownerPhone: "",
+    ownerPhones: [""], // one empty slot so the primary phone input renders
   });
 
   const { data: citiesData, isLoading: isLoadingCities } = useGetCitiesQuery({
     page: 1,
     limit: 100,
   });
-
   const { data: localitiesData, isLoading: isLoadingLocalities } =
     useGetLocalitiesQuery(
       { cityId: formData.cityId || "" },
@@ -235,11 +241,8 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const cities = citiesData?.data || [];
   const localities = localitiesData?.data || [];
 
-  // Custom Hooks
-  const { errors, touched, validateStep, handleBlur, setErrors } =
-    usePropertyValidation();
-
-  const { setLocationSearch, setShowSuggestions } = useLocationSearch();
+  // ── Validation + image/doc hooks ──────────────────────────────────────────
+  const { errors, touched, validateStep, handleBlur } = usePropertyValidation();
 
   const {
     imageFiles,
@@ -253,7 +256,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
   const { documents, setDocuments, handleDocumentUpload, removeDocument } =
     usePropertyDocuments(showError);
 
-  // Load existing property data for edit mode
+  // ── Edit-mode hydration ───────────────────────────────────────────────────
   useEffect(() => {
     if (mode === "edit" && propertyData?.data) {
       const property = propertyData.data;
@@ -373,12 +376,22 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         industryType: property.industryType,
         amenities: property.amenities?.map((a) => a.amenityId) || [],
         images: [],
+
+        // ── PATCH 2: Owner contact — hydrate so BasicInfoStep shows saved values
+        ownerName: property.ownerName || "",
+        ownerEmail: property.ownerEmail || "",
+        ownerPhone: property.ownerPhone || "",
+        // Build the phones array: prefer ownerPhones[], fall back to ownerPhone scalar
+        ownerPhones:
+          Array.isArray(property.ownerPhones) &&
+          (property.ownerPhones as string[]).filter(Boolean).length
+            ? (property.ownerPhones as string[]).filter(Boolean)
+            : property.ownerPhone
+              ? [property.ownerPhone]
+              : [""],
       };
 
-      setFormData((prev) => ({
-        ...prev,
-        ...updateData,
-      }));
+      setFormData((prev) => ({ ...prev, ...updateData }));
 
       if (property.propertyTypeId) {
         dispatch(
@@ -391,10 +404,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
 
       if (property.subTypeId && property.subType) {
         dispatch(
-          setSubType({
-            id: property.subType.id,
-            name: property.subType.name,
-          }),
+          setSubType({ id: property.subType.id, name: property.subType.name }),
         );
       } else {
         dispatch(setSubType(null));
@@ -428,6 +438,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     }
   }, [mode, propertyData, setImageFiles, setDocuments]);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleFormUpdate = (updates: Partial<PropertyCreateRequest>) => {
     setFormData({ ...formData, ...updates });
   };
@@ -439,8 +450,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     } else {
       const errorMessages = Object.values(errors);
       if (errorMessages.length > 0) {
-        const errorText = errorMessages.join("\n");
-        showError("Please fix the following issues:", errorText);
+        showError("Please fix the following issues:", errorMessages.join("\n"));
       } else {
         showError(
           "Validation Failed",
@@ -482,41 +492,37 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
         key: img.key || null,
       }));
 
+      // ownerName/ownerEmail/ownerPhone/ownerPhones are in formData,
+      // so they flow through here automatically via the spread.
       const propertyDataToSend: PropertyCreateRequest = {
         ...formData,
         status: mode === "create" ? "UNDER_REVIEW" : formData.status!,
         images: imageMetadata,
+        // Ensure ownerPhones is clean (no empty strings)
+        ownerPhones: (formData.ownerPhones || []).filter(Boolean),
       };
 
       if (mode === "edit") {
         const updateData: PropertyUpdateRequest = {
           ...propertyDataToSend,
-          roadWidth: propertyDataToSend.roadWidth
-            ? propertyDataToSend.roadWidth?.toString()
-            : null,
+          roadWidth: propertyDataToSend.roadWidth?.toString() ?? null,
           status: formData.status,
         };
         formDataToSend.append("data", JSON.stringify(updateData));
       } else {
         const createData: PropertyUpdateRequest = {
           ...propertyDataToSend,
-          roadWidth: propertyDataToSend.roadWidth
-            ? propertyDataToSend.roadWidth?.toString()
-            : null,
+          roadWidth: propertyDataToSend.roadWidth?.toString() ?? null,
         };
         formDataToSend.append("data", JSON.stringify(createData));
       }
 
       imageFiles.forEach((img) => {
-        if (img.file) {
-          formDataToSend.append("images", img.file);
-        }
+        if (img.file) formDataToSend.append("images", img.file);
       });
 
       documents.forEach((doc) => {
-        if (doc.file) {
-          formDataToSend.append("documents", doc.file);
-        }
+        if (doc.file) formDataToSend.append("documents", doc.file);
       });
 
       if (mode === "create") {
@@ -528,18 +534,15 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           id: propertyId,
           data: formDataToSend,
         }).unwrap();
-        success("Property updated successfully!", "check property details.");
+        success("Property updated successfully!", "Check property details.");
         navigate(`/properties/${result.data.slug}`);
       }
-    } catch (error: any) {
-      console.error("Failed to save property:", error);
-      showError(
-        error?.data?.message || "Failed to save property",
-        "Please try again.",
-      );
+    } catch {
+      // errors handled by RTK Query / toast
     }
   };
 
+  // ── Step renderer ─────────────────────────────────────────────────────────
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
@@ -621,6 +624,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
 
   const isLoading = isCreating || isUpdating;
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       {/* Header */}
@@ -657,7 +661,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
               <form onSubmit={(e) => e.preventDefault()}>
                 {renderStepContent()}
 
-                {/* Navigation Buttons */}
+                {/* Navigation */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
                   <Button
                     type="button"
@@ -711,7 +715,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
           </CardContent>
         </Card>
 
-        {/* Additional Info */}
+        {/* What happens next (create mode only) */}
         {mode === "create" && (
           <Card className="mt-4 sm:mt-6">
             <CardContent className="p-4 sm:p-5 md:p-6">
@@ -724,13 +728,13 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                     icon: Clock,
                     text: 'Your property will be set to "UNDER_REVIEW" status',
                     color:
-                      "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30",
+                      "text-blue-600   dark:text-blue-400   bg-blue-100   dark:bg-blue-900/30",
                   },
                   {
                     icon: CheckCircle,
                     text: "Our team will review your listing within 24-48 hours",
                     color:
-                      "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30",
+                      "text-green-600  dark:text-green-400  bg-green-100  dark:bg-green-900/30",
                   },
                   {
                     icon: Eye,
@@ -744,21 +748,18 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
                     color:
                       "text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30",
                   },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={idx} className="flex items-start gap-2 sm:gap-3">
-                      <div
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${item.color}`}
-                      >
-                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 pt-0.5 sm:pt-1">
-                        {item.text}
-                      </div>
+                ].map(({ icon: Icon, text, color }, idx) => (
+                  <div key={idx} className="flex items-start gap-2 sm:gap-3">
+                    <div
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}
+                    >
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
-                  );
-                })}
+                    <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 pt-0.5 sm:pt-1">
+                      {text}
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

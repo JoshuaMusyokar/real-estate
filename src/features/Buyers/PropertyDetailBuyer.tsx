@@ -6,6 +6,7 @@ import { PropertyStats } from "./components/PropertyStats";
 import { ImageGallery } from "./components/ImageGallery";
 import { useGetPropertyAmenitiesQuery } from "../../services/AmenityApi";
 import {
+  useGetPropertyBySlugQuery,
   useGetPropertyQuery,
   useGetUserFavoritesQuery,
 } from "../../services/propertyApi";
@@ -32,16 +33,16 @@ import { PropertyShowcase } from "./components/PropertyShowcase";
 import { FloorPlanSection } from "./components/FloorPlanSection";
 
 interface PropertyDetailBuyerProps {
-  id: string;
+  slug: string;
   userRole?: Role;
   userId?: string;
 }
 
 export const PropertyDetailBuyer: React.FC<PropertyDetailBuyerProps> = ({
-  id,
+  slug,
 }) => {
   const navigate = useNavigate();
-  const { data, isLoading, error } = useGetPropertyQuery(id);
+  const { data, isLoading, error } = useGetPropertyBySlugQuery(slug);
   const property = data?.data;
   const propertyId = property?.id;
 

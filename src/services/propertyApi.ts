@@ -148,25 +148,91 @@ export const propertyApi = baseApi.injectEndpoints({
     // Get user properties
     getUserProperties: builder.query<
       PropertiesResponse,
-      { page?: number; limit?: number; status?: string }
+      {
+        page?: number;
+        limit?: number;
+        // Core filters
+        search?: string;
+        status?: string | string[]; // PropertyStatus | PropertyStatus[]
+        purpose?: string | string[]; // PropertyPurpose | PropertyPurpose[]
+        possessionStatus?: string | string[];
+        propertyTypeId?: string | string[];
+        subTypeId?: string | string[];
+        // Location — multi-value
+        cityId?: string;
+        city?: string | string[];
+        locality?: string | string[];
+        localityId?: string | string[];
+        // Price range
+        minPrice?: number;
+        maxPrice?: number;
+        // Area range
+        minSquareFeet?: number;
+        maxSquareFeet?: number;
+        // Room counts
+        bedrooms?: number[];
+        bathrooms?: number[];
+        // Amenities
+        amenities?: string[];
+        // Boolean flags
+        featured?: boolean;
+        verified?: boolean;
+        hasBalcony?: boolean;
+        // Commercial / specialised
+        furnishingStatus?: string | string[];
+        facingDirection?: string | string[];
+        // Sort
+        sortBy?: string;
+        sortOrder?: "asc" | "desc";
+        // NOTE: listingSource / postedBy intentionally omitted
+      }
     >({
-      query: ({ page = 1, limit = 20, status } = {}) => {
+      query: (args = {}) => {
         const params = new URLSearchParams();
-        params.append("page", page.toString());
-        params.append("limit", limit.toString());
-        if (status) params.append("status", status);
+
+        // Helper — append scalar or comma-joined array
+        const add = (
+          key: string,
+          value: string | number | boolean | string[] | number[] | undefined,
+        ) => {
+          if (value === undefined || value === null) return;
+          if (Array.isArray(value)) {
+            if (value.length) params.append(key, value.join(","));
+          } else {
+            params.append(key, String(value));
+          }
+        };
+
+        add("page", args.page ?? 1);
+        add("limit", args.limit ?? 20);
+        add("search", args.search);
+        add("status", args.status);
+        add("purpose", args.purpose);
+        add("possessionStatus", args.possessionStatus);
+        add("propertyTypeId", args.propertyTypeId);
+        add("subTypeId", args.subTypeId);
+        add("cityId", args.cityId);
+        add("city", args.city);
+        add("locality", args.locality);
+        add("localityId", args.localityId);
+        add("minPrice", args.minPrice);
+        add("maxPrice", args.maxPrice);
+        add("minSquareFeet", args.minSquareFeet);
+        add("maxSquareFeet", args.maxSquareFeet);
+        add("bedrooms", args.bedrooms);
+        add("bathrooms", args.bathrooms);
+        add("amenities", args.amenities);
+        add("featured", args.featured);
+        add("verified", args.verified);
+        add("hasBalcony", args.hasBalcony);
+        add("furnishingStatus", args.furnishingStatus);
+        add("facingDirection", args.facingDirection);
+        add("sortBy", args.sortBy ?? "createdAt");
+        add("sortOrder", args.sortOrder ?? "desc");
+
         return `/properties/user/my-properties?${params.toString()}`;
       },
-      // providesTags: (result) =>
-      //   result
-      //     ? [
-      //         ...result.data.map(({ id }) => ({
-      //           type: "Property" as const,
-      //           id,
-      //         })),
-      //         "Property",
-      //       ]
-      //     : ["Property"],
+      // providesTags: ["Property"],
     }),
 
     // Get property stats

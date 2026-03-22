@@ -41,7 +41,7 @@ export const Template2PropertyCard = ({
     property.purpose === "RENT" || property.purpose === "LEASE";
 
   const handleCardClick = () => {
-    window.location.href = `/property-detail/${property.id}`;
+    window.location.href = `/property-detail/${property.slug}`;
   };
 
   const handleSave = async (e: React.MouseEvent) => {

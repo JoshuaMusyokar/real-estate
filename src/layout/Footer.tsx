@@ -2,15 +2,17 @@ import { Link } from "react-router-dom";
 import {
   Phone,
   Mail,
-  MapPin,
   Facebook,
   Twitter,
   Instagram,
   Linkedin,
+  Youtube,
   Send,
   Building2,
   ShieldCheck,
   Award,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useState } from "react";
 import appLogo from "../assets/p4i.png";
@@ -18,6 +20,7 @@ import appLogo from "../assets/p4i.png";
 export const Footer = () => {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [disclaimerExpanded, setDisclaimerExpanded] = useState(false);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +71,12 @@ export const Footer = () => {
       url: "https://linkedin.com",
       hoverBg: "hover:bg-blue-700",
     },
+    {
+      name: "YouTube",
+      icon: Youtube,
+      url: "https://youtube.com",
+      hoverBg: "hover:bg-red-600",
+    },
   ];
 
   const trustBadges = [
@@ -79,7 +88,7 @@ export const Footer = () => {
   return (
     <footer className="bg-gray-950 text-white">
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 mb-8 sm:mb-12">
           {/* Company info — full width on xs, 2 cols on sm, 5 cols on lg */}
           <div className="col-span-2 lg:col-span-5">
@@ -107,12 +116,12 @@ export const Footer = () => {
                 {
                   href: "tel:+1234567890",
                   icon: Phone,
-                  label: "+1 (234) 567-890",
+                  label: "+91 (234) 567-890",
                 },
                 {
-                  href: "mailto:info@property4india.com",
+                  href: "mailto:info@property4india.in",
                   icon: Mail,
-                  label: "info@property4india.com",
+                  label: "info@property4india.in",
                 },
               ].map(({ href, icon: Icon, label }) => (
                 <a
@@ -128,14 +137,6 @@ export const Footer = () => {
                   </span>
                 </a>
               ))}
-              <div className="flex items-start gap-2 text-gray-400">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <MapPin className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-xs sm:text-sm font-medium leading-relaxed">
-                  123 Property Street, Real Estate City, RE 12345
-                </span>
-              </div>
             </div>
           </div>
 
@@ -247,14 +248,56 @@ export const Footer = () => {
           </div>
         </div>
 
+        {/* ── Disclaimer box ───────────────────────────────────────────────── */}
+        <div className="border-t border-gray-800 pt-5 sm:pt-6 mb-4 sm:mb-5">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-3.5 sm:p-4">
+            {/* Always-visible: first 2 lines */}
+            <p
+              className={`text-gray-500 text-[10px] sm:text-xs leading-relaxed ${disclaimerExpanded ? "" : "line-clamp-2"}`}
+            >
+              Property4india.com provides an advertising platform for sellers to
+              list their properties. We act solely as an intermediary and are
+              not involved in, nor do we control, any transactions between
+              sellers and users/buyers visiting our website. Any offers or
+              discounts displayed are directly from the
+              builders/developers/Brokers or Sellers advertising their products.
+              Property4india.com facilitates communication of these offers but
+              does not sell or provide the actual products or services. We do
+              not guarantee or make any representations regarding the offers
+              presented. Property4india.com is not responsible for mediating or
+              resolving any disputes between sellers and users/buyers; all such
+              matters should be settled directly between the parties involved
+              without Property4india.com participation.
+            </p>
+
+            {/* Toggle */}
+            <button
+              onClick={() => setDisclaimerExpanded((s) => !s)}
+              className="mt-1.5 flex items-center gap-1 text-[10px] sm:text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+            >
+              {disclaimerExpanded ? (
+                <>
+                  <ChevronUp className="w-3 h-3" /> Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3 h-3" /> More
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* ── Bottom bar ───────────────────────────────────────────────────── */}
         <div className="border-t border-gray-800 pt-5 sm:pt-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             <p className="text-gray-500 text-[10px] sm:text-xs font-medium text-center sm:text-left">
-              © {new Date().getFullYear()} Property4India. All rights reserved.
+              Trademarks, logos and names belong to their respective owners. All
+              rights reserved. &copy; {new Date().getFullYear()}{" "}
+              Property4india.com
             </p>
 
-            {/* Legal links — inline on desktop, shown below on mobile */}
+            {/* Legal links */}
             <div className="flex items-center gap-3 sm:gap-4">
               {["Privacy", "Terms", "Cookies", "Sitemap"].map(
                 (label, i, arr) => (

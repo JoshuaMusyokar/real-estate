@@ -17,7 +17,7 @@ interface RouteParams {
 }
 
 const PropertyDetailBuyerPage: FC = () => {
-  const { id } = useParams<RouteParams>();
+  const { slug } = useParams<RouteParams>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -94,7 +94,7 @@ const PropertyDetailBuyerPage: FC = () => {
   };
 
   // Handle invalid or missing slug
-  if (!id) {
+  if (!slug) {
     return (
       <div className="p-8 text-center text-red-500 font-medium">
         Invalid property URL — missing slug.
@@ -126,7 +126,7 @@ const PropertyDetailBuyerPage: FC = () => {
         onLocalityChange={handleLocalityChange}
         onCityChange={handleCityChange}
       />
-      <PropertyDetailBuyer id={id} />
+      <PropertyDetailBuyer slug={slug} />
       <Footer />
     </>
   );

@@ -64,7 +64,7 @@ export const LandingPropertyCard: FC<PropertyCardProps> = ({
 
   const handleCardClick = () => {
     // Navigate to property detail
-    window.location.href = `/property-detail/${property.id}`;
+    window.location.href = `/property-detail/${property.slug}`;
   };
 
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {

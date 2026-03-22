@@ -61,7 +61,7 @@ export const Template4PropertyCard: FC<Template4PropertyCardProps> = ({
     property.purpose === "RENT" || property.purpose === "LEASE";
 
   const handleCardClick = () => {
-    window.location.href = `/property-detail/${property.id}`;
+    window.location.href = `/property-detail/${property.slug}`;
   };
 
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {

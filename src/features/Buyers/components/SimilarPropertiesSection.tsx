@@ -162,6 +162,7 @@ const SimilarCard = ({
 }: {
   property: {
     id: string;
+    slug: string;
     title: string;
     price: number;
     city: ResCity;
@@ -185,7 +186,7 @@ const SimilarCard = ({
 
   return (
     <Link
-      to={`/property-detail/${property.id}`}
+      to={`/property-detail/${property.slug}`}
       className="group flex-shrink-0 w-60 sm:w-72 bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
     >
       {/* Image */}

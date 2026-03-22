@@ -44,7 +44,7 @@ export const CompactFeaturedPropertyCard: React.FC<
 
   return (
     <Link
-      to={`/property-detail/${id}`}
+      to={`/property-detail/${slug}`}
       className="block group w-full"
       target="_blank"
     >

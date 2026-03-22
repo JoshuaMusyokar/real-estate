@@ -213,7 +213,7 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
         {/* CTA */}
         <button
           onClick={() =>
-            window.open(`/property-detail/${property.id}`, "_blank")
+            window.open(`/property-detail/${property.slug}`, "_blank")
           }
           className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-[10px] sm:text-xs font-black rounded-lg sm:rounded-xl transition-all hover:shadow-lg hover:shadow-amber-200"
         >

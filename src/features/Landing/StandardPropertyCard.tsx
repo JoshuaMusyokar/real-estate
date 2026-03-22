@@ -156,7 +156,7 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
         {/* CTA */}
         <button
           onClick={() =>
-            window.open(`/property-detail/${property.id}`, "_blank")
+            window.open(`/property-detail/${property.slug}`, "_blank")
           }
           className="w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] sm:text-xs font-bold rounded-lg sm:rounded-xl transition-colors"
         >

@@ -1,4 +1,3 @@
-// PropertyDetail.tsx  (PropertyDetails component)
 import {
   Home,
   Layers,
@@ -299,32 +298,42 @@ export const PropertyDetails: React.FC<PropertyDetailsProps> = ({
         )}
       </div>
 
-      {/* ── Specs — SINGLE COLUMN always, no wrapping issues ───────────────── */}
+      {/* ── Specs — 2-column grid, label stacked above value ──────────────── */}
       {allSpecs.length === 0 ? (
         <p className="text-center py-6 text-xs text-gray-400">
           No additional details available
         </p>
       ) : (
-        <div className="divide-y divide-blue-50">
+        <div className="grid grid-cols-2">
           {allSpecs.map((item, i) => {
             const Icon = item.icon;
+            const isRight = i % 2 !== 0;
             return (
-              <div key={i} className="flex items-center gap-3 py-2.5">
+              <div
+                key={i}
+                className={`flex items-start gap-2 py-2 sm:py-2.5 border-b border-blue-50
+                  ${isRight ? "pl-3 border-l border-blue-50" : "pr-3"}`}
+              >
                 {/* Icon */}
-                <div className="w-7 h-7 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-3.5 h-3.5 text-blue-500" />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500" />
                 </div>
-                {/* Label — fixed width, no wrapping */}
-                <span className="text-[11px] uppercase tracking-wide text-gray-400 font-medium w-28 flex-shrink-0 leading-tight">
-                  {item.label}
-                </span>
-                {/* Value */}
-                <span className="text-xs sm:text-sm font-bold text-gray-800 flex-1 min-w-0 truncate">
-                  {item.value}
-                </span>
+                {/* Label + value stacked */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-gray-400 font-medium truncate leading-none mb-0.5">
+                    {item.label}
+                  </p>
+                  <p className="text-[11px] sm:text-xs font-bold text-gray-800 truncate leading-snug">
+                    {item.value}
+                  </p>
+                </div>
               </div>
             );
           })}
+          {/* Ghost cell if odd count — keeps last row's bottom border aligned */}
+          {allSpecs.length % 2 !== 0 && (
+            <div className="py-2 sm:py-2.5 pl-3 border-b border-l border-blue-50" />
+          )}
         </div>
       )}
     </div>

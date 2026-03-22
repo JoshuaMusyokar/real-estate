@@ -158,7 +158,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
         <div
           className="flex-1 p-3 sm:p-4 flex flex-col justify-between cursor-pointer min-w-0"
           onClick={() =>
-            window.open(`/property-detail/${property.id}`, "_blank")
+            window.open(`/property-detail/${property.slug}`, "_blank")
           }
         >
           <div>
@@ -244,11 +244,12 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
                 <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-gray-800 truncate">
-                  {property.postedBy}
-                </p>
                 <p className="text-[9px] sm:text-[10px] text-gray-400">
                   Posted by
+                </p>
+                <p className="text-[10px] sm:text-xs font-bold text-gray-800 truncate">
+                  {property.postedBy}
+                  {property.advertiserName ?? ""}
                 </p>
               </div>
             </div>

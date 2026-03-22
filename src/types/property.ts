@@ -204,6 +204,7 @@ export interface Property {
   ownerEmail: string;
   ownerPhone: string;
   ownerName: string;
+  ownerPhones: string[];
 
   // Advertiser Information
   postedBy: string; // "OWNER", "AGENT", "DEVELOPER"
@@ -462,6 +463,10 @@ export interface PropertyCreateRequest {
   // Related Data
   amenities: string[] | null; // Array of amenity IDs
   images: PropertyImageInput[] | null;
+  ownerName: string;
+  ownerEmail: string;
+  ownerPhone: string;
+  ownerPhones: string[];
 }
 
 export interface PropertyUpdateRequest {
@@ -609,6 +614,10 @@ export interface PropertyUpdateRequest {
   // Related Data
   amenities: string[] | null;
   images: PropertyImageInput[] | null;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string;
+  ownerPhones?: string[];
 }
 
 export interface PropertyImageInput {
@@ -728,6 +737,7 @@ export interface PropertyReviewRequest {
 export interface SimilarPropertiesResponse {
   data: Array<{
     id: string;
+    slug: string;
     title: string;
     price: number;
     city: ResCity;
