@@ -249,7 +249,7 @@ export default function App() {
             <Route path="/bar-chart" element={<BarChart />} />
           </Route>
           <Route
-            path="/property-detail/:id"
+            path="/property-detail/:slug"
             element={<PropertyDetailBuyerPage />}
           />
 
