@@ -1,4 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+// MyPropertyFilters.tsx
+// Fix: dropdowns rendered via ReactDOM.createPortal so they escape
+// the overflow:hidden / overflow-x-auto scroll container that was clipping them.
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowUpDown,
   Check,
@@ -119,9 +124,32 @@ const PRICE_RANGES = [
   { label: "₹5 Cr+", min: 50_000_000, max: undefined },
 ];
 
-// ── Primitives ────────────────────────────────────────────────────────────────
+// ── Portal dropdown hook ──────────────────────────────────────────────────────
+// Calculates the trigger's screen position and renders the dropdown at
+// that position via a portal on document.body — completely escaping any
+// overflow:hidden or overflow:auto ancestor.
 
-/** Standard filter pill with dropdown */
+function useDropdownPosition(
+  triggerRef: React.RefObject<HTMLButtonElement | HTMLDivElement | null>,
+  open: boolean,
+) {
+  const [pos, setPos] = useState({ top: 0, left: 0, minWidth: 0 });
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + window.scrollY + 6,
+      left: rect.left + window.scrollX,
+      minWidth: rect.width,
+    });
+  }, [open, triggerRef]);
+
+  return pos;
+}
+
+// ── Pill with portalled dropdown ──────────────────────────────────────────────
+
 const Pill: React.FC<{
   label: string;
   count?: number;
@@ -129,47 +157,65 @@ const Pill: React.FC<{
   onClick: () => void;
   children: React.ReactNode;
   alignRight?: boolean;
-}> = ({ label, count, open, onClick, children, alignRight }) => (
-  <div className="relative flex-shrink-0">
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all
-        ${
-          open || (count && count > 0)
-            ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
-            : "bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
-        }`}
-    >
-      {label}
-      {count && count > 0 ? (
-        <span
-          className={`w-4 h-4 rounded-full text-[10px] font-black flex items-center justify-center
-          ${open ? "bg-white text-blue-600" : "bg-blue-100 text-blue-700"}`}
-        >
-          {count}
-        </span>
-      ) : (
-        <ChevronDown
-          className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      )}
-    </button>
-    {open && (
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`absolute top-full mt-1.5 z-50 bg-white border border-blue-100 rounded-xl shadow-xl overflow-hidden
-          ${alignRight ? "right-0" : "left-0"} min-w-[160px]`}
-      >
-        {children}
-      </div>
-    )}
-  </div>
-);
+}> = ({ label, count, open, onClick, children, alignRight }) => {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const pos = useDropdownPosition(btnRef, open);
 
-/** Standard option row inside a dropdown */
+  return (
+    <div className="relative flex-shrink-0">
+      <button
+        ref={btnRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all
+          ${
+            open || (count && count > 0)
+              ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
+              : "bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
+          }`}
+      >
+        {label}
+        {count && count > 0 ? (
+          <span
+            className={`w-4 h-4 rounded-full text-[10px] font-black flex items-center justify-center
+            ${open ? "bg-white text-blue-600" : "bg-blue-100 text-blue-700"}`}
+          >
+            {count}
+          </span>
+        ) : (
+          <ChevronDown
+            className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        )}
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "absolute",
+              top: pos.top,
+              left: alignRight ? undefined : pos.left,
+              right: alignRight
+                ? window.innerWidth - pos.left - pos.minWidth
+                : undefined,
+              minWidth: Math.max(pos.minWidth, 160),
+              zIndex: 9999,
+            }}
+            className="bg-white border border-blue-100 rounded-xl shadow-2xl overflow-hidden"
+          >
+            {children}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
+
+/** Standard option row */
 const Opt: React.FC<{
   active: boolean;
   onClick: () => void;
@@ -185,20 +231,8 @@ const Opt: React.FC<{
   </button>
 );
 
-// ── City + Locality compound selector ─────────────────────────────────────────
-// Shown inline below the search bar as a distinct row on mobile,
-// and merged into the search bar row on sm+.
+// ── One fetcher per city ──────────────────────────────────────────────────────
 
-interface CityLocalityProps {
-  selectedCities: string[];
-  selectedLocalities: string[];
-  onCitiesChange: (cities: string[]) => void;
-  onLocalitiesChange: (localities: string[]) => void;
-  open: string | null;
-  toggle: (id: string) => void;
-}
-
-// ── One fetcher per city — avoids calling hooks in a loop ────────────────────
 const CityLocalitiesFetcher: React.FC<{
   cityId: string;
   onLoaded: (cityId: string, names: string[]) => void;
@@ -215,6 +249,17 @@ const CityLocalitiesFetcher: React.FC<{
   return null;
 };
 
+// ── City + Locality selector ──────────────────────────────────────────────────
+
+interface CityLocalityProps {
+  selectedCities: string[];
+  selectedLocalities: string[];
+  onCitiesChange: (cities: string[]) => void;
+  onLocalitiesChange: (localities: string[]) => void;
+  open: string | null;
+  toggle: (id: string) => void;
+}
+
 const CityLocalitySelector: React.FC<CityLocalityProps> = ({
   selectedCities,
   selectedLocalities,
@@ -225,8 +270,12 @@ const CityLocalitySelector: React.FC<CityLocalityProps> = ({
 }) => {
   const [cityQ, setCityQ] = useState("");
   const [localQ, setLocalQ] = useState("");
-  // Map of cityId → locality names loaded so far
   const [localityMap, setLocalityMap] = useState<Record<string, string[]>>({});
+
+  const cityBtnRef = useRef<HTMLButtonElement>(null);
+  const localBtnRef = useRef<HTMLButtonElement>(null);
+  const cityPos = useDropdownPosition(cityBtnRef, open === "city");
+  const localPos = useDropdownPosition(localBtnRef, open === "locality");
 
   const { data: citiesData } = useGetCitiesQuery({ limit: 200 });
   const allCities = citiesData?.data || [];
@@ -236,16 +285,13 @@ const CityLocalitySelector: React.FC<CityLocalityProps> = ({
       )
     : allCities;
 
-  // Resolve selected city names → city objects (for IDs + fetching)
   const selectedCityObjs = allCities.filter((c) =>
     selectedCities.includes(c.name),
   );
 
-  // Merge all loaded localities across every selected city, deduplicated
   const allLocalities: string[] = Array.from(
     new Set(selectedCityObjs.flatMap((c) => localityMap[c.id] ?? [])),
   );
-  // Still loading if ANY selected city hasn't had its localities resolved yet
   const isLoadingLocalities =
     selectedCityObjs.length > 0 &&
     selectedCityObjs.some((c) => localityMap[c.id] === undefined);
@@ -256,15 +302,17 @@ const CityLocalitySelector: React.FC<CityLocalityProps> = ({
       )
     : allLocalities;
 
-  const handleCityLoaded = (cityId: string, names: string[]) =>
-    setLocalityMap((prev) => ({ ...prev, [cityId]: names }));
+  const handleCityLoaded = useCallback(
+    (id: string, names: string[]) =>
+      setLocalityMap((prev) => ({ ...prev, [id]: names })),
+    [],
+  );
 
   const toggleCity = (name: string) => {
     const next = selectedCities.includes(name)
       ? selectedCities.filter((c) => c !== name)
       : [...selectedCities, name];
     onCitiesChange(next);
-    // Clear localities when cities change
     onLocalitiesChange([]);
   };
 
@@ -294,9 +342,10 @@ const CityLocalitySelector: React.FC<CityLocalityProps> = ({
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-      {/* ── City pill ─────────────────────────────────────────────────────── */}
+      {/* City button */}
       <div className="relative">
         <button
+          ref={cityBtnRef}
           onClick={(e) => {
             e.stopPropagation();
             toggle("city");
@@ -326,100 +375,103 @@ const CityLocalitySelector: React.FC<CityLocalityProps> = ({
           )}
         </button>
 
-        {open === "city" && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-blue-100 rounded-xl shadow-xl w-64 overflow-hidden"
-          >
-            {/* Search */}
-            <div className="p-2 border-b border-blue-50">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                <input
-                  autoFocus
-                  value={cityQ}
-                  onChange={(e) => setCityQ(e.target.value)}
-                  placeholder="Search cities…"
-                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-blue-100 rounded-lg bg-blue-50/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
+        {open === "city" &&
+          createPortal(
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: "absolute",
+                top: cityPos.top,
+                left: cityPos.left,
+                minWidth: 256,
+                zIndex: 9999,
+              }}
+              className="bg-white border border-blue-100 rounded-xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-2 border-b border-blue-50">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    autoFocus
+                    value={cityQ}
+                    onChange={(e) => setCityQ(e.target.value)}
+                    placeholder="Search cities…"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-blue-100 rounded-lg bg-blue-50/40 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
               </div>
-            </div>
-
-            {/* Selected chips */}
-            {selectedCities.length > 0 && (
-              <div className="flex flex-wrap gap-1 px-2 pt-2">
-                {selectedCities.map((c) => (
-                  <span
-                    key={c}
-                    className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                  >
-                    {c}
-                    <button
-                      onClick={() => toggleCity(c)}
-                      className="hover:text-red-500 transition-colors"
+              {selectedCities.length > 0 && (
+                <div className="flex flex-wrap gap-1 px-2 pt-2">
+                  {selectedCities.map((c) => (
+                    <span
+                      key={c}
+                      className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold"
                     >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* List */}
-            <div className="max-h-52 overflow-y-auto py-1">
-              {displayedCities.length === 0 && (
-                <p className="text-[11px] text-gray-400 px-3 py-3 text-center">
-                  No cities found
-                </p>
+                      {c}
+                      <button
+                        onClick={() => toggleCity(c)}
+                        className="hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               )}
-              {displayedCities.map((c) => {
-                const active = selectedCities.includes(c.name);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => toggleCity(c.name)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors
+              <div className="max-h-52 overflow-y-auto py-1">
+                {displayedCities.length === 0 && (
+                  <p className="text-[11px] text-gray-400 px-3 py-3 text-center">
+                    No cities found
+                  </p>
+                )}
+                {displayedCities.map((c) => {
+                  const active = selectedCities.includes(c.name);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => toggleCity(c.name)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors
                       ${active ? "bg-blue-50 text-blue-700 font-bold" : "text-gray-700 hover:bg-gray-50 font-medium"}`}
-                  >
-                    <MapPin
-                      className={`w-3 h-3 flex-shrink-0 ${active ? "text-blue-500" : "text-gray-400"}`}
-                    />
-                    <span className="flex-1 text-left">{c.name}</span>
-                    {c.state && (
-                      <span className="text-[10px] text-gray-400">
-                        {c.state}
-                      </span>
-                    )}
-                    {active && (
-                      <Check className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Footer */}
-            {selectedCities.length > 0 && (
-              <div className="p-2 border-t border-blue-50 flex items-center justify-between">
-                <span className="text-[11px] text-gray-400">
-                  {selectedCities.length} selected
-                </span>
-                <button
-                  onClick={() => onCitiesChange([])}
-                  className="text-[11px] text-red-500 hover:text-red-600 font-semibold transition-colors"
-                >
-                  Clear all
-                </button>
+                    >
+                      <MapPin
+                        className={`w-3 h-3 flex-shrink-0 ${active ? "text-blue-500" : "text-gray-400"}`}
+                      />
+                      <span className="flex-1 text-left">{c.name}</span>
+                      {c.state && (
+                        <span className="text-[10px] text-gray-400">
+                          {c.state}
+                        </span>
+                      )}
+                      {active && (
+                        <Check className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        )}
+              {selectedCities.length > 0 && (
+                <div className="p-2 border-t border-blue-50 flex items-center justify-between">
+                  <span className="text-[11px] text-gray-400">
+                    {selectedCities.length} selected
+                  </span>
+                  <button
+                    onClick={() => onCitiesChange([])}
+                    className="text-[11px] text-red-500 hover:text-red-600 font-semibold"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </div>,
+            document.body,
+          )}
       </div>
 
-      {/* ── Locality pill — only visible when cities selected ─────────────── */}
+      {/* Locality button */}
       {hasCityFilter && (
         <div className="relative">
           <button
+            ref={localBtnRef}
             onClick={(e) => {
               e.stopPropagation();
               toggle("locality");
@@ -449,113 +501,113 @@ const CityLocalitySelector: React.FC<CityLocalityProps> = ({
             )}
           </button>
 
-          {open === "locality" && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-indigo-100 rounded-xl shadow-xl w-64 overflow-hidden"
-            >
-              {/* City context header */}
-              <div className="px-3 py-2 bg-indigo-50/60 border-b border-indigo-100">
-                <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wide">
-                  Areas in {selectedCities.join(", ")}
-                </p>
-              </div>
-
-              {/* Search */}
-              <div className="p-2 border-b border-indigo-50">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <input
-                    autoFocus
-                    value={localQ}
-                    onChange={(e) => setLocalQ(e.target.value)}
-                    placeholder="Search localities…"
-                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-indigo-100 rounded-lg bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  />
+          {open === "locality" &&
+            createPortal(
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: "absolute",
+                  top: localPos.top,
+                  left: localPos.left,
+                  minWidth: 256,
+                  zIndex: 9999,
+                }}
+                className="bg-white border border-indigo-100 rounded-xl shadow-2xl overflow-hidden"
+              >
+                <div className="px-3 py-2 bg-indigo-50/60 border-b border-indigo-100">
+                  <p className="text-[10px] text-indigo-500 font-semibold uppercase tracking-wide">
+                    Areas in {selectedCities.join(", ")}
+                  </p>
                 </div>
-              </div>
-
-              {/* Selected chips */}
-              {selectedLocalities.length > 0 && (
-                <div className="flex flex-wrap gap-1 px-2 pt-2">
-                  {selectedLocalities.map((l) => (
-                    <span
-                      key={l}
-                      className="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                    >
-                      {l}
-                      <button
-                        onClick={() => toggleLocality(l)}
-                        className="hover:text-red-500 transition-colors"
+                <div className="p-2 border-b border-indigo-50">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      autoFocus
+                      value={localQ}
+                      onChange={(e) => setLocalQ(e.target.value)}
+                      placeholder="Search localities…"
+                      className="w-full pl-8 pr-3 py-1.5 text-xs border border-indigo-100 rounded-lg bg-indigo-50/40 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    />
+                  </div>
+                </div>
+                {selectedLocalities.length > 0 && (
+                  <div className="flex flex-wrap gap-1 px-2 pt-2">
+                    {selectedLocalities.map((l) => (
+                      <span
+                        key={l}
+                        className="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold"
                       >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* List */}
-              <div className="max-h-52 overflow-y-auto py-1">
-                {isLoadingLocalities && (
-                  <div className="flex flex-col items-center py-4 gap-1">
-                    <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-[11px] text-gray-400">
-                      Loading localities…
-                    </p>
+                        {l}
+                        <button
+                          onClick={() => toggleLocality(l)}
+                          className="hover:text-red-500 transition-colors"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ))}
                   </div>
                 )}
-                {!isLoadingLocalities && allLocalities.length === 0 && (
-                  <p className="text-[11px] text-gray-400 px-3 py-3 text-center">
-                    No localities found for {selectedCities.join(", ")}
-                  </p>
-                )}
-                {!isLoadingLocalities &&
-                  allLocalities.length > 0 &&
-                  displayedLocalities.length === 0 && (
+                <div className="max-h-52 overflow-y-auto py-1">
+                  {isLoadingLocalities && (
+                    <div className="flex flex-col items-center py-4 gap-1">
+                      <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[11px] text-gray-400">
+                        Loading localities…
+                      </p>
+                    </div>
+                  )}
+                  {!isLoadingLocalities && allLocalities.length === 0 && (
                     <p className="text-[11px] text-gray-400 px-3 py-3 text-center">
-                      No matches
+                      No localities found for {selectedCities.join(", ")}
                     </p>
                   )}
-                {!isLoadingLocalities &&
-                  displayedLocalities.map((name) => {
-                    const active = selectedLocalities.includes(name);
-                    return (
-                      <button
-                        key={name}
-                        onClick={() => toggleLocality(name)}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors
+                  {!isLoadingLocalities &&
+                    allLocalities.length > 0 &&
+                    displayedLocalities.length === 0 && (
+                      <p className="text-[11px] text-gray-400 px-3 py-3 text-center">
+                        No matches
+                      </p>
+                    )}
+                  {!isLoadingLocalities &&
+                    displayedLocalities.map((name) => {
+                      const active = selectedLocalities.includes(name);
+                      return (
+                        <button
+                          key={name}
+                          onClick={() => toggleLocality(name)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors
                         ${active ? "bg-indigo-50 text-indigo-700 font-bold" : "text-gray-700 hover:bg-gray-50 font-medium"}`}
-                      >
-                        <span className="flex-1 text-left">{name}</span>
-                        {active && (
-                          <Check className="w-3 h-3 text-indigo-600 flex-shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-              </div>
-
-              {/* Footer */}
-              {selectedLocalities.length > 0 && (
-                <div className="p-2 border-t border-indigo-50 flex items-center justify-between">
-                  <span className="text-[11px] text-gray-400">
-                    {selectedLocalities.length} selected
-                  </span>
-                  <button
-                    onClick={() => onLocalitiesChange([])}
-                    className="text-[11px] text-red-500 hover:text-red-600 font-semibold transition-colors"
-                  >
-                    Clear all
-                  </button>
+                        >
+                          <span className="flex-1 text-left">{name}</span>
+                          {active && (
+                            <Check className="w-3 h-3 text-indigo-600 flex-shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
                 </div>
-              )}
-            </div>
-          )}
+                {selectedLocalities.length > 0 && (
+                  <div className="p-2 border-t border-indigo-50 flex items-center justify-between">
+                    <span className="text-[11px] text-gray-400">
+                      {selectedLocalities.length} selected
+                    </span>
+                    <button
+                      onClick={() => onLocalitiesChange([])}
+                      className="text-[11px] text-red-500 hover:text-red-600 font-semibold"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
+              </div>,
+              document.body,
+            )}
         </div>
       )}
 
-      {/* Invisible fetchers — one per selected city, keeps hook count stable */}
+      {/* Invisible fetchers */}
       {selectedCityObjs.map((c) => (
         <CityLocalitiesFetcher
           key={c.id}
@@ -579,7 +631,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<string | null>(null);
 
-  // Property types
   const { data: typesData } = useGetPropertyTypesQuery({
     isActive: true,
     includeSubTypes: true,
@@ -593,7 +644,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
     !filters.propertyTypeId || currentType?.name === "RESIDENTIAL";
   const isCommercial = currentType?.name === "COMMERCIAL";
 
-  // Close on outside click / Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(null);
@@ -613,7 +663,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
     };
   }, []);
 
-  // Helpers
   const toggle = (id: string) => setOpen((p) => (p === id ? null : id));
   const set = (patch: Partial<MyPropertyFiltersState>) =>
     setFilters((p) => ({ ...p, ...patch }));
@@ -629,7 +678,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
 
   const reset = () => setFilters({ sortBy: "createdAt", sortOrder: "desc" });
 
-  // Active count (excludes sort)
   const activeCount = [
     filters.search,
     filters.status,
@@ -649,7 +697,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
 
   const sortValue = `${filters.sortBy ?? "createdAt"}-${filters.sortOrder ?? "desc"}`;
 
-  // Status label
   const statusLabel = (() => {
     const arr = Array.isArray(filters.status)
       ? filters.status
@@ -664,11 +711,10 @@ export const MyPropertyFilters: React.FC<Props> = ({
   return (
     <div
       ref={containerRef}
-      className="bg-white border border-blue-100 rounded-xl mb-4 sm:mb-5 overflow-visible"
+      className="bg-white border border-blue-100 rounded-xl mb-4 sm:mb-5"
     >
-      {/* ── Row 1: search + location selector + view toggle ──────────────── */}
+      {/* Row 1: search + city/locality + view toggle */}
       <div className="flex items-center gap-2 px-3 sm:px-4 py-3 border-b border-blue-50 flex-wrap sm:flex-nowrap">
-        {/* Search */}
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
           <input
@@ -688,7 +734,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
           )}
         </div>
 
-        {/* City + Locality — sits right of search on sm+, wraps below on mobile */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto order-3 sm:order-2">
           <CityLocalitySelector
             selectedCities={filters.city || []}
@@ -704,7 +749,6 @@ export const MyPropertyFilters: React.FC<Props> = ({
           />
         </div>
 
-        {/* Right side: result count + view toggle */}
         <div className="flex items-center gap-2 flex-shrink-0 order-2 sm:order-3 ml-auto sm:ml-0">
           {totalCount !== undefined && (
             <span className="text-[11px] text-gray-400 font-medium hidden md:block whitespace-nowrap">
@@ -728,12 +772,13 @@ export const MyPropertyFilters: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* ── Row 2: filter pills ───────────────────────────────────────────── */}
+      {/* Row 2: filter pills — overflow-x-auto is fine here because
+          all dropdowns are now portalled to document.body */}
       <div
         className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 overflow-x-auto"
         style={{ scrollbarWidth: "none" }}
       >
-        {/* Status — multi */}
+        {/* Status */}
         <Pill
           label={statusLabel}
           count={
@@ -806,7 +851,7 @@ export const MyPropertyFilters: React.FC<Props> = ({
           </div>
         </Pill>
 
-        {/* Property Type */}
+        {/* Type */}
         <Pill
           label={currentType?.name || "Type"}
           count={filters.propertyTypeId ? 1 : 0}
@@ -909,7 +954,7 @@ export const MyPropertyFilters: React.FC<Props> = ({
           </div>
         </Pill>
 
-        {/* BHK (residential) */}
+        {/* BHK */}
         {isResidential && (
           <Pill
             label="BHK"
@@ -927,11 +972,7 @@ export const MyPropertyFilters: React.FC<Props> = ({
                     key={n}
                     onClick={() => toggleArr("bedrooms", n)}
                     className={`w-9 h-9 rounded-xl text-xs font-bold border transition-colors
-                      ${
-                        (filters.bedrooms || []).includes(n)
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-blue-200 hover:bg-blue-50"
-                      }`}
+                      ${(filters.bedrooms || []).includes(n) ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-blue-200 hover:bg-blue-50"}`}
                   >
                     {n === 6 ? "6+" : n}
                   </button>
@@ -970,7 +1011,7 @@ export const MyPropertyFilters: React.FC<Props> = ({
           </div>
         </Pill>
 
-        {/* Furnishing (commercial) */}
+        {/* Furnishing */}
         {isCommercial && (
           <Pill
             label={filters.furnishingStatus || "Furnishing"}
@@ -995,7 +1036,7 @@ export const MyPropertyFilters: React.FC<Props> = ({
           </Pill>
         )}
 
-        {/* Facing (commercial) */}
+        {/* Facing */}
         {isCommercial && (
           <Pill
             label={filters.facingDirection || "Facing"}
@@ -1024,33 +1065,24 @@ export const MyPropertyFilters: React.FC<Props> = ({
         <button
           onClick={() => set({ verified: filters.verified ? undefined : true })}
           className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all
-            ${
-              filters.verified
-                ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
-                : "bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
-            }`}
+            ${filters.verified ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200" : "bg-white border-blue-200 text-blue-700 hover:bg-blue-50"}`}
         >
           <Check className="w-3 h-3" /> Verified
         </button>
 
-        {/* Balcony (residential) */}
+        {/* Balcony */}
         {isResidential && (
           <button
             onClick={() =>
               set({ hasBalcony: filters.hasBalcony ? undefined : true })
             }
             className={`inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all
-              ${
-                filters.hasBalcony
-                  ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200"
-                  : "bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
-              }`}
+              ${filters.hasBalcony ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-200" : "bg-white border-blue-200 text-blue-700 hover:bg-blue-50"}`}
           >
             Balcony
           </button>
         )}
 
-        {/* Divider */}
         <div className="w-px h-5 bg-gray-200 flex-shrink-0 mx-0.5" />
 
         {/* Sort */}
