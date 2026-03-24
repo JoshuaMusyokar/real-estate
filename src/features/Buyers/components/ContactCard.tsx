@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
-import { User, Building, Shield, BadgeCheck, Phone, Eye } from "lucide-react";
+import {
+  User,
+  Building,
+  Shield,
+  BadgeCheck,
+  Phone,
+  Mail,
+  MessageCircle,
+  Eye,
+} from "lucide-react";
 import type { Property } from "../../../types";
 import { RevealContactModal } from "../../../components/form/RevealContactModal";
 
@@ -17,13 +26,14 @@ export const ContactCard: React.FC<ContactCardProps> = ({
 }) => {
   const [showReveal, setShowReveal] = useState(false);
 
-  // ── Poster info ────────────────────────────────────────────────────────────
   const getDisplayInfo = () => {
-    const { postedBy, advertiserName, ownerName } = property;
+    const { postedBy, advertiserName } = property;
+    const listingName = property.contactName || advertiserName || "";
+
     switch (postedBy) {
       case "OWNER":
         return {
-          name: ownerName,
+          name: listingName,
           description: "Property Owner",
           icon: <User className="w-3.5 h-3.5" />,
           badgeClass: "bg-blue-50 text-blue-700 border-blue-100",
@@ -33,7 +43,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         };
       case "AGENT":
         return {
-          name: advertiserName || ownerName,
+          name: advertiserName || listingName,
           description: advertiserName
             ? "Real Estate Agency"
             : "Real Estate Agent",
@@ -45,7 +55,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         };
       case "DEVELOPER":
         return {
-          name: advertiserName || "Developer",
+          name: advertiserName || listingName,
           description: "Property Developer",
           icon: <Building className="w-3.5 h-3.5" />,
           badgeClass: "bg-amber-50 text-amber-700 border-amber-100",
@@ -55,7 +65,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
         };
       default:
         return {
-          name: ownerName,
+          name: listingName,
           description: "Property Contact",
           icon: <User className="w-3.5 h-3.5" />,
           badgeClass: "bg-blue-50 text-blue-700 border-blue-100",
@@ -76,13 +86,19 @@ export const ContactCard: React.FC<ContactCardProps> = ({
       : name[0].toUpperCase();
   };
 
-  // Phone count (for teaser badge)
-  const phoneCount =
-    Array.isArray(property.ownerPhones) && property.ownerPhones.length
-      ? (property.ownerPhones as string[]).filter(Boolean).length
-      : property.ownerPhone
-        ? 1
-        : 0;
+  const formatPhone = (phone: string) => {
+    const c = phone.replace(/\D/g, "");
+    if (c.length === 10)
+      return `(${c.slice(0, 3)}) ${c.slice(3, 6)}-${c.slice(6)}`;
+    return phone;
+  };
+
+  // ownerPhone is the actual property owner's number — masked, reveal via modal
+  const hasOwnerContact = !!(
+    property.ownerPhone ||
+    property.ownerEmail ||
+    property.ownerName
+  );
 
   return (
     <>
@@ -91,7 +107,7 @@ export const ContactCard: React.FC<ContactCardProps> = ({
           Contact Information
         </h2>
 
-        {/* ── Avatar + name ──────────────────────────────────────────────── */}
+        {/* ── Avatar + listing user name ─────────────────────────────────── */}
         <div className="flex items-start gap-3 mb-4">
           <div
             className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${info.avatarClass} rounded-xl flex items-center justify-center text-white text-lg font-black flex-shrink-0 shadow-md`}
@@ -126,40 +142,100 @@ export const ContactCard: React.FC<ContactCardProps> = ({
           </div>
         </div>
 
-        {/* ── Masked phone teaser ────────────────────────────────────────── */}
-        <div className="mb-4">
-          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl mb-2.5">
-            <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Phone className="w-3.5 h-3.5 text-gray-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-gray-400 font-medium">Phone</p>
-              {/* Masked dots */}
-              <p className="text-sm font-black text-gray-400 tracking-widest">
-                ••••• •••••
-                {phoneCount > 1 && (
-                  <span className="text-[10px] text-blue-500 font-semibold ml-1.5 tracking-normal">
-                    +{phoneCount - 1} more
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <span className="text-[10px] bg-blue-50 border border-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">
+        {/* ── Poster contact — shown directly, no masking ────────────────── */}
+        {/* contactPhone / contactEmail are the listing user's registered details */}
+        <div className="space-y-2 mb-4">
+          {property.contactPhone && (
+            <a
+              href={`tel:${property.contactPhone}`}
+              className="flex items-center gap-3 p-2.5 bg-blue-50/60 border border-blue-100 rounded-xl hover:bg-blue-100/60 transition-colors group"
+            >
+              <div className="w-8 h-8 bg-white border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 transition-colors">
+                <Phone className="w-3.5 h-3.5 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wide">
+                  Phone
+                </p>
+                <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                  {formatPhone(property.contactPhone)}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* WhatsApp */}
+                <a
+                  href={`https://wa.me/${property.contactPhone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, I'm interested in ${property.title}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-7 h-7 bg-emerald-500 hover:bg-emerald-600 rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-white" />
+                </a>
+              </div>
+            </a>
+          )}
+
+          {property.contactEmail && (
+            <a
+              href={`mailto:${property.contactEmail}?subject=${encodeURIComponent(`Inquiry: ${property.title}`)}`}
+              className="flex items-center gap-3 p-2.5 bg-blue-50/60 border border-blue-100 rounded-xl hover:bg-blue-100/60 transition-colors group"
+            >
+              <div className="w-8 h-8 bg-white border border-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:border-blue-300 transition-colors">
+                <Mail className="w-3.5 h-3.5 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wide">
+                  Email
+                </p>
+                <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                  {property.contactEmail}
+                </p>
+              </div>
+            </a>
+          )}
+
+          {!property.contactPhone && !property.contactEmail && (
+            <p className="text-xs text-gray-400 text-center py-2">
+              No contact details available
+            </p>
+          )}
+        </div>
+
+        {/* ── Property owner contact — masked, reveal after lead capture ──── */}
+        {/* ownerName / ownerPhone / ownerEmail are the actual property owner's  */}
+        {/* details entered by the listing agent — gated behind the modal.       */}
+        {hasOwnerContact && (
+          <div className="mb-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">
+              Property Owner Contact
+            </p>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl mb-2.5">
+              <div className="w-8 h-8 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Phone className="w-3.5 h-3.5 text-gray-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-gray-400 font-medium">
+                  Owner Phone
+                </p>
+                <p className="text-sm font-black text-gray-400 tracking-widest">
+                  ••••• •••••
+                </p>
+              </div>
+              <span className="text-[10px] bg-amber-50 border border-amber-100 text-amber-600 font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                 Hidden
               </span>
             </div>
+            <button
+              onClick={() => setShowReveal(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl transition-colors shadow-sm shadow-blue-200"
+            >
+              <Eye className="w-4 h-4" />
+              Get Phone Number
+              {/* {info.ctaLabel} — Click for Phone Number */}
+            </button>
           </div>
-
-          {/* CTA — reveal button */}
-          <button
-            onClick={() => setShowReveal(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl transition-colors shadow-sm shadow-blue-200"
-          >
-            <Eye className="w-4 h-4" />
-            {info.ctaLabel} — Click for Phone Number
-          </button>
-        </div>
+        )}
 
         {/* ── Response time ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl mb-3">
@@ -194,12 +270,12 @@ export const ContactCard: React.FC<ContactCardProps> = ({
 
         {/* ── Privacy note ──────────────────────────────────────────────── */}
         <p className="text-[10px] text-gray-400 pt-2.5 border-t border-blue-50 leading-relaxed">
-          Contact details are protected. Submit your name and phone to reveal
-          them. Your details will be saved as an enquiry.
+          Poster details are shown directly. Property owner contact is protected
+          — submit your details to reveal it.
         </p>
       </div>
 
-      {/* Reveal modal */}
+      {/* Reveal modal — for property owner contact (ownerPhone/ownerEmail) */}
       <RevealContactModal
         property={property}
         isOpen={showReveal}

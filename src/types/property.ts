@@ -266,6 +266,10 @@ export interface Property {
   images: PropertyImage[];
   documents?: PropertyDocument[];
   amenities?: PropertyAmenity[];
+
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
 }
 
 export interface PropertyImage {
