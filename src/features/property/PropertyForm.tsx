@@ -528,14 +528,14 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       if (mode === "create") {
         const result = await createProperty(formDataToSend).unwrap();
         success("Property created successfully!", "It's now under review.");
-        navigate(`/properties/${result.data.slug}`);
+        navigate(`/properties/${result.data.id}`);
       } else if (propertyId) {
         const result = await updateProperty({
           id: propertyId,
           data: formDataToSend,
         }).unwrap();
         success("Property updated successfully!", "Check property details.");
-        navigate(`/properties/${result.data.slug}`);
+        navigate(`/properties/${result.data.id}`);
       }
     } catch {
       // errors handled by RTK Query / toast
