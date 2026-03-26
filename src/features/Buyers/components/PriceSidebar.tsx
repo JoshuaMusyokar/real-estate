@@ -52,7 +52,7 @@ export const PriceSidebar: React.FC<PriceSidebarProps> = ({
           onClick={onInquire}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-white hover:bg-blue-50 text-blue-600 text-xs sm:text-sm font-bold rounded-xl border border-blue-200 transition-colors"
         >
-          <Mail className="w-4 h-4" /> Quick Contact
+          <Mail className="w-4 h-4" /> Quick Inquiry
         </button>
       </div>
 

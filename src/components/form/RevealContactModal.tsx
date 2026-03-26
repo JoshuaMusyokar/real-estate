@@ -33,6 +33,7 @@ export const RevealContactModal: React.FC<RevealContactModalProps> = ({
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   // const [otp,    setOtp]    = useState("");       // ← re-enable when SMS is live
   // const [otpErr, setOtpErr] = useState("");
@@ -69,7 +70,9 @@ export const RevealContactModal: React.FC<RevealContactModalProps> = ({
       await createLead({
         firstName,
         lastName: rest.join(" ") || undefined,
-        email: `${phone.replace(/\D/g, "")}@noemail.local`, // placeholder
+        email: email
+          ? email.trim()
+          : `${phone.replace(/\D/g, "")}@noemail.local`, // placeholder
         phone: phone.trim(),
         cityId: property.cityId,
         localities: [property.locality],
@@ -186,6 +189,22 @@ export const RevealContactModal: React.FC<RevealContactModalProps> = ({
                     placeholder="e.g. Arjun Singh"
                     autoComplete="name"
                     className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              {/* Email */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1">
+                  Email
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    required
                   />
                 </div>
               </div>
