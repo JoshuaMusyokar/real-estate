@@ -51,7 +51,6 @@ interface BasicInfoStepProps {
 }
 
 const purposes: PropertyPurpose[] = ["SALE", "RENT", "PG"];
-
 const statuses: PropertyStatus[] = [
   "DRAFT",
   "UNDER_REVIEW",
@@ -61,27 +60,23 @@ const statuses: PropertyStatus[] = [
 ];
 
 const currencies = [
-  { code: "USD", name: "US Dollar", symbol: "$" },
-  { code: "EUR", name: "Euro", symbol: "€" },
-  { code: "GBP", name: "British Pound", symbol: "£" },
-  { code: "KES", name: "Kenyan Shilling", symbol: "KSh" },
-  { code: "INR", name: "Indian Rupee", symbol: "₹" },
-  { code: "AED", name: "UAE Dirham", symbol: "د.إ" },
-  { code: "SAR", name: "Saudi Riyal", symbol: "﷼" },
-  { code: "AUD", name: "Australian Dollar", symbol: "A$" },
-  { code: "CAD", name: "Canadian Dollar", symbol: "C$" },
-  { code: "JPY", name: "Japanese Yen", symbol: "¥" },
-  { code: "ZAR", name: "South African Rand", symbol: "R" },
+  { code: "USD", symbol: "$" },
+  { code: "EUR", symbol: "€" },
+  { code: "GBP", symbol: "£" },
+  { code: "KES", symbol: "KSh" },
+  { code: "INR", symbol: "₹" },
+  { code: "AED", symbol: "د.إ" },
+  { code: "SAR", symbol: "﷼" },
+  { code: "AUD", symbol: "A$" },
+  { code: "CAD", symbol: "C$" },
+  { code: "JPY", symbol: "¥" },
+  { code: "ZAR", symbol: "R" },
 ];
 
-// ── Owner contact constants ────────────────────────────────────────────────────
 const MAX_PHONES = 5;
 const isValidPhone = (v: string) => /^[+]?[\d\s\-().]{7,15}$/.test(v.trim());
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
-type OwnerTab = "name" | "phones" | "email";
-
-// ── Shared input class builder ─────────────────────────────────────────────────
 const inputCls = (hasErr: boolean) =>
   `h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs
    focus:outline-hidden focus:ring-3 dark:bg-gray-900 dark:text-white/90
@@ -101,12 +96,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   onBlur,
 }) => {
   const [localSubTypes, setLocalSubTypes] = useState<PropertySubType[]>([]);
-  const [ownerTab, setOwnerTab] = useState<OwnerTab>("name");
   const dispatch = useDispatch();
 
   const { data: propertyTypesData, isLoading: loadingPropertyTypes } =
     useGetPropertyTypesQuery({ isActive: true });
-
   const { data: subtypesData, isLoading: loadingSubTypes } =
     useGetSubTypesByPropertyTypeIdQuery(formData.propertyTypeId, {
       skip: !formData.propertyTypeId,
@@ -115,7 +108,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   const propertyTypes = propertyTypesData?.data || [];
   const allSubTypes = subtypesData?.data || [];
 
-  // Ensure ownerPhones is always initialised as an array with at least one slot
   const phones: string[] = formData.ownerPhones?.length
     ? formData.ownerPhones
     : [""];
@@ -133,20 +125,16 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     if (
       formData.subTypeId &&
       !filtered.some((st) => st.id === formData.subTypeId)
-    ) {
+    )
       handleSubTypeChange(null);
-    }
   }, [formData.propertyTypeId, formData.subTypeId, allSubTypes, subtypesData]);
 
   const displayStatuses =
     mode === "edit" ? statuses : ["DRAFT", "UNDER_REVIEW"];
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
-
   const handlePropertyTypeChange = (typeId: string) => {
-    const selectedType = propertyTypes.find((t) => t.id === typeId);
-    if (selectedType)
-      dispatch(setPropertyType({ id: typeId, name: selectedType.name }));
+    const sel = propertyTypes.find((t) => t.id === typeId);
+    if (sel) dispatch(setPropertyType({ id: typeId, name: sel.name }));
     onUpdate({ propertyTypeId: typeId, subTypeId: null });
   };
 
@@ -159,8 +147,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
   const getCurrencySymbol = () =>
     currencies.find((c) => c.code === formData.currency)?.symbol || "$";
-
-  // ── Phone handlers ────────────────────────────────────────────────────────────
 
   const setPhone = (index: number, value: string) => {
     const next = [...phones];
@@ -179,7 +165,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     onUpdate({ ownerPhones: next, ownerPhone: next[0] || "" });
   };
 
-  // ── Completion indicators ─────────────────────────────────────────────────────
   const nameComplete = (formData.ownerName || "").trim().length >= 2;
   const emailComplete = isValidEmail(formData.ownerEmail || "");
   const phonesComplete = phones.length > 0 && isValidPhone(phones[0] || "");
@@ -190,50 +175,16 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     (k) => k.startsWith("ownerPhones") && touched[k],
   );
 
-  // ── Tab button helper ─────────────────────────────────────────────────────────
-  const OwnerTabBtn: React.FC<{
-    id: OwnerTab;
-    icon: React.ElementType;
-    label: string;
-    hasErr: boolean;
-    done: boolean;
-  }> = ({ id, icon: Icon, label, hasErr, done }) => (
-    <button
-      type="button"
-      onClick={() => setOwnerTab(id)}
-      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 text-xs sm:text-sm font-semibold border-b-2 transition-all
-        ${
-          ownerTab === id
-            ? "border-brand-500 text-brand-600 dark:text-brand-400"
-            : hasErr
-              ? "border-error-300 text-error-500"
-              : "border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300"
-        }`}
-    >
-      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-      <span className="hidden xs:inline">{label}</span>
-      {done && !hasErr && (
-        <CheckCircle2 className="w-3 h-3 text-success-500 flex-shrink-0" />
-      )}
-      {hasErr && (
-        <AlertCircle className="w-3 h-3 text-error-400 flex-shrink-0" />
-      )}
-    </button>
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* ── Basic Information ─────────────────────────────────────────────── */}
       <Card>
         <CardHeader className="p-4 sm:p-5 md:p-6">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-            <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
-            Basic Information
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6" /> Basic Information
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-5 md:p-6 pt-0 space-y-4 sm:space-y-5">
-          {/* Title */}
           <div>
             <Label>Property Title *</Label>
             <Input
@@ -249,8 +200,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
               }
             />
           </div>
-
-          {/* Complex Name */}
           <div>
             <Label>Complex Name</Label>
             <Input
@@ -262,8 +211,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
               hint={touched.complexName ? errors.complexName : undefined}
             />
           </div>
-
-          {/* Description */}
           <div>
             <Label>Description *</Label>
             <TextArea
@@ -286,13 +233,12 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Card>
         <CardHeader className="p-4 sm:p-5 md:p-6">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-            <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
-            Property Classification
+            <Building2 className="w-5 h-5 sm:w-6 sm:h-6" /> Property
+            Classification
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-5 md:p-6 pt-0 space-y-4 sm:space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-            {/* Property Type */}
             <div>
               <Label>Property Type *</Label>
               <div className="relative">
@@ -312,19 +258,17 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                 </select>
                 {loadingPropertyTypes && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-gray-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                   </div>
                 )}
               </div>
               {touched.propertyTypeId && errors.propertyTypeId && (
                 <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" />
+                  <AlertCircle className="w-3.5 h-3.5" />{" "}
                   {errors.propertyTypeId}
                 </p>
               )}
             </div>
-
-            {/* Sub Type */}
             <div>
               <Label>Sub Type</Label>
               <div className="relative">
@@ -345,7 +289,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                 </select>
                 {loadingSubTypes && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-gray-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                   </div>
                 )}
               </div>
@@ -362,7 +306,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             </div>
           </div>
 
-          {/* Purpose */}
           <div>
             <Label>Purpose *</Label>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -371,11 +314,12 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                   key={purpose}
                   type="button"
                   onClick={() => onUpdate({ purpose })}
-                  className={`py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all text-sm sm:text-base ${
-                    formData.purpose === purpose
-                      ? "bg-brand-500 text-white shadow-lg"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                  }`}
+                  className={`py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all text-sm sm:text-base
+                    ${
+                      formData.purpose === purpose
+                        ? "bg-brand-500 text-white shadow-lg"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    }`}
                 >
                   {purpose}
                 </button>
@@ -383,7 +327,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             </div>
           </div>
 
-          {/* Status (edit only) */}
           {mode === "edit" && (
             <div>
               <Label>Status</Label>
@@ -422,12 +365,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Card>
         <CardHeader className="p-4 sm:p-5 md:p-6">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-            <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" />
-            Financial Details
+            <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" /> Financial Details
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-5 md:p-6 pt-0 space-y-4 sm:space-y-5">
-          {/* Price + Currency */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
             <div className="sm:col-span-2">
               <Label>Price * ({getCurrencySymbol()})</Label>
@@ -466,7 +407,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             </div>
           </div>
 
-          {/* Price options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
               <Checkbox
@@ -490,7 +430,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             </div>
           </div>
 
-          {/* Additional financial */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <div>
               <Label>Monthly Maintenance ({getCurrencySymbol()})</Label>
@@ -534,7 +473,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                 </span>
               </div>
             </div>
-
             {formData.purpose === "RENT" && (
               <>
                 <div>
@@ -596,8 +534,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Card>
         <CardHeader className="p-4 sm:p-5 md:p-6">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-            <Home className="w-5 h-5 sm:w-6 sm:h-6" />
-            Property Information
+            <Home className="w-5 h-5 sm:w-6 sm:h-6" /> Property Information
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-5 md:p-6 pt-0 space-y-4 sm:space-y-5">
@@ -635,16 +572,12 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       </Card>
 
       {/* ── Owner Contact Details ─────────────────────────────────────────── */}
-      {/* Tabbed card: Name | Phone Numbers | Email                           */}
-      {/* All fields are internal-only and masked from public listings        */}
       <Card>
-        <CardHeader className="p-4 sm:p-5 md:p-6 pb-0">
+        <CardHeader className="p-4 sm:p-5 md:p-6 pb-3">
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-              <User className="w-5 h-5 sm:w-6 sm:h-6" />
-              Owner Contact Details
+              <User className="w-5 h-5 sm:w-6 sm:h-6" /> Owner Contact Details
             </CardTitle>
-            {/* Hidden-from-public badge */}
             <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full flex-shrink-0">
               <EyeOff className="w-3 h-3" />
               <span className="text-[10px] sm:text-xs font-semibold">
@@ -652,191 +585,152 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
               </span>
             </div>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-            Used internally for contact and search only — never shown to buyers
-            or agents.
-          </p>
         </CardHeader>
 
-        {/* Tab bar */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mx-4 sm:mx-5 md:mx-6 mt-4">
-          <OwnerTabBtn
-            id="name"
-            icon={User}
-            label="Owner Name"
-            hasErr={nameErr}
-            done={nameComplete}
-          />
-          <OwnerTabBtn
-            id="phones"
-            icon={Phone}
-            label="Phone Numbers"
-            hasErr={phonesErr}
-            done={phonesComplete}
-          />
-          <OwnerTabBtn
-            id="email"
-            icon={Mail}
-            label="Email"
-            hasErr={emailErr}
-            done={emailComplete}
-          />
-        </div>
-
-        <CardContent className="p-4 sm:p-5 md:p-6 space-y-4">
-          {/* ── Name tab ──────────────────────────────────────────────────── */}
-          {ownerTab === "name" && (
-            <div className="space-y-3">
-              <div>
-                <Label>Full Name *</Label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={formData.ownerName || ""}
-                    onChange={(e) => onUpdate({ ownerName: e.target.value })}
-                    onBlur={() => onBlur("ownerName")}
-                    placeholder="e.g., Rajesh Kumar"
-                    autoComplete="name"
-                    className={`${inputCls(nameErr)} pl-10`}
-                  />
-                </div>
-                {nameErr && (
-                  <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {errors.ownerName}
-                  </p>
-                )}
-                {nameComplete && !nameErr && (
-                  <p className="mt-1.5 text-xs text-success-500 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Name saved
-                  </p>
-                )}
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-                This name is only visible to your team and will never be shown
-                to buyers or agents browsing listings.
-              </div>
+        <CardContent className="p-4 sm:p-5 md:p-6 pt-0 space-y-5">
+          {/* ── Owner Name ──────────────────────────────────────────────── */}
+          <div>
+            <Label className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-gray-400" /> Owner Full Name
+            </Label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={formData.ownerName || ""}
+                onChange={(e) => onUpdate({ ownerName: e.target.value })}
+                onBlur={() => onBlur("ownerName")}
+                placeholder="e.g., Rajesh Kumar"
+                autoComplete="off"
+                className={`${inputCls(nameErr)} pl-10`}
+              />
             </div>
-          )}
+            {nameErr && (
+              <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {errors.ownerName}
+              </p>
+            )}
+            {nameComplete && !nameErr && (
+              <p className="mt-1.5 text-xs text-success-500 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Saved
+              </p>
+            )}
+          </div>
 
-          {/* ── Phones tab ────────────────────────────────────────────────── */}
-          {ownerTab === "phones" && (
-            <div className="space-y-3">
+          {/* ── Phone Numbers ───────────────────────────────────────────── */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="flex items-center gap-1.5 mb-0">
+                <Phone className="w-3.5 h-3.5 text-gray-400" /> Owner Phone
+                Number{phones.length > 1 ? "s" : ""}
+              </Label>
+              {phones.length < MAX_PHONES && (
+                <button
+                  type="button"
+                  onClick={addPhone}
+                  className="flex items-center gap-1 text-[11px] text-brand-600 hover:text-brand-700 font-semibold transition-colors"
+                >
+                  <Plus className="w-3 h-3" /> Add Number
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2.5">
               {phones.map((phone, index) => (
                 <div key={index}>
-                  {/* Row label */}
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    {/* Primary / extra badge */}
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full
+                      className={`text-[10px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full flex-shrink-0
                       ${
                         index === 0
                           ? "bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400"
                           : "bg-gray-100 dark:bg-gray-800 text-gray-500"
                       }`}
                     >
-                      {index === 0 ? "Primary" : `Number ${index + 1}`}
+                      {index === 0 ? "Primary" : `#${index + 1}`}
                     </span>
+
+                    <div className="relative flex-1">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(index, e.target.value)}
+                        onBlur={() => onBlur(`ownerPhones_${index}`)}
+                        placeholder={
+                          index === 0 ? "Primary number" : "Additional number"
+                        }
+                        autoComplete="off"
+                        className={`${inputCls(!!errors[`ownerPhones_${index}`] && !!touched[`ownerPhones_${index}`])} pl-10`}
+                      />
+                    </div>
+
                     {index > 0 && (
                       <button
                         type="button"
                         onClick={() => removePhone(index)}
-                        className="flex items-center gap-1 text-[11px] text-error-400 hover:text-error-600 dark:hover:text-error-300 font-semibold transition-colors"
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 hover:text-error-600 transition-colors flex-shrink-0"
                       >
-                        <Trash2 className="w-3 h-3" /> Remove
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
 
-                  {/* Input */}
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(index, e.target.value)}
-                      onBlur={() => onBlur(`ownerPhones_${index}`)}
-                      placeholder={
-                        index === 0
-                          ? "Primary contact number *"
-                          : "Additional number"
-                      }
-                      autoComplete="tel"
-                      className={`${inputCls(!!errors[`ownerPhones_${index}`] && !!touched[`ownerPhones_${index}`])} pl-10`}
-                    />
-                  </div>
-
                   {errors[`ownerPhones_${index}`] &&
                     touched[`ownerPhones_${index}`] && (
-                      <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5" />{" "}
+                      <p className="mt-1 ml-16 text-xs text-error-500 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />{" "}
                         {errors[`ownerPhones_${index}`]}
                       </p>
                     )}
                   {phone && isValidPhone(phone) && (
-                    <p className="mt-1.5 text-xs text-success-500 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Valid number
+                    <p className="mt-1 ml-16 text-xs text-success-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Valid
                     </p>
                   )}
                 </div>
               ))}
-
-              {/* Add number */}
-              {phones.length < MAX_PHONES && (
-                <button
-                  type="button"
-                  onClick={addPhone}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-brand-400 dark:hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 text-xs sm:text-sm font-semibold rounded-xl transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Another Number ({phones.length}/{MAX_PHONES})
-                </button>
-              )}
-
-              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-                Phone numbers are masked on public listings. Buyers must submit
-                an inquiry to receive contact details. You can add up to{" "}
-                {MAX_PHONES} numbers.
-              </div>
             </div>
-          )}
 
-          {/* ── Email tab ─────────────────────────────────────────────────── */}
-          {ownerTab === "email" && (
-            <div className="space-y-3">
-              <div>
-                <Label>Email Address *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <input
-                    type="email"
-                    value={formData.ownerEmail || ""}
-                    onChange={(e) => onUpdate({ ownerEmail: e.target.value })}
-                    onBlur={() => onBlur("ownerEmail")}
-                    placeholder="e.g., owner@example.com"
-                    autoComplete="email"
-                    className={`${inputCls(emailErr)} pl-10`}
-                  />
-                </div>
-                {emailErr && (
-                  <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" /> {errors.ownerEmail}
-                  </p>
-                )}
-                {emailComplete && !emailErr && (
-                  <p className="mt-1.5 text-xs text-success-500 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Email saved
-                  </p>
-                )}
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">
-                Email is only used for inquiry routing and internal
-                notifications. It is never displayed publicly.
-              </div>
+            {phones.length >= MAX_PHONES && (
+              <p className="mt-2 text-[11px] text-gray-400">
+                Maximum {MAX_PHONES} numbers reached.
+              </p>
+            )}
+          </div>
+
+          {/* ── Email ───────────────────────────────────────────────────── */}
+          <div>
+            <Label className="flex items-center gap-1.5">
+              <Mail className="w-3.5 h-3.5 text-gray-400" /> Owner Email Address
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="email"
+                value={formData.ownerEmail || ""}
+                onChange={(e) => onUpdate({ ownerEmail: e.target.value })}
+                onBlur={() => onBlur("ownerEmail")}
+                placeholder="e.g., owner@example.com"
+                autoComplete="off"
+                className={`${inputCls(emailErr)} pl-10`}
+              />
             </div>
-          )}
+            {emailErr && (
+              <p className="mt-1.5 text-xs text-error-500 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> {errors.ownerEmail}
+              </p>
+            )}
+            {emailComplete && !emailErr && (
+              <p className="mt-1.5 text-xs text-success-500 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Saved
+              </p>
+            )}
+          </div>
 
-          {/* ── Completion summary ────────────────────────────────────────── */}
-          <div className="pt-1 border-t border-gray-100 dark:border-gray-700 flex items-center gap-4 flex-wrap">
+          {/* ── Completion summary ───────────────────────────────────────── */}
+          <div className="flex items-center gap-4 flex-wrap pt-1 border-t border-gray-100 dark:border-gray-700">
             {[
               { label: "Name", done: nameComplete },
               { label: "Phone", done: phonesComplete },
@@ -864,7 +758,6 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         </CardContent>
       </Card>
 
-      {/* Loading state */}
       {loadingPropertyTypes && (
         <div className="flex items-center justify-center p-4 sm:p-6 bg-gray-50 dark:bg-gray-800 rounded-lg sm:rounded-xl">
           <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-brand-600 mr-2 sm:mr-3" />
