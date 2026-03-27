@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import {
-  Phone,
   Mail,
   Facebook,
   Twitter,
@@ -113,11 +112,6 @@ export const Footer = () => {
             {/* Contact details */}
             <div className="space-y-2 sm:space-y-2.5">
               {[
-                {
-                  href: "tel:+1234567890",
-                  icon: Phone,
-                  label: "+91 (234) 567-890",
-                },
                 {
                   href: "mailto:info@property4india.in",
                   icon: Mail,
