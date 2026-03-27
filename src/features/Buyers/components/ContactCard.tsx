@@ -141,6 +141,23 @@ export const ContactCard: React.FC<ContactCardProps> = ({
             </span>
           </div>
         </div>
+
+        {/* ── Property owner contact — masked, reveal after lead capture ──── */}
+        {/* ownerName / ownerPhone / ownerEmail are the actual property owner's  */}
+        {/* details entered by the listing agent — gated behind the modal.       */}
+        {hasOwnerContact && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowReveal(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl transition-colors shadow-sm shadow-blue-200"
+            >
+              <Eye className="w-4 h-4" />
+              Get Phone Number
+              {/* {info.ctaLabel} — Click for Phone Number */}
+            </button>
+          </div>
+        )}
+
         {/* ── Response time ──────────────────────────────────────────────── */}
         <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl mb-3">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse flex-shrink-0" />
