@@ -54,12 +54,15 @@ export const RevealContactModal: React.FC<RevealContactModalProps> = ({
   const ctaLabel = `Contact ${posterLabel}`;
 
   // ── Revealed phone (primary + extras) ────────────────────────────────────
-  const ownerPhones: string[] =
-    Array.isArray(property.ownerPhones) && property.ownerPhones.length
-      ? (property.ownerPhones as string[]).filter(Boolean)
-      : property.ownerPhone
-        ? [property.ownerPhone]
-        : [];
+  // const ownerPhones: string[] =
+  //   Array.isArray(property.ownerPhones) && property.ownerPhones.length
+  //     ? (property.ownerPhones as string[]).filter(Boolean)
+  //     : property.ownerPhone
+  //       ? [property.ownerPhone]
+  //       : [];
+  const ownerPhones: string[] = property.contactPhone
+    ? [property.contactPhone]
+    : [];
 
   // ── Submit handler ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
