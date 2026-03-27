@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCreateLeadMutation } from "../../services/leadApi";
-import type { LeadCreateRequest, Property } from "../../types";
+import type { Property } from "../../types";
 import { Loader2, Mail, X } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 
@@ -34,17 +34,18 @@ export const InquiryFormModal: React.FC<InquiryFormModalProps> = ({
         phone: formData.phone,
         cityId: property.cityId,
         localities: [property.locality],
-        propertyType: property.propertyType,
+        propertyTypeId: property.propertyType.id,
         purpose: property.purpose,
         requirements: formData.message,
         source: "PROPERTY_INQUIRY",
+        interestedProperties: [property.id],
         sourcePage: window.location.href,
         tags: [
           `property:${property.id}`,
           property.locality,
           property.city.name,
         ],
-      } as LeadCreateRequest).unwrap();
+      }).unwrap();
 
       onClose();
       success("Inquiry", "Inquiry sent successfully!");
