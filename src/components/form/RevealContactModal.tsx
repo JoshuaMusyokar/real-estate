@@ -13,7 +13,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useCreateLeadMutation } from "../../services/leadApi";
-import type { LeadCreateRequest, Property } from "../../types";
+import type { Property } from "../../types";
 import { useToast } from "../../hooks/useToast";
 import { getCurrencySymbol } from "../../utils/currency-utils";
 
@@ -76,17 +76,18 @@ export const RevealContactModal: React.FC<RevealContactModalProps> = ({
         phone: phone.trim(),
         cityId: property.cityId,
         localities: [property.locality],
-        propertyType: property.propertyType,
+        propertyTypeId: property.propertyType.id,
         purpose: property.purpose,
         requirements: `Requested contact details for: ${property.title}`,
         source: "PROPERTY_INQUIRY",
         sourcePage: window.location.href,
+        interestedProperties: [property.id],
         tags: [
           `property:${property.id}`,
           property.locality,
           property.city.name,
         ],
-      } as LeadCreateRequest).unwrap();
+      }).unwrap();
 
       // ── When SMS is live, instead of revealing immediately:
       // await sendOtp(phone);
