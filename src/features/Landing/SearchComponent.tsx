@@ -267,16 +267,41 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
     }
   };
 
+  // const handleSuggestionSelect = (item: SuggestionItem) => {
+  //   if (item.type === "locality") {
+  //     setSelectedLocalities((prev) =>
+  //       prev.some((l) => l.id === item.id) ? prev : [...prev, item],
+  //     );
+  //     setSearchInput("");
+  //     // Keep dropdown open to allow selecting more localities
+  //     setShowSuggestions(true);
+  //     // Focus back on input for continuous selection
+  //     setTimeout(() => inputRef.current?.focus(), 50);
+  //     return;
+  //   }
+  //   navigateToSearch({
+  //     cityId: item.cityId,
+  //     cityName: item.cityName,
+  //     searchText: item.name,
+  //   });
+  //   setShowSuggestions(false);
+  // };
   const handleSuggestionSelect = (item: SuggestionItem) => {
     if (item.type === "locality") {
       setSelectedLocalities((prev) =>
         prev.some((l) => l.id === item.id) ? prev : [...prev, item],
       );
       setSearchInput("");
-      // Keep dropdown open to allow selecting more localities
-      setShowSuggestions(true);
-      // Focus back on input for continuous selection
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setSuggestions([]); // ← NEW: wipe stale search results immediately
+      setShowSuggestions(false); // ← CHANGED: close dropdown so chip appears confirmed
+
+      // Re-open fresh on next tick — blur+focus ensures onFocus fires correctly
+      // even when the input was already focused (React won't re-fire onFocus
+      // if the element never lost focus, which caused the stale-list bug).
+      setTimeout(() => {
+        inputRef.current?.blur();
+        inputRef.current?.focus(); // triggers onFocus → setShowSuggestions(true)
+      }, 50);
       return;
     }
     navigateToSearch({

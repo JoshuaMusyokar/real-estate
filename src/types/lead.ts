@@ -204,20 +204,70 @@ export interface LeadResponse {
   updatedAt: Date;
 }
 // TODO: UPDATE THIS PROPERTY TYPE
+// export interface LeadFilter {
+//   search?: string;
+//   stage?: LeadStage;
+//   priority?: LeadPriority;
+//   source?: LeadSource;
+//   assignedToId?: string;
+//   city?: string;
+//   locality?: string;
+//   propertyType?: string;
+//   minScore?: number;
+//   maxScore?: number;
+//   isActive?: boolean;
+//   dateFrom?: Date;
+//   dateTo?: Date;
+// }
+
 export interface LeadFilter {
+  // Text search
   search?: string;
+
+  // Enum filters — values must match backend enums exactly
   stage?: LeadStage;
   priority?: LeadPriority;
   source?: LeadSource;
+  purpose?: string; // PropertyPurpose: "SALE" | "RENT" | "LEASE" | "PG"
+
+  // Assignment
   assignedToId?: string;
-  city?: string;
-  locality?: string;
-  propertyType?: string;
+  isActive?: boolean;
+
+  // Location — send cityId (UUID) when available, city name as fallback
+  cityId?: string; // ← preferred: Lead.cityId FK
+  city?: string; // ← fallback: filter by City.name contains
+  locality?: string; // exact match against Lead.localities[] array
+
+  // Property
+  propertyTypeId?: string; // ← preferred: UUID
+  propertyType?: string; // ← fallback: name string
+
+  // Requirements
+  bedrooms?: string; // e.g. "2" or "2,3"
+  minPrice?: number;
+  maxPrice?: number;
+
+  // Score range
   minScore?: number;
   maxScore?: number;
-  isActive?: boolean;
-  dateFrom?: Date;
-  dateTo?: Date;
+
+  // Date range — ISO date strings (NOT Date objects)
+  dateFrom?: string;
+  dateTo?: string;
+
+  // Sorting
+  sortBy?:
+    | "createdAt"
+    | "updatedAt"
+    | "score"
+    | "lastContactedAt"
+    | "nextFollowUpAt";
+  sortOrder?: "asc" | "desc";
+
+  // Pagination (convenience — controller also reads page/limit from query directly)
+  page?: number;
+  limit?: number;
 }
 export interface LeadStats {
   total: number;
