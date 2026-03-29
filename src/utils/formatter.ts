@@ -2,7 +2,7 @@ import type { PropertyType, PropertySubType } from "../types/property";
 
 export const formatPrice = (
   price: number,
-  currency: string = "INR"
+  currency: string = "INR",
 ): string => {
   if (currency === "INR") {
     if (price >= 10000000) {
@@ -25,7 +25,7 @@ export const formatPrice = (
 
 export const getPropertyTypeLabel = (
   type: PropertyType,
-  subType: PropertySubType | null = null
+  subType: PropertySubType | null = null,
 ): string => {
   if (subType) {
     return `${type.name} - ${subType.name}`;
@@ -45,4 +45,17 @@ export const formatDate = (date: Date | string): string => {
 export const truncateText = (text: string, maxLength: number = 100): string => {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
+};
+export const formatToIndianUnits = (value?: number) => {
+  if (!value || value <= 0) return "";
+
+  if (value >= 10000000) {
+    return `₹${(value / 10000000).toFixed(2).replace(/\.00$/, "")} Cr`;
+  }
+
+  if (value >= 100000) {
+    return `₹${(value / 100000).toFixed(2).replace(/\.00$/, "")} L`;
+  }
+
+  return `₹${value.toLocaleString("en-IN")}`;
 };

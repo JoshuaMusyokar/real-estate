@@ -5,6 +5,7 @@
 
 import type { Activity, Note } from "./activity";
 import type { Appointment } from "./appointments";
+import type { City } from "./location";
 import type { Property, PropertyPurpose, PropertyType } from "./property";
 import type { User } from "./user";
 
@@ -195,7 +196,7 @@ export interface LeadResponse {
     id: string;
     title: string;
     price: number;
-    city: string;
+    city: City;
     locality: string;
   }>;
   activitiesCount: number;

@@ -514,7 +514,10 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
                 ref={inputRef}
                 type="text"
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  setShowSuggestions(true);
+                }}
                 onFocus={() => setShowSuggestions(true)}
                 onClick={() => setShowSuggestions(true)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}

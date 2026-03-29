@@ -37,7 +37,11 @@ export const PropertyManagement: React.FC = () => {
   const canDelete = can("property.delete");
 
   // ── API ──────────────────────────────────────────────────────────────────────
-  const { data: propertiesData, isLoading } = useGetUserPropertiesQuery({
+  const {
+    data: propertiesData,
+    isLoading,
+    refetch,
+  } = useGetUserPropertiesQuery({
     page,
     limit: 20,
     // Pass every filter field — the endpoint ignores undefined values
@@ -179,6 +183,7 @@ export const PropertyManagement: React.FC = () => {
                 onView={handleView}
                 onEdit={canEdit ? handleEdit : undefined}
                 onDelete={canDelete ? handleDelete : undefined}
+                refetch={() => refetch()}
               />
             ))}
           </div>

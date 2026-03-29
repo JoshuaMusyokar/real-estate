@@ -40,6 +40,7 @@ import Label from "../../../components/form/Label";
 import Input from "../../../components/form/input/InputField";
 import TextArea from "../../../components/form/input/TextArea";
 import Checkbox from "../../../components/form/input/Checkbox";
+import { formatToIndianUnits } from "../../../utils/formatter";
 
 interface BasicInfoStepProps {
   formData: PropertyCreateRequest;
@@ -60,17 +61,17 @@ const statuses: PropertyStatus[] = [
 ];
 
 const currencies = [
-  { code: "USD", symbol: "$" },
-  { code: "EUR", symbol: "€" },
-  { code: "GBP", symbol: "£" },
-  { code: "KES", symbol: "KSh" },
+  // { code: "USD", symbol: "$" },
+  // { code: "EUR", symbol: "€" },
+  // { code: "GBP", symbol: "£" },
+  // { code: "KES", symbol: "KSh" },
   { code: "INR", symbol: "₹" },
-  { code: "AED", symbol: "د.إ" },
-  { code: "SAR", symbol: "﷼" },
-  { code: "AUD", symbol: "A$" },
-  { code: "CAD", symbol: "C$" },
-  { code: "JPY", symbol: "¥" },
-  { code: "ZAR", symbol: "R" },
+  // { code: "AED", symbol: "د.إ" },
+  // { code: "SAR", symbol: "﷼" },
+  // { code: "AUD", symbol: "A$" },
+  // { code: "CAD", symbol: "C$" },
+  // { code: "JPY", symbol: "¥" },
+  // { code: "ZAR", symbol: "R" },
 ];
 
 const MAX_PHONES = 5;
@@ -390,6 +391,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
                   {getCurrencySymbol()}
                 </span>
               </div>
+              {formData.price > 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  ≈ {formatToIndianUnits(formData.price)}
+                </p>
+              )}
             </div>
             <div>
               <Label>Currency</Label>

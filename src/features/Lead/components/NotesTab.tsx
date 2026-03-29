@@ -32,7 +32,6 @@ interface NoteFormData {
 }
 
 // ─── NoteCard ─────────────────────────────────────────────────────────────────
-// Receives permission flags from parent — avoids calling usePermissions() per card.
 
 interface NoteCardProps {
   note: NoteResponse;
@@ -72,31 +71,31 @@ const NoteCard: React.FC<NoteCardProps> = ({
   const showActions = canEdit || canDelete;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all group">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex items-center gap-3">
+    <div className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 hover:shadow-md transition-all group">
+      <div className="flex items-start justify-between gap-3 sm:gap-4 mb-2 sm:mb-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <div
-            className={`w-10 h-10 rounded-lg flex items-center justify-center ${note.isInternal ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"}`}
+            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${note.isInternal ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"}`}
           >
             {note.isInternal ? (
-              <Lock className="w-5 h-5" />
+              <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
             ) : (
-              <Eye className="w-5 h-5" />
+              <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                 {note.user.firstName} {note.user.lastName}
               </span>
               <span
-                className={`px-2 py-0.5 rounded-md text-xs font-semibold ${note.isInternal ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}
+                className={`px-1.5 sm:px-2 py-0.5 rounded-md text-xs font-semibold flex-shrink-0 ${note.isInternal ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}
               >
                 {note.isInternal ? "Internal" : "Visible"}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-              <Clock className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-500 mt-0.5 sm:mt-1">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
               <span>{formatDate(note.createdAt)}</span>
               {new Date(note.updatedAt).getTime() !==
                 new Date(note.createdAt).getTime() && (
@@ -106,13 +105,13 @@ const NoteCard: React.FC<NoteCardProps> = ({
           </div>
         </div>
 
-        {/* Action buttons — only rendered when user has at least one action */}
+        {/* Action buttons — always visible on mobile, hover on desktop */}
         {showActions && (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-0.5 sm:gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
             {canEdit && (
               <button
                 onClick={() => onEdit(note)}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 sm:p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                 title="Edit note"
               >
                 <Edit className="w-4 h-4" />
@@ -121,7 +120,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
             {canDelete && (
               <button
                 onClick={() => onDelete(note.id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                 title="Delete note"
               >
                 <Trash2 className="w-4 h-4" />
@@ -131,7 +130,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
         )}
       </div>
 
-      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm sm:text-base">
         {note.content}
       </p>
     </div>
@@ -139,7 +138,6 @@ const NoteCard: React.FC<NoteCardProps> = ({
 };
 
 // ─── NoteEditor ───────────────────────────────────────────────────────────────
-// Pure form — no permission checks inside. Parent controls when it renders.
 
 interface NoteEditorProps {
   initialData?: NoteFormData;
@@ -166,15 +164,15 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   };
 
   return (
-    <div className="bg-white border-2 border-blue-200 rounded-xl p-5 shadow-lg">
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="font-bold text-gray-900">
+    <div className="bg-white border-2 border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 shadow-lg">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h4 className="font-bold text-gray-900 text-base sm:text-lg">
           {isEditing ? "Edit Note" : "Add New Note"}
         </h4>
         {!isEditing && (
           <button
             onClick={onCancel}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
@@ -185,14 +183,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         value={formData.content}
         onChange={(e) => setFormData({ ...formData, content: e.target.value })}
         placeholder="Write your note here..."
-        rows={4}
-        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none mb-4"
+        rows={3}
+        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none mb-3 sm:mb-4 text-sm sm:text-base"
         autoFocus
       />
 
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <div className="relative">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <label className="flex items-center gap-2 sm:gap-3 cursor-pointer group">
+          <div className="relative flex-shrink-0">
             <input
               type="checkbox"
               checked={formData.isInternal}
@@ -201,11 +199,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               }
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            <div className="w-10 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
           </div>
           <div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <Lock className="w-4 h-4 text-amber-600" />
+            <div className="flex items-center gap-1.5 sm:gap-2 text-sm font-semibold text-gray-900">
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
               Internal Note
             </div>
             <div className="text-xs text-gray-600">
@@ -214,11 +212,11 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
         </label>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           {isEditing && (
             <button
               onClick={onCancel}
-              className="px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              className="px-3 sm:px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base"
             >
               Cancel
             </button>
@@ -226,15 +224,23 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
           <button
             onClick={handleSubmit}
             disabled={isLoading || !formData.content.trim()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="hidden sm:inline">Saving...</span>
+                <span className="sm:hidden">Save</span>
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" /> {isEditing ? "Update" : "Add Note"}
+                <Save className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {isEditing ? "Update" : "Add Note"}
+                </span>
+                <span className="sm:hidden">
+                  {isEditing ? "Update" : "Add"}
+                </span>
               </>
             )}
           </button>
@@ -313,54 +319,60 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center py-12 sm:py-20">
+        <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">Notes</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900">Notes</h3>
+          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
             Keep track of important information about this lead
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Internal toggle — always available to anyone who can view notes */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Internal toggle */}
           <button
             onClick={() => setShowInternal(!showInternal)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors flex items-center gap-1.5 sm:gap-2 ${
               showInternal
                 ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             {showInternal ? (
-              <Lock className="w-4 h-4" />
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             ) : (
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             )}
-            {showInternal ? "Show All" : "Show Visible Only"}
+            <span className="hidden sm:inline">
+              {showInternal ? "Show All" : "Show Visible Only"}
+            </span>
+            <span className="sm:hidden">
+              {showInternal ? "All" : "Visible"}
+            </span>
           </button>
 
-          {/* Add Note button — hidden without lead.add_note */}
+          {/* Add Note button */}
           {canAdd && !showEditor && !editingNote && (
             <button
               onClick={() => setShowEditor(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center gap-1.5 sm:gap-2 shadow-lg text-sm sm:text-base"
             >
-              <Plus className="w-5 h-5" />
-              Add Note
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Add Note</span>
+              <span className="sm:hidden">Add</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Create editor — only when canAdd */}
+      {/* Create editor */}
       {canAdd && showEditor && !editingNote && (
         <NoteEditor
           isEditing={false}
@@ -370,7 +382,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
         />
       )}
 
-      {/* Edit editor — only when canEdit */}
+      {/* Edit editor */}
       {canEdit && editingNote && (
         <NoteEditor
           initialData={{
@@ -386,12 +398,12 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
 
       {/* Note list */}
       {notes.length === 0 ? (
-        <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl">
-          <StickyNote className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="text-center py-12 sm:py-20 bg-white border border-gray-200 rounded-xl sm:rounded-2xl px-4">
+          <StickyNote className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+          <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-1.5 sm:mb-2">
             No notes yet
           </h4>
-          <p className="text-gray-600 mb-6">
+          <p className="text-sm text-gray-600 mb-4 sm:mb-6">
             {canAdd
               ? "Start documenting your interactions and observations"
               : "No notes have been added for this lead yet"}
@@ -399,15 +411,15 @@ export const NotesTab: React.FC<NotesTabProps> = ({ leadId }) => {
           {canAdd && (
             <button
               onClick={() => setShowEditor(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg sm:rounded-xl font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base w-full sm:w-auto justify-center"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               Add First Note
             </button>
           )}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {notes.map((note) => (
             <NoteCard
               key={note.id}

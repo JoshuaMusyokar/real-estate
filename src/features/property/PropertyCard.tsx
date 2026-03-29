@@ -31,6 +31,7 @@ import { usePermissions } from "../../hooks/usePermissions";
 
 interface PropertyCardProps {
   property: Property;
+  refetch?: () => void;
   onView: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
@@ -109,6 +110,7 @@ export const PropertyCard: FC<PropertyCardProps> = ({
   onEdit,
   onDelete,
   onFeaturedToggle,
+  refetch,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -438,7 +440,12 @@ export const PropertyCard: FC<PropertyCardProps> = ({
       {/* Quick review (admin) */}
       {canReview && (
         <div className="px-3 sm:px-4 pb-3 pt-1 border-t border-gray-100">
-          <QuickReviewActions property={property} onSuccess={() => {}} />
+          <QuickReviewActions
+            property={property}
+            onSuccess={() => {
+              refetch?.();
+            }}
+          />
         </div>
       )}
     </Card>

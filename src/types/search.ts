@@ -75,7 +75,7 @@ export function getPropertyPurposeFromPurpose(
   commercialSub?: string,
 ): PropertyPurpose {
   if (purpose === "commercial") {
-    return (commercialSub === "lease" ? "LEASE" : "SALE") as PropertyPurpose;
+    return (commercialSub === "lease" ? "RENT" : "SALE") as PropertyPurpose;
   }
   if (purpose === "rent" || purpose === "pg") return "RENT" as PropertyPurpose;
   return "SALE" as PropertyPurpose;
