@@ -136,7 +136,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   return (
     <>
       {/* ── Nav bar ────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 w-full z-50 bg-white border-b border-blue-100 shadow-sm">
+      <nav className="fixed top-0 w-full z-[9999] bg-white border-b border-blue-100 shadow-sm">
         <div className="max-w-full mx-auto px-3 sm:px-5 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 lg:h-[68px] gap-2">
             {/* ── Left: Logo + City ─────────────────────────────────────────── */}

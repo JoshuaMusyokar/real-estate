@@ -27,6 +27,7 @@ import {
   type SearchComponentProps,
   type SuggestionItem,
 } from "../../types/search";
+import { MobileLocalityChips } from "./components/MobileLocalityChips";
 
 export const SearchComponent: React.FC<SearchComponentProps> = ({
   variant = "default",
@@ -542,6 +543,17 @@ export const SearchComponent: React.FC<SearchComponentProps> = ({
             }
           />
         </div>
+
+        {/* ── Mobile: selected locality chips — always visible below search bar ── */}
+        {selectedLocalities.length > 0 && (
+          <MobileLocalityChips
+            localities={selectedLocalities}
+            onRemove={(id) =>
+              setSelectedLocalities((p) => p.filter((l) => l.id !== id))
+            }
+            onClearAll={() => setSelectedLocalities([])}
+          />
+        )}
 
         {/* Commercial sub-purpose */}
         {purpose === "commercial" && (

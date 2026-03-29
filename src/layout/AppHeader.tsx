@@ -16,7 +16,7 @@ import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import UserDropdown from "../components/header/UserDropdown";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import appLogo from "../assets/p4i.png";
-
+import appMobileLogo from "../assets/p41-mobile.png";
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -215,7 +215,7 @@ const AppHeader: React.FC = () => {
           {/* Mobile logo */}
           <Link to="/" className="flex items-center lg:hidden flex-shrink-0">
             <img
-              src={appLogo}
+              src={appMobileLogo}
               alt="Property4India Logo"
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
