@@ -206,19 +206,19 @@ export function LocalityForm({
         success("Locality created successfully");
       }
       onSuccess();
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        showError(
-          error.message ||
-            (locality
-              ? "Failed to update locality"
-              : "Failed to create locality"),
-        );
-      } else {
-        showError(
-          locality ? "Failed to update locality" : "Failed to create locality",
-        );
-      }
+    } catch {
+      // if (error instanceof Error) {
+      //   showError(
+      //     error.message ||
+      //       (locality
+      //         ? "Failed to update locality"
+      //         : "Failed to create locality"),
+      //   );
+      // } else {
+      //   showError(
+      //     locality ? "Failed to update locality" : "Failed to create locality",
+      //   );
+      // }
     } finally {
       setIsSubmitting(false);
     }

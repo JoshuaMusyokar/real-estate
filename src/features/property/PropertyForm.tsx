@@ -98,7 +98,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
     // Pricing
     price: 0,
     priceNegotiable: false,
-    currency: "USD",
+    currency: "INR",
     stampDutyExcluded: false,
     maintenanceCharges: null,
     securityDeposit: null,
@@ -437,6 +437,7 @@ export const PropertyForm: React.FC<PropertyFormPageProps> = ({
       }
     }
   }, [mode, propertyData, setImageFiles, setDocuments]);
+  console.log("rrrr", formData.currency, formData.complexName);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleFormUpdate = (updates: Partial<PropertyCreateRequest>) => {

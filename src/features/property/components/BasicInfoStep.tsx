@@ -147,7 +147,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   };
 
   const getCurrencySymbol = () =>
-    currencies.find((c) => c.code === formData.currency)?.symbol || "$";
+    currencies.find((c) => c.code === formData.currency)?.symbol || "₹";
 
   const setPhone = (index: number, value: string) => {
     const next = [...phones];

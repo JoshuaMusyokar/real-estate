@@ -112,14 +112,14 @@ export function CityForm({ city, onClose, onSuccess }: CityFormProps) {
         success("City created successfully");
       }
       onSuccess();
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : city
-            ? "Failed to update city"
-            : "Failed to create city";
-      showError(errorMessage);
+    } catch {
+      // const errorMessage =
+      //   error instanceof Error
+      //     ? error.message
+      //     : city
+      //       ? "Failed to update city"
+      //       : "Failed to create city";
+      // showError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
