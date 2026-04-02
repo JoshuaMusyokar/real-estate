@@ -770,6 +770,9 @@ export interface CategorizedProperty {
   purpose: "SALE" | "RENT" | "LEASE" | string;
   bedrooms: number;
   bathrooms: number;
+  superBuiltArea: number | null;
+  carpetArea: number | null;
+  builtUpArea: number | null;
   squareFeet: number;
   featured: boolean;
   coverImage: string;
