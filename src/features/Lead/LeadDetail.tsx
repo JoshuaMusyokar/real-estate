@@ -219,7 +219,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ leadId }) => {
               <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg px-2.5 py-1.5">
                 <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-blue-400" />
                 <span>
-                  {[lead.city, ...(lead.localities ?? [])]
+                  {[lead.city?.name, ...(lead.localities ?? [])]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>

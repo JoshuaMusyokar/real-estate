@@ -61,13 +61,13 @@ export const KanbanLeadCard: React.FC<KanbanLeadCardProps> = ({ lead }) => {
           {lead.city && (
             <div className="flex items-center gap-1.5 text-xs text-gray-600">
               <MapPin className="w-3 h-3 text-gray-400 flex-shrink-0" />
-              <span className="truncate">{lead.city}</span>
+              <span className="truncate">{lead.city.name}</span>
             </div>
           )}
         </div>
         <div
           className={`px-2 py-1 rounded-lg text-xs font-bold border flex items-center gap-1 flex-shrink-0 ${getPriorityStyle(
-            lead.priority
+            lead.priority,
           )}`}
         >
           <PriorityIcon className="w-3 h-3" />

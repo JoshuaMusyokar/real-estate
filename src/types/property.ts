@@ -831,10 +831,11 @@ export interface FavoriteProperty {
   id: string;
   title: string;
   price: string;
-  city: string;
+  city: City;
   locality: string;
   propertyType: PropertyType;
   purpose: PropertyStatus;
+  slug: string;
   bedrooms: number;
   bathrooms: number;
   squareFeet: number;

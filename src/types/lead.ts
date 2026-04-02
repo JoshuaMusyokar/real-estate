@@ -124,13 +124,48 @@ export interface CreateLeadInput {
   tags?: string[];
 }
 
+// export interface UpdateLeadInput {
+//   firstName?: string;
+//   lastName?: string;
+//   email?: string;
+//   phone?: string;
+//   alternatePhone?: string;
+//   city?: string;
+//   localities?: string[];
+//   propertyTypeId?: string;
+//   purpose?: PropertyPurpose;
+//   minPrice?: number;
+//   maxPrice?: number;
+//   bedrooms?: string;
+//   requirements?: string;
+//   stage?: LeadStage;
+//   priority?: LeadPriority;
+//   score?: number;
+//   tags?: string[];
+//   assignedToId?: string;
+//   isActive?: boolean;
+//   lastContactedAt?: Date;
+//   nextFollowUpAt?: Date;
+//   dealValue?: number;
+//   dealClosedAt?: Date;
+//   lostReason?: string;
+// }
+
 export interface UpdateLeadInput {
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
   alternatePhone?: string;
-  city?: string;
+  cityId?: string;
+  source?: LeadSource;
+  sourcePage?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  assignToId?: string | null;
+  interestedProperties?: string[];
+  // city?: string;
   localities?: string[];
   propertyTypeId?: string;
   purpose?: PropertyPurpose;
@@ -161,7 +196,7 @@ export interface LeadResponse {
   email: string;
   phone: string;
   alternatePhone?: string;
-  city?: string;
+  city?: { id: string; name: string };
   localities: string[];
   propertyTypeId?: string;
   propertyType?: PropertyType;

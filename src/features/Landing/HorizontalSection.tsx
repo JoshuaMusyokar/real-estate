@@ -1,7 +1,8 @@
-// HorizontalScrollSection.tsx
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
+import { useAuth } from "../../hooks/useAuth";
+import { useGetUserFavoritesQuery } from "../../services/propertyApi";
 
 interface HorizontalScrollSectionProps {
   title: string;
@@ -15,16 +16,23 @@ interface HorizontalScrollSectionProps {
 
 export const HorizontalScrollSection: React.FC<
   HorizontalScrollSectionProps
-> = ({
-  title,
-  description,
-  icon,
-  properties,
-  CardComponent,
-  color,
-  adBanner,
-}) => {
+> = ({ title, description, icon, properties, CardComponent, color }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated } = useAuth();
+  const { data: favouriteData, refetch: refetchFavorites } =
+    useGetUserFavoritesQuery(undefined, {
+      skip: !isAuthenticated,
+    });
+  const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isAuthenticated) refetchFavorites();
+  }, [isAuthenticated, refetchFavorites]);
+
+  useEffect(() => {
+    if (isAuthenticated && favouriteData?.data)
+      setFavPropertiesIds(favouriteData.data);
+  }, [favouriteData, isAuthenticated]);
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
@@ -87,6 +95,7 @@ export const HorizontalScrollSection: React.FC<
               property={property}
               index={index}
               color={color}
+              isFavorite={favPropertiesIds.includes(property.id)}
             />
           ))}
         </div>

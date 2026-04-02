@@ -10,16 +10,17 @@ import {
 } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router";
 import {
   useAddToFavoritesMutation,
   useRemoveFromFavoritesMutation,
 } from "../../services/propertyApi";
-import { useState } from "react";
 
 interface CategorizedPropertyCardProps {
   property: CategorizedProperty;
   category: string;
   index: number;
+  isFavorite: boolean;
 }
 
 const categoryBadges = {
@@ -53,35 +54,39 @@ export const CategorizedPropertyCard = ({
   property,
   category,
   index,
+  isFavorite,
 }: CategorizedPropertyCardProps) => {
   const { isAuthenticated } = useAuth();
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [addToFavorites] = useAddToFavoritesMutation();
-  const [removeFromFavorites] = useRemoveFromFavoritesMutation();
-
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!isAuthenticated) return;
-
-    try {
-      if (isFavorited) {
-        await removeFromFavorites({ propertyId: property.id }).unwrap();
-      } else {
-        await addToFavorites({ propertyId: property.id }).unwrap();
-      }
-      setIsFavorited(!isFavorited);
-    } catch (error) {
-      console.error("Error updating favorites:", error);
-    }
-  };
-
+  const navigate = useNavigate();
+  const [addToFavorites, { isLoading: isAddingToFavorites }] =
+    useAddToFavoritesMutation();
+  const [removeFromFavorites, { isLoading: isRemovingFromFavorites }] =
+    useRemoveFromFavoritesMutation();
   const coverImage = property.viewableCoverImage || "/api/placeholder/400/300";
 
   const badgeConfig =
     categoryBadges[category as keyof typeof categoryBadges] ||
     categoryBadges.featured;
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites({ propertyId: property.id }).unwrap();
+      } else {
+        await addToFavorites({ propertyId: property.id }).unwrap();
+      }
+    } catch {
+      //
+    }
+  };
 
   const formatPrice = (price: number) => {
     if (price >= 10000000) return `₹${(price / 10000000).toFixed(2)}Cr`;
@@ -111,13 +116,14 @@ export const CategorizedPropertyCard = ({
       {/* Favorite Button */}
       <button
         onClick={handleFavoriteClick}
+        disabled={isAddingToFavorites || isRemovingFromFavorites}
         className={`absolute top-4 right-4 z-20 p-2 rounded-2xl backdrop-blur-sm transition-all duration-300 ${
-          isFavorited
+          isFavorite
             ? "bg-red-500 text-white shadow-lg"
             : "bg-white/90 text-gray-600 hover:bg-white hover:text-red-500 hover:scale-110"
         }`}
       >
-        <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
+        <Heart className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
       </button>
 
       {/* Image Container */}

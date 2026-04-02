@@ -50,7 +50,7 @@ function FilterPill<T extends string>({
     <div className="relative flex-shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all
+        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0
           ${
             active
               ? "bg-blue-600 border-blue-600 text-white"
@@ -132,7 +132,7 @@ const CitySelect: React.FC<{
             locality: undefined, // clear locality when city changes
           });
         }}
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
       >
         <option value="">All Cities</option>
         {cities.map((c) => (
@@ -165,7 +165,7 @@ const LocalitySelect: React.FC<{
         </label>
         <select
           disabled
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs bg-gray-50 text-gray-400 outline-none cursor-not-allowed"
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs bg-gray-50 text-gray-400 outline-none cursor-not-allowed"
         >
           <option>Select a city first</option>
         </select>
@@ -180,7 +180,7 @@ const LocalitySelect: React.FC<{
       <select
         value={filters.locality || ""}
         onChange={(e) => set({ locality: e.target.value || undefined })}
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
       >
         <option value="">All Localities</option>
         {localities.map((l) => (
@@ -227,18 +227,18 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
 
   return (
     <Card>
-      <CardContent className="p-3 sm:p-4">
+      <CardContent className="p-2.5 sm:p-4">
         {/* ── Row 1: Search + quick pills + advanced toggle ──────────────── */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap mb-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 flex-nowrap sm:flex-wrap sm:flex-nowrap mb-2">
           {/* Search */}
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             <input
               type="text"
               placeholder="Search name, email, phone…"
               value={filters.search || ""}
               onChange={(e) => set({ search: e.target.value || undefined })}
-              className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full pl-8 pr-7 py-1.5 sm:py-2 border border-gray-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
             {filters.search && (
               <button
@@ -253,7 +253,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
           {/* Advanced toggle */}
           <button
             onClick={() => setShowAdvanced((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold flex-shrink-0 transition-all
+            className={`flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border text-xs font-semibold flex-shrink-0 transition-all
               ${
                 showAdvanced || activeFilterCount > 0
                   ? "bg-blue-600 border-blue-600 text-white"
@@ -274,7 +274,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
         </div>
 
         {/* ── Row 2: Quick pill filters ──────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 flex-nowrap sm:flex-wrap">
           <FilterPill<LeadStage>
             label="Stage"
             value={filters.stage || ""}
@@ -310,7 +310,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                   sortOrder: ord as "asc" | "desc",
                 });
               }}
-              className="text-xs font-semibold border border-gray-200 bg-gray-50 text-gray-700 rounded-xl px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
+              className="text-[11px] sm:text-xs font-semibold border border-gray-200 bg-gray-50 text-gray-700 rounded-xl px-2 py-1.5 sm:px-2.5 sm:py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer flex-shrink-0"
             >
               <option value="createdAt-desc">Newest First</option>
               <option value="createdAt-asc">Oldest First</option>
@@ -323,7 +323,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
             {activeFilterCount > 0 && (
               <button
                 onClick={reset}
-                className="flex items-center gap-1 px-2.5 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-xl transition-colors whitespace-nowrap"
+                className="flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] sm:text-xs font-semibold rounded-xl transition-colors whitespace-nowrap flex-shrink-0"
               >
                 <X className="w-3 h-3" /> Reset
               </button>
@@ -333,7 +333,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
 
         {/* ── Advanced filters panel ─────────────────────────────────────── */}
         {showAdvanced && (
-          <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="mt-2.5 pt-2.5 border-t border-gray-100 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
             {/* City — API-driven select */}
             <CitySelect filters={filters} set={set} />
 
@@ -341,14 +341,14 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
             <LocalitySelect filters={filters} set={set} />
 
             {/* Purpose */}
-            {/* <div>
+            <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
                 Purpose
               </label>
               <select
                 value={filters.purpose || ""}
                 onChange={(e) => set({ purpose: e.target.value || undefined })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
               >
                 <option value="">Any</option>
                 <option value="SALE">Sale</option>
@@ -356,7 +356,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 <option value="LEASE">Lease</option>
                 <option value="PG">PG</option>
               </select>
-            </div> */}
+            </div>
 
             {/* Active status */}
             <div>
@@ -375,7 +375,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                         : e.target.value === "true",
                   })
                 }
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
               >
                 <option value="">All</option>
                 <option value="true">Active</option>
@@ -400,7 +400,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 }
                 placeholder="0"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
 
@@ -421,7 +421,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 }
                 placeholder="No limit"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
 
@@ -443,7 +443,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 placeholder="0"
                 min="0"
                 max="100"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
 
@@ -465,7 +465,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 placeholder="100"
                 min="0"
                 max="100"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
 
@@ -478,7 +478,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 type="date"
                 value={filters.dateFrom || ""}
                 onChange={(e) => set({ dateFrom: e.target.value || undefined })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
 
@@ -491,7 +491,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 type="date"
                 value={filters.dateTo || ""}
                 onChange={(e) => set({ dateTo: e.target.value || undefined })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none"
               />
             </div>
 
@@ -505,7 +505,7 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
                 onChange={(e) =>
                   set({ limit: Number(e.target.value), page: 1 })
                 }
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
+                className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-400 outline-none bg-white"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
@@ -518,8 +518,8 @@ export const LeadsFilters: React.FC<LeadsFiltersProps> = ({
 
         {/* ── Bulk action bar ────────────────────────────────────────────── */}
         {showBulkBar && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between gap-3 flex-wrap">
-            <span className="text-blue-700 font-semibold text-sm">
+          <div className="mt-2.5 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+            <span className="text-blue-700 font-semibold text-xs sm:text-sm">
               {selectedLeads.size} lead{selectedLeads.size > 1 ? "s" : ""}{" "}
               selected
             </span>

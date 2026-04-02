@@ -1,5 +1,3 @@
-// PropertyList.tsx
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 import { Home } from "lucide-react";
 import type { PropertySearchFilters, Property } from "../../types";
@@ -21,16 +19,13 @@ interface PropertyListProps {
 }
 
 export const PropertyList: React.FC<PropertyListProps> = ({
-  filters,
   setFilters,
   properties,
   isLoading,
   totalCount,
   currentPage,
   totalPages,
-  searchInput,
   favPropertiesIds,
-  onToggleFavorite,
   onPageChange,
 }) => {
   const totalLabel = isLoading
@@ -91,7 +86,6 @@ export const PropertyList: React.FC<PropertyListProps> = ({
                     <PropertyCard
                       property={property}
                       isFavorite={favPropertiesIds.includes(property.id)}
-                      onToggleFavorite={onToggleFavorite}
                     />
                   </div>
                 ))}

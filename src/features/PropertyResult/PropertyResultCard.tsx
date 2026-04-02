@@ -19,22 +19,32 @@ import type { Property } from "../../types";
 import { PropertyImageCarousel } from "./PropertyImageCarousel";
 import { InquiryFormModal } from "../../components/form/InquiryForm";
 import { ScheduleViewingModal } from "../../components/form/ScheduleViewingForm";
+import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router";
+import {
+  useAddToFavoritesMutation,
+  useRemoveFromFavoritesMutation,
+} from "../../services/propertyApi";
 
 interface PropertyCardProps {
   property: Property;
   isFavorite: boolean;
-  onToggleFavorite: (propertyId: string) => void;
 }
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({
   property,
   isFavorite,
-  onToggleFavorite,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showInquiry, setShowInquiry] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showContactOptions, setShowContactOptions] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [addToFavorites, { isLoading: isAddingToFavorites }] =
+    useAddToFavoritesMutation();
+  const [removeFromFavorites, { isLoading: isRemovingFromFavorites }] =
+    useRemoveFromFavoritesMutation();
 
   const formatPrice = (price: number) => {
     if (price >= 10_000_000) return `₹${(price / 10_000_000).toFixed(2)} Cr`;
@@ -67,6 +77,26 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
         year: "numeric",
       })
     : "";
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites({ propertyId: property.id }).unwrap();
+      } else {
+        await addToFavorites({ propertyId: property.id }).unwrap();
+      }
+    } catch {
+      //
+    }
+  };
 
   const rera = property.reraNumber
     ? { label: "RERA Approved Property", number: property.reraNumber }
@@ -125,8 +155,9 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onToggleFavorite(property.id);
+              handleFavoriteClick(e);
             }}
+            disabled={isAddingToFavorites || isRemovingFromFavorites}
             className={`
               absolute top-2 right-2 p-1.5 rounded-lg backdrop-blur-sm shadow transition-all z-10
               ${

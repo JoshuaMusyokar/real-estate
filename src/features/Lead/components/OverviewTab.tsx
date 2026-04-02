@@ -372,7 +372,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ lead, onUpdate }) => {
               icon={MapPin}
               label="City"
               accent="text-blue-400"
-              value={lead.city}
+              value={lead.city.name}
             />
           )}
           {(lead.localities?.length ?? 0) > 0 && (

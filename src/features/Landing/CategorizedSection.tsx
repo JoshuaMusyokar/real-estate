@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 
 import { CategorizedPropertyCard } from "./CategorizedPropertyCard";
 import type { CategorizedProperty } from "../../types";
+import { useGetUserFavoritesQuery } from "../../services/propertyApi";
+import { useEffect, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 interface CategorizedSectionProps {
   title: string;
@@ -23,6 +26,21 @@ export const CategorizedSection: React.FC<CategorizedSectionProps> = ({
   index,
 }) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { data: favouriteData, refetch: refetchFavorites } =
+    useGetUserFavoritesQuery(undefined, {
+      skip: !isAuthenticated,
+    });
+  const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isAuthenticated) refetchFavorites();
+  }, [isAuthenticated, refetchFavorites]);
+
+  useEffect(() => {
+    if (isAuthenticated && favouriteData?.data)
+      setFavPropertiesIds(favouriteData.data);
+  }, [favouriteData, isAuthenticated]);
 
   if (!properties || properties.length === 0) {
     return null;
@@ -68,6 +86,7 @@ export const CategorizedSection: React.FC<CategorizedSectionProps> = ({
                 property={property}
                 category=""
                 index={0}
+                isFavorite={favPropertiesIds.includes(property.id)}
               />
             </div>
           ))}

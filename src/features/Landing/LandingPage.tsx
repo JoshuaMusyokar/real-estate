@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Check,
   Shield,
@@ -13,14 +12,9 @@ import {
 import React, { useEffect, useState } from "react";
 import { FilterPanel } from "./FilterPanel";
 import { type PropertyPurpose, type PropertySearchFilters } from "../../types";
-import {
-  useGetCategorizedPropertiesQuery,
-  useGetUserFavoritesQuery,
-  useSearchPropertiesQuery,
-} from "../../services/propertyApi";
+import { useGetCategorizedPropertiesQuery } from "../../services/propertyApi";
 import { useNavigate } from "react-router-dom";
 import { PublicHeader } from "../../layout/PublicHeader";
-import { useAuth } from "../../hooks/useAuth";
 import { Footer } from "../../layout/Footer";
 import { useDefaultCity } from "../../hooks/useDefaultCity";
 import { HorizontalScrollSection } from "./HorizontalSection";
@@ -40,10 +34,7 @@ export const PropertyLandingPage = () => {
   const [propertyType, setPropertyType] = useState<string>("RESIDENTIAL");
   const [propertyPurpose, setPropertyPurpose] =
     useState<PropertyPurpose>("SALE");
-  const [searchInput, setSearchInput] = useState("");
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [sortBy, setSortBy] = useState("");
-  const [favPropertiesIds, setFavPropertiesIds] = useState<string[]>([]);
   const [bgIndex, setBgIndex] = useState(0);
 
   const heroBgs = [bg1, bg2, bg3];
@@ -56,25 +47,12 @@ export const PropertyLandingPage = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const { isAuthenticated } = useAuth();
-  const { data: favouriteData, refetch } = useGetUserFavoritesQuery(undefined, {
-    skip: !isAuthenticated,
-  });
-
   // ── Single source of truth for city ────────────────────────────────────────
   // Both PublicHeader (header city pill) and SearchComponent (search bar city)
   // read from here and call the same handleCityChange, so they stay perfectly
   // in sync. Changing city in either place updates both simultaneously.
   const { selectedCityId, selectedCityName, handleCityChange } =
     useDefaultCity();
-
-  const { data, isLoading } = useSearchPropertiesQuery({
-    ...filters,
-    search: searchInput,
-    sortBy,
-    sortOrder: "desc",
-    status: "AVAILABLE",
-  });
 
   const { data: categorizedData, isLoading: isCategorizedLoading } =
     useGetCategorizedPropertiesQuery({
@@ -133,17 +111,8 @@ export const PropertyLandingPage = () => {
   ];
 
   useEffect(() => {
-    if (isAuthenticated) refetch();
-  }, [isAuthenticated, refetch]);
-
-  useEffect(() => {
     if (selectedCityId) setFilters((p) => ({ ...p, cityId: selectedCityId }));
   }, [selectedCityId]);
-
-  useEffect(() => {
-    if (isAuthenticated && favouriteData?.data)
-      setFavPropertiesIds(favouriteData.data);
-  }, [favouriteData, isAuthenticated]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">

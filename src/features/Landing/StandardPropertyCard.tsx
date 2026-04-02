@@ -11,20 +11,31 @@ import {
   Eye,
 } from "lucide-react";
 import type { CategorizedProperty } from "../../types";
+import {
+  useAddToFavoritesMutation,
+  useRemoveFromFavoritesMutation,
+} from "../../services/propertyApi";
+import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router";
 
 interface StandardPropertyCardProps {
   property: CategorizedProperty;
   index: number;
   color?: string;
+  isFavorite: boolean;
 }
 
 export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
   property,
   index,
-  color = "from-blue-500 to-indigo-600",
+  isFavorite,
 }) => {
-  const [isFavorited, setIsFavorited] = React.useState(false);
-
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [addToFavorites, { isLoading: isAddingToFavorites }] =
+    useAddToFavoritesMutation();
+  const [removeFromFavorites, { isLoading: isRemovingFromFavorites }] =
+    useRemoveFromFavoritesMutation();
   const formatPrice = (price: number) => {
     if (price >= 10_000_000) return `₹${(price / 10_000_000).toFixed(2)} Cr`;
     if (price >= 100_000) return `₹${(price / 100_000).toFixed(2)} L`;
@@ -39,6 +50,25 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
       year: "numeric",
     },
   );
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites({ propertyId: property.id }).unwrap();
+      } else {
+        await addToFavorites({ propertyId: property.id }).unwrap();
+      }
+    } catch {
+      //
+    }
+  };
 
   return (
     <div
@@ -67,16 +97,17 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            setIsFavorited((f) => !f);
+            handleFavoriteClick(e);
           }}
+          disabled={isAddingToFavorites || isRemovingFromFavorites}
           className={`absolute top-2 right-2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-sm transition-all duration-200 ${
-            isFavorited
+            isFavorite
               ? "bg-red-500 text-white shadow-lg"
               : "bg-white/90 text-gray-500 hover:text-red-500 hover:bg-white"
           }`}
         >
           <Heart
-            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? "fill-current" : ""}`}
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorite ? "fill-current" : ""}`}
           />
         </button>
 

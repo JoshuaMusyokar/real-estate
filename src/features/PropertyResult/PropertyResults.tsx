@@ -155,7 +155,7 @@ export const PropertySearchResults = () => {
 
   const handleToggleFavorite = async (propertyId: string) => {
     if (!isAuthenticated) {
-      navigate("/login");
+      navigate("/signin");
       return;
     }
     try {
