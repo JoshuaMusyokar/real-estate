@@ -1,5 +1,4 @@
 import type { ResCity, ResLocality } from "./location";
-import type { PropertyType } from "./property";
 import type { ResRole } from "./rbac";
 import type { UserStatus } from "./user";
 
@@ -20,6 +19,7 @@ export interface AgentForAssignment {
   totalLeadsClosed: number;
   conversionRate: number;
   averageResponseTime: number;
+  managerId?: string;
   // Property relationships
   ownedPropertiesCount: number;
   assignedAppointmentsCount: number;
@@ -37,8 +37,9 @@ export interface AgentResponse<T> {
 export interface AgentsFilter {
   city?: string;
   locality?: string;
-  propertyType?: PropertyType;
+  propertyTypeId?: string;
   includePerformance?: boolean;
   onlyAvailable?: boolean;
   search?: string;
+  leadCityId?: string;
 }

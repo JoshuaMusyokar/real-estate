@@ -55,6 +55,7 @@ import NotificationsPage from "./pages/Notifications/NotificationPage";
 import UserProfilesPage from "./pages/UserProfiles";
 import FAQPage from "./pages/FAQS/Faqs";
 import ManagementPage from "./pages/UserPage/ManagementPage";
+import AgentDetailsPage from "./pages/Agents/AgentsDetailsPage";
 
 // import {Role } from "./types";
 
@@ -172,6 +173,7 @@ export default function App() {
 
             {/* Agents  */}
             <Route path="/agents" element={<AgentsPage />} />
+            <Route path="/crm/agents/:id" element={<AgentDetailsPage />} />
             {/* Amenity  */}
             <Route path="/amenities" element={<AmenityPage />} />
             {/* cms  */}

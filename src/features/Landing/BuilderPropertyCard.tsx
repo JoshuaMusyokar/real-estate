@@ -72,7 +72,36 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
       year: "numeric",
     },
   );
+  const area =
+    property.superBuiltArea ??
+    property.builtUpArea ??
+    property.carpetArea ??
+    property.squareFeet;
 
+  const items = [
+    {
+      icon: Bed,
+      label: "Beds",
+      value: property.bedrooms,
+      bg: "from-blue-50 to-indigo-50",
+      text: "text-blue-600",
+    },
+    {
+      icon: Bath,
+      label: "Baths",
+      value: property.bathrooms,
+      bg: "from-purple-50 to-pink-50",
+      text: "text-purple-600",
+    },
+    {
+      icon: Square,
+      label: "sqft",
+      value: area,
+      bg: "from-emerald-50 to-green-50",
+      text: "text-emerald-600",
+    },
+  ];
+  const filteredItems = items.filter((item) => item.value != null);
   return (
     <div
       className="
@@ -172,37 +201,17 @@ export const BuilderPropertyCard: React.FC<BuilderPropertyCardProps> = ({
 
         {/* Feature grid — 3 cols */}
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
-          {[
-            {
-              icon: Bed,
-              label: "Beds",
-              value: property.bedrooms,
-              bg: "from-blue-50 to-indigo-50",
-              text: "text-blue-600",
-            },
-            {
-              icon: Bath,
-              label: "Baths",
-              value: property.bathrooms,
-              bg: "from-purple-50 to-pink-50",
-              text: "text-purple-600",
-            },
-            {
-              icon: Square,
-              label: "sqft",
-              value: property.squareFeet,
-              bg: "from-emerald-50 to-green-50",
-              text: "text-emerald-600",
-            },
-          ].map(({ icon: Icon, label, value, bg, text }) => (
+          {filteredItems.map(({ icon: Icon, label, value, bg, text }) => (
             <div
               key={label}
               className={`flex flex-col items-center gap-0.5 sm:gap-1 bg-gradient-to-br ${bg} rounded-lg sm:rounded-xl p-2 sm:p-2.5`}
             >
               <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${text}`} />
+
               <span className="text-[10px] sm:text-xs font-black text-gray-800">
                 {value}
               </span>
+
               <span className="text-[9px] text-gray-400 hidden sm:block">
                 {label}
               </span>

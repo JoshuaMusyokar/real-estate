@@ -69,7 +69,21 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
       //
     }
   };
+  let areaValue = null;
+  // let areaType = "";
 
+  if (property.superBuiltArea) {
+    areaValue = property.superBuiltArea;
+    // areaType = "Super Built-up";
+  } else if (property.builtUpArea) {
+    areaValue = property.builtUpArea;
+    // areaType = "Built-up";
+  } else if (property.carpetArea) {
+    areaValue = property.carpetArea;
+    // areaType = "Carpet";
+  }
+
+  const areaLabel = areaValue ? `${areaValue} ft²` : null;
   return (
     <div
       className="
@@ -137,20 +151,27 @@ export const StandardPropertyCard: React.FC<StandardPropertyCardProps> = ({
         {/* Feature pills */}
         <div className="flex items-center gap-1.5 sm:gap-2 mb-2.5 sm:mb-3 flex-wrap">
           {[
-            { icon: Bed, value: `${property.bedrooms} Bed` },
-            { icon: Bath, value: `${property.bathrooms} Bath` },
-            { icon: Square, value: `${property.squareFeet} ft²` },
-          ].map(({ icon: Icon, value }) => (
-            <span
-              key={value}
-              className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-md text-[10px] sm:text-xs font-semibold text-blue-700"
-            >
-              <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-              {value}
-            </span>
-          ))}
+            {
+              icon: Bed,
+              value: property.bedrooms ? `${property.bedrooms} Bed` : null,
+            },
+            {
+              icon: Bath,
+              value: property.bathrooms ? `${property.bathrooms} Bath` : null,
+            },
+            { icon: Square, value: areaLabel },
+          ]
+            .filter((item) => item.value)
+            .map(({ icon: Icon, value }) => (
+              <span
+                key={value}
+                className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-md text-[10px] sm:text-xs font-semibold text-blue-700"
+              >
+                <Icon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                {value}
+              </span>
+            ))}
         </div>
-
         {/* Parking row (only if any parking exists) */}
         {(property.coveredParking ||
           property.openParking ||

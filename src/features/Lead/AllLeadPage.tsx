@@ -470,7 +470,10 @@ export const AllLeads: React.FC = () => {
                                   (lead.localities?.length ?? 0) > 0) && (
                                   <div className="text-[10px] text-gray-400 flex items-center gap-0.5 mt-0.5 truncate max-w-[140px]">
                                     <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
-                                    {[lead.city, ...(lead.localities ?? [])]
+                                    {[
+                                      lead.city?.name,
+                                      ...(lead.localities ?? []),
+                                    ]
                                       .filter(Boolean)
                                       .slice(0, 1)
                                       .join("")}
