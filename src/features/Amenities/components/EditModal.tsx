@@ -5,6 +5,7 @@ import { AmenityForm } from "./AmenityForm";
 import type { Amenity, AmenityFormData } from "../../../types";
 import { useUpdateAmenityMutation } from "../../../services/AmenityApi";
 import { useToast } from "../../../hooks/useToast";
+import { Loader2, Save } from "lucide-react";
 
 interface EditModalProps {
   isOpen: boolean;
@@ -23,7 +24,6 @@ export const EditModal = ({
 }: EditModalProps) => {
   const { formData, formErrors, updateFormData, resetForm, validateForm } =
     useAmenityForm();
-
   const [updateAmenity, { isLoading }] = useUpdateAmenityMutation();
   const { error: showError } = useToast();
 
@@ -37,7 +37,7 @@ export const EditModal = ({
         isActive: amenity.isActive,
       });
     }
-  }, [amenity]); // Remove updateFormData from dependencies to avoid infinite loop
+  }, [amenity]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClose = () => {
     resetForm();
@@ -46,12 +46,8 @@ export const EditModal = ({
 
   const handleUpdate = async () => {
     if (!validateForm() || !amenity) return;
-
     try {
-      await updateAmenity({
-        id: amenity.id,
-        data: formData,
-      }).unwrap();
+      await updateAmenity({ id: amenity.id, data: formData }).unwrap();
       onSuccess();
       resetForm();
     } catch (error: unknown) {
@@ -60,37 +56,42 @@ export const EditModal = ({
     }
   };
 
-  // Wrapper function to match the expected signature
-  const handleFormDataChange = (updates: Partial<AmenityFormData>) => {
-    updateFormData(updates);
-  };
-
   return (
     <BaseModal isOpen={isOpen} onClose={handleClose}>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-        Edit Amenity
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+          Edit Amenity
+        </h2>
+      </div>
 
       <AmenityForm
         formData={formData}
         formErrors={formErrors}
         categories={categories}
-        onFormDataChange={handleFormDataChange}
+        onFormDataChange={(u: Partial<AmenityFormData>) => updateFormData(u)}
       />
 
-      <div className="flex items-center gap-3 mt-6">
+      <div className="flex gap-2.5 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={handleClose}
-          className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          className="flex-1 py-2 sm:py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs sm:text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleUpdate}
           disabled={isLoading}
-          className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5"
         >
-          {isLoading ? "Updating..." : "Update"}
+          {isLoading ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Updating…
+            </>
+          ) : (
+            <>
+              <Save className="w-3.5 h-3.5" /> Update
+            </>
+          )}
         </button>
       </div>
     </BaseModal>

@@ -13,6 +13,11 @@ interface AmenityFormProps {
   onFormDataChange: (updates: Partial<AmenityFormData>) => void;
 }
 
+const inp =
+  "w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-xs sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all";
+const lbl =
+  "block text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1";
+
 export const AmenityForm = ({
   formData,
   formErrors,
@@ -25,8 +30,8 @@ export const AmenityForm = ({
   const filteredAmenities = searchQuery
     ? searchAmenities(searchQuery)
     : selectedCategory === "all"
-    ? PREDEFINED_AMENITIES
-    : PREDEFINED_AMENITIES.filter((a) => a.category === selectedCategory);
+      ? PREDEFINED_AMENITIES
+      : PREDEFINED_AMENITIES.filter((a) => a.category === selectedCategory);
 
   const handleSelectAmenity = (amenity: (typeof PREDEFINED_AMENITIES)[0]) => {
     onFormDataChange({
@@ -38,30 +43,23 @@ export const AmenityForm = ({
     setShowCustomInput(false);
   };
 
-  const toggleCustomInput = () => {
-    setShowCustomInput(!showCustomInput);
-    if (!showCustomInput) {
-      // Clear selection when switching to custom
-      onFormDataChange({
-        name: "",
-        icon: "",
-        category: "",
-        order: 0,
-      });
-    }
+  const toggleCustom = () => {
+    setShowCustomInput((v) => !v);
+    if (!showCustomInput)
+      onFormDataChange({ name: "", icon: "", category: "", order: 0 });
   };
 
   return (
-    <div className="space-y-6">
-      {/* Toggle between predefined and custom */}
+    <div className="space-y-4">
+      {/* Header + toggle */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
           {showCustomInput ? "Custom Amenity" : "Select Amenity"}
         </h3>
         <button
           type="button"
-          onClick={toggleCustomInput}
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+          onClick={toggleCustom}
+          className="text-[11px] sm:text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
         >
           {showCustomInput ? "← Back to predefined" : "Create custom →"}
         </button>
@@ -69,168 +67,148 @@ export const AmenityForm = ({
 
       {!showCustomInput ? (
         <>
-          {/* Search and Filter */}
-          <div className="space-y-3">
+          {/* Search */}
+          <div className="relative">
             <input
               type="text"
-              placeholder="Search amenities..."
+              placeholder="Search amenities…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={inp}
             />
-
-            <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory("all")}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  selectedCategory === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                All
-              </button>
-              {AMENITY_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    selectedCategory === cat
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
           </div>
 
-          {/* Amenities Grid */}
-          <div className="max-h-96 overflow-y-auto border-2 border-gray-200 dark:border-gray-700 rounded-xl p-4">
+          {/* Category chips — scrollable on mobile */}
+          <div
+            className="flex gap-1.5 overflow-x-auto pb-0.5"
+            style={{ scrollbarWidth: "none" }}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-colors
+                ${selectedCategory === "all" ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}
+            >
+              All
+            </button>
+            {AMENITY_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-colors
+                  ${selectedCategory === cat ? "bg-blue-600 text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Grid */}
+          <div className="max-h-56 sm:max-h-72 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 sm:p-3">
             {filteredAmenities.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {filteredAmenities.map((amenity) => (
                   <button
                     key={amenity.name}
                     type="button"
                     onClick={() => handleSelectAmenity(amenity)}
-                    className={`p-4 border-2 rounded-xl transition-all hover:shadow-md ${
-                      formData.name === amenity.name
-                        ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500"
-                        : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500"
-                    }`}
+                    className={`p-2 sm:p-3 border rounded-xl transition-all text-center
+                      ${
+                        formData.name === amenity.name
+                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-500"
+                          : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600"
+                      }`}
                   >
-                    <div className="flex flex-col items-center gap-2">
-                      <img
-                        src={amenity.icon}
-                        alt={amenity.name}
-                        className="w-10 h-10 object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "/icons/amenities/default.svg";
-                        }}
-                      />
-                      <span className="text-xs font-medium text-center text-gray-900 dark:text-white">
-                        {amenity.name}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {amenity.category}
-                      </span>
-                    </div>
+                    <img
+                      src={amenity.icon}
+                      alt={amenity.name}
+                      className="w-7 h-7 sm:w-8 sm:h-8 object-contain mx-auto mb-1"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "/icons/amenities/default.svg";
+                      }}
+                    />
+                    <p className="text-[9px] sm:text-[10px] font-semibold text-gray-900 dark:text-white leading-tight truncate">
+                      {amenity.name}
+                    </p>
+                    <p className="text-[8px] sm:text-[9px] text-gray-400 truncate">
+                      {amenity.category}
+                    </p>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <p className="text-center py-6 text-[11px] sm:text-xs text-gray-400">
                 No amenities found. Try a different search or create a custom
                 amenity.
-              </div>
+              </p>
             )}
           </div>
 
-          {/* Selected Amenity Display */}
+          {/* Selected preview */}
           {formData.name && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                  <img
-                    src={formData.icon || "/icons/amenities/default.svg"}
-                    alt={formData.name}
-                    className="w-12 h-12 object-contain"
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-lg text-gray-900 dark:text-white">
-                    {formData.name}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Category: {formData.category}
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Order: {formData.order}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                <img
+                  src={formData.icon || "/icons/amenities/default.svg"}
+                  alt={formData.name}
+                  className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
+                  {formData.name}
+                </p>
+                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
+                  {formData.category} · Order {formData.order}
+                </p>
               </div>
             </div>
           )}
           {formErrors.name && (
-            <p className="text-red-500 text-sm font-medium">
+            <p className="text-[10px] sm:text-xs text-red-500 font-medium">
               {formErrors.name}
             </p>
           )}
         </>
       ) : (
-        /* Custom Input Form */
-        <div className="space-y-4">
+        /* Custom form */
+        <div className="space-y-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Name *
-            </label>
+            <label className={lbl}>Name *</label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => onFormDataChange({ name: e.target.value })}
-              className={`w-full px-4 py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                formErrors.name
-                  ? "border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
-              }`}
               placeholder="e.g., Swimming Pool"
+              className={`${inp} ${formErrors.name ? "border-red-400 dark:border-red-500" : ""}`}
             />
             {formErrors.name && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                {formErrors.name}
-              </p>
+              <p className="mt-1 text-[10px] text-red-500">{formErrors.name}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Icon (Emoji or URL)
-            </label>
+            <label className={lbl}>Icon (Emoji or URL)</label>
             <input
               type="text"
               value={formData.icon}
               onChange={(e) => onFormDataChange({ icon: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="🏊 or /icons/amenities/pool.svg"
+              className={inp}
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Use emoji or path to icon file
+            <p className="mt-1 text-[10px] text-gray-400">
+              Use an emoji or a path to an icon file
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Category
-            </label>
+            <label className={lbl}>Category</label>
             <select
               value={formData.category}
               onChange={(e) => onFormDataChange({ category: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`${inp} appearance-none`}
             >
               <option value="">Select category</option>
               {AMENITY_CATEGORIES.map((cat) => (
@@ -242,27 +220,19 @@ export const AmenityForm = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Display Order
-            </label>
+            <label className={lbl}>Display Order</label>
             <input
               type="number"
               value={formData.order}
-              onChange={(e) =>
-                onFormDataChange({
-                  order: parseInt(e.target.value) || 0,
-                })
-              }
-              className={`w-full px-4 py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                formErrors.order
-                  ? "border-red-500"
-                  : "border-gray-300 dark:border-gray-600"
-              }`}
               min="0"
               placeholder="e.g., 100"
+              onChange={(e) =>
+                onFormDataChange({ order: parseInt(e.target.value) || 0 })
+              }
+              className={`${inp} ${formErrors.order ? "border-red-400 dark:border-red-500" : ""}`}
             />
             {formErrors.order && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              <p className="mt-1 text-[10px] text-red-500">
                 {formErrors.order}
               </p>
             )}
@@ -270,16 +240,25 @@ export const AmenityForm = ({
         </div>
       )}
 
-      {/* Active Status - Always Visible */}
-      <div className="pt-4 border-t-2 border-gray-200 dark:border-gray-700">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={formData.isActive}
-            onChange={(e) => onFormDataChange({ isActive: e.target.checked })}
-            className="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+      {/* Active toggle — always visible */}
+      <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <div className="relative flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={formData.isActive}
+              onChange={(e) => onFormDataChange({ isActive: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div
+              className="w-9 h-5 bg-gray-200 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full
+              peer peer-checked:after:translate-x-full peer-checked:after:border-white
+              after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+              after:bg-white after:border-gray-300 after:border after:rounded-full
+              after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"
+            />
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
             Active
           </span>
         </label>
