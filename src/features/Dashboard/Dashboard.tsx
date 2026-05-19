@@ -4,7 +4,7 @@ import {
   useExportAnalyticsReportMutation,
 } from "../../services/analyticsApi";
 import PageMeta from "../../components/common/PageMeta";
-import type { AnalyticsQueryParams } from "../../types";
+import type { AnalyticsPeriod, AnalyticsQueryParams } from "../../types";
 import FilterBar from "./components/Filterbar";
 import DashboardMetrics from "./components/DashboardMetrix";
 import PropertyTrendsChart from "./components/PropertyTrendChart";
@@ -15,7 +15,7 @@ import TopPropertiesTable from "./components/TopPropertiesTable";
 import AgentPerformanceTable from "./components/AgentPerformanceTable";
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d" | "1y">("30d");
+  const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>(
     [],
@@ -63,6 +63,7 @@ export default function Dashboard() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleFilterChange = (filters: Partial<AnalyticsQueryParams>) => {
     // Update query params and refetch
     Object.assign(queryParams, filters);

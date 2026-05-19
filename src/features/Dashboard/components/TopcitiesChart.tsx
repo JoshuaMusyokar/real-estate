@@ -2,10 +2,11 @@ import React from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { useGetTopCitiesQuery } from "../../../services/analyticsApi";
+import type { AnalyticsPeriod } from "../../../types";
 
 interface TopCitiesChartProps {
   limit: number;
-  period: "today" | "7d" | "30d" | "90d" | "1y" | "custom";
+  period: AnalyticsPeriod;
 }
 
 export default function TopCitiesChart({ limit, period }: TopCitiesChartProps) {

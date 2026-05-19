@@ -37,7 +37,7 @@ export interface PageView {
 export interface TimeRangeFilter {
   startDate: Date | string;
   endDate: Date | string;
-  period?: "today" | "7d" | "30d" | "90d" | "1y" | "custom";
+  period?: AnalyticsPeriod;
 }
 
 export interface LocationFilter {
@@ -322,7 +322,14 @@ export interface LeadSourcesResponse {
   [key: string]: PerformanceMetrics;
 }
 
-export type AnalyticsPeriod = "today" | "7d" | "30d" | "90d" | "1y" | "custom";
+export type AnalyticsPeriod =
+  | "today"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "1y"
+  | "all"
+  | "custom";
 export type AnalyticsInterval = "monthly" | "daily" | "weekly";
 
 export type ConversionMetricsResponse = ConversionMetrics;

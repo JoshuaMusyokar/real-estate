@@ -180,6 +180,7 @@ export interface Property {
   clearTitle: boolean;
   developmentStatus: string | null;
   roadWidth: string | null;
+  roadWidthUnit: string | null;
   electricityAvailable: boolean;
   waterConnection: boolean;
   sewageConnection: boolean;
@@ -191,7 +192,9 @@ export interface Property {
   flooringType: string | null;
   coveredArea: number | null;
   openArea: number | null;
-
+  coveredAreaUnit: string | null;
+  openAreaUnit: string | null;
+  frontageWidthUnit: string | null;
   // Features & Media
   featured: boolean;
   verified: boolean;
@@ -418,6 +421,7 @@ export interface PropertyCreateRequest {
   clearTitle?: boolean;
   developmentStatus: string | null;
   roadWidth: string | null;
+  roadWidthUnit: string | null;
   electricityAvailable?: boolean;
   waterConnection?: boolean;
   sewageConnection?: boolean;
@@ -429,7 +433,9 @@ export interface PropertyCreateRequest {
   flooringType: string | null;
   coveredArea: number | null;
   openArea: number | null;
-
+  coveredAreaUnit: string | null;
+  openAreaUnit: string | null;
+  frontageWidthUnit: string | null;
   // Legal & Ownership
   ownershipType: OwnershipType | null;
   approvedBy: string | null;
@@ -570,6 +576,7 @@ export interface PropertyUpdateRequest {
   clearTitle?: boolean;
   developmentStatus?: string | null;
   roadWidth?: string | null;
+  roadWidthUnit?: string | null;
   electricityAvailable?: boolean;
   waterConnection?: boolean;
   sewageConnection?: boolean;
@@ -581,7 +588,10 @@ export interface PropertyUpdateRequest {
   flooringType?: string | null;
   coveredArea?: number | null;
   openArea?: number | null;
-  industryType: IndustryType | null;
+  coveredAreaUnit?: string | null;
+  openAreaUnit?: string | null;
+  frontageWidthUnit?: string | null;
+  industryType?: IndustryType | null;
   // Legal & Ownership
   ownershipType?: OwnershipType | null;
   approvedBy?: string | null;

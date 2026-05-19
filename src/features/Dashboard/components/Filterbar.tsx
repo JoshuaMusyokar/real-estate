@@ -8,12 +8,13 @@ import {
 } from "lucide-react";
 import { useGetCitiesQuery } from "../../../services/locationApi";
 import { useGetPropertyTypesQuery } from "../../../services/propertyApi";
+import type { AnalyticsPeriod } from "../../../types";
 
 interface FilterBarProps {
-  period: "7d" | "30d" | "90d" | "1y";
+  period: AnalyticsPeriod;
   selectedCities: string[];
   selectedPropertyTypes: string[];
-  onPeriodChange: (period: "7d" | "30d" | "90d" | "1y") => void;
+  onPeriodChange: (period: AnalyticsPeriod) => void;
   onCitiesChange: (cities: string[]) => void;
   onPropertyTypesChange: (types: string[]) => void;
   onExport: (format: "csv" | "excel" | "pdf") => void;
@@ -59,7 +60,7 @@ export default function FilterBar({
   const handlePropertyTypeToggle = (typeId: string) => {
     if (selectedPropertyTypes.includes(typeId)) {
       onPropertyTypesChange(
-        selectedPropertyTypes.filter((id) => id !== typeId)
+        selectedPropertyTypes.filter((id) => id !== typeId),
       );
     } else {
       onPropertyTypesChange([...selectedPropertyTypes, typeId]);
@@ -104,9 +105,12 @@ export default function FilterBar({
               <CalendarIcon className="w-4 h-4 text-primary flex-shrink-0" />
               <select
                 value={period}
-                onChange={(e) => onPeriodChange(e.target.value as any)}
+                onChange={(e) =>
+                  onPeriodChange(e.target.value as AnalyticsPeriod)
+                }
                 className="bg-transparent outline-none cursor-pointer flex-1 min-w-[120px]"
               >
+                <option value="all">All Time</option>
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
                 <option value="90d">Last 90 days</option>

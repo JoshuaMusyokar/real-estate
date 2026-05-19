@@ -1,9 +1,10 @@
 import { UserIcon, TrendingUpIcon } from "lucide-react";
 import { useGetAgentPerformanceQuery } from "../../../services/analyticsApi";
+import type { AnalyticsPeriod } from "../../../types";
 
 interface AgentPerformanceTableProps {
   limit: number;
-  period: "today" | "7d" | "30d" | "90d" | "1y" | "custom";
+  period: AnalyticsPeriod;
 }
 
 export default function AgentPerformanceTable({

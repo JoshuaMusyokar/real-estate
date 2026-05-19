@@ -1,10 +1,11 @@
 import { EyeIcon, MessageCircle, HeartIcon } from "lucide-react";
 import { useGetTopPropertiesQuery } from "../../../services/analyticsApi";
 import Badge from "../../../components/ui/badge/Badge";
+import type { AnalyticsPeriod } from "../../../types";
 
 interface TopPropertiesTableProps {
   limit: number;
-  period: "today" | "7d" | "30d" | "90d" | "1y" | "custom";
+  period: AnalyticsPeriod;
   by: "views" | "inquiries" | "favorites";
 }
 

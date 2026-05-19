@@ -2,9 +2,10 @@ import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { MoreHorizontal } from "lucide-react";
 import { useGetPropertiesOverTimeQuery } from "../../../services/analyticsApi";
+import type { AnalyticsPeriod } from "../../../types";
 
 interface PropertyTrendsChartProps {
-  period: "today" | "7d" | "30d" | "90d" | "1y" | "custom";
+  period: AnalyticsPeriod;
 }
 
 export default function PropertyTrendsChart({

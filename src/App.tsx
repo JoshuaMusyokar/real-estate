@@ -56,6 +56,17 @@ import UserProfilesPage from "./pages/UserProfiles";
 import FAQPage from "./pages/FAQS/Faqs";
 import ManagementPage from "./pages/UserPage/ManagementPage";
 import AgentDetailsPage from "./pages/Agents/AgentsDetailsPage";
+import { MessageListPage } from "./features/Messaging/MessagingListPage";
+import { WebhookLogsPage } from "./features/Messaging/WebhookLogsPage";
+import { MessagingTestPage } from "./features/Messaging/MessagingTestPage";
+import { MessageTemplatesPage } from "./features/Messaging/templates";
+import { EmailTemplatesPage } from "./features/Messaging/templates/EmailTemplate";
+import { CampaignDetailPage } from "./features/Campaigns/CampaignDetailPage";
+import { CampaignsPage } from "./features/Campaigns";
+import { SchedulePage } from "./features/Jobs/SchedulePage";
+import { ExecutionHistoryPage } from "./features/Jobs/ExecutionHistoryPage";
+import { WorkflowBuilderPage } from "./features/Jobs/WorkflowBuilderPage";
+import { WorkflowsPage } from "./features/Jobs";
 
 // import {Role } from "./types";
 
@@ -110,11 +121,9 @@ export default function App() {
           >
             {/* Dashboard - Accessible to all authenticated users */}
             <Route index path="/dashboard" element={<Dashboard />} />
-
             {/* Properties - Different access levels */}
             <Route path="/property" element={<Property />} />
             <Route path="/properties/:id" element={<PropertyDetailPage />} />
-
             {/* Property Creation - Property owners, agents, and admins */}
             <Route
               path="/properties/new"
@@ -142,7 +151,126 @@ export default function App() {
                 </RoleBasedRoute>
               }
             />
+            <Route
+              path="/crm/messages/whatsapp"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN_STAFF", "SUPER_ADMIN"]}
+                >
+                  <MessageListPage channel="whatsapp" />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messages/sms"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <MessageListPage channel="sms" />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/templates/messages"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <MessageTemplatesPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/templates/email"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <EmailTemplatesPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/campaigns"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <CampaignsPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/campaigns/:id"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <CampaignDetailPage />
+                </RoleBasedRoute>
+              }
+            />
 
+            <Route
+              path="/crm/messaging/workflows"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <WorkflowsPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/workflows/:id"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <WorkflowBuilderPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/executions"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <ExecutionHistoryPage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/messaging/schedule"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <SchedulePage />
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/crm/webhooks"
+              element={
+                <RoleBasedRoute
+                  allowedRoles={["SUPER_ADMIN", "SUPER_ADMIN_STAFF"]}
+                >
+                  <WebhookLogsPage />
+                </RoleBasedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/messaging-test"
+              element={
+                <RoleBasedRoute allowedRoles={["SUPER_ADMIN"]}>
+                  <MessagingTestPage />
+                </RoleBasedRoute>
+              }
+            />
             {/* Property Editing - Property owners, agents, and admins */}
             <Route
               path="/properties/:id/edit"
@@ -170,7 +298,6 @@ export default function App() {
             <Route path="/crm/leads" element={<AllLeadsPage />} />
             <Route path="/crm/pipeline" element={<PipelineViewPage />} />
             <Route path="/crm/leads/:id" element={<LeadDetailPage />} />
-
             {/* Agents  */}
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/crm/agents/:id" element={<AgentDetailsPage />} />
@@ -185,7 +312,6 @@ export default function App() {
               path="/cms/view/:contentId"
               element={<ContentDetailsPage />}
             />
-
             {/* User Profile - All authenticated users */}
             <Route path="/profile" element={<UserProfilesPage />} />
             {/* User Profile - All authenticated users */}
@@ -224,7 +350,6 @@ export default function App() {
             <Route path="/landing" element={<LandingPagesAdmin />} />
             {/* User Ntfs -  */}
             <Route path="/notifications" element={<NotificationsPage />} />
-
             {/* Admin Only Routes */}
             <Route
               path="/calendar"
@@ -236,7 +361,6 @@ export default function App() {
                 </RoleBasedRoute>
               }
             />
-
             {/* Demo/UI Routes - Accessible to all authenticated users */}
             <Route path="/blank" element={<Blank />} />
             <Route path="/form-elements" element={<FormElements />} />

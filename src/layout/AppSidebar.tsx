@@ -15,10 +15,12 @@ import {
   LayoutDashboard,
   ListCheck,
   MapPin,
+  MessageSquare,
   ShieldCheck,
   User,
   UserCog,
   Users,
+  Zap,
 } from "lucide-react";
 import { useAppSelector } from "../hooks";
 import { usePermissions } from "../hooks/usePermissions";
@@ -97,6 +99,31 @@ const NAV_MAIN: NavItem[] = [
       { name: "Categories", path: "/cms/categories" },
     ],
   },
+  {
+    icon: <MessageSquare />,
+    name: "Messaging",
+    permissions: ["message.view"],
+    subItems: [
+      { name: "WhatsApp", path: "/crm/messages/whatsapp", new: true },
+      { name: "SMS", path: "/crm/messages/sms" },
+      { name: "Webhook Logs", path: "/crm/webhooks" },
+    ],
+  },
+  {
+    icon: <Zap />,
+    name: "Automation",
+    permissions: ["message.view"],
+    subItems: [
+      { name: "WA & SMS Templates", path: "/crm/messaging/templates/messages" },
+      { name: "Email Templates", path: "/crm/messaging/templates/email" },
+      { name: "Campaigns", path: "/crm/messaging/campaigns" },
+      { name: "Workflows", path: "/crm/messaging/workflows" },
+      { name: "Executions", path: "/crm/messaging/executions" },
+      { name: "Schedule", path: "/crm/messaging/schedule" },
+      { name: "Messaging Test", path: "/admin/messaging-test" },
+    ],
+  },
+
   {
     icon: <BarChart3 />,
     name: "Analytics",
